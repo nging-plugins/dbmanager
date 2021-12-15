@@ -7,6 +7,7 @@ replace github.com/admpub/nging/v4 => ../../admpub/nging
 require (
 	github.com/admpub/archiver v1.1.4
 	github.com/admpub/errors v0.8.2
+	github.com/admpub/godownloader v2.1.0+incompatible
 	github.com/admpub/log v1.3.2
 	github.com/admpub/mysql-schema-sync v0.2.1
 	github.com/admpub/nging/v4 v4.0.0-00010101000000-000000000000
@@ -40,6 +41,8 @@ require (
 	github.com/admpub/go-reuseport v0.0.4 // indirect
 	github.com/admpub/go-utility v0.0.1 // indirect
 	github.com/admpub/godotenv v1.4.2 // indirect
+	github.com/admpub/gohls v1.0.7 // indirect
+	github.com/admpub/gohls-server v0.3.5 // indirect
 	github.com/admpub/humanize v0.0.0-20190501023926-5f826e92c8ca // indirect
 	github.com/admpub/i18n v0.0.3 // indirect
 	github.com/admpub/identicon v1.0.2 // indirect
@@ -61,6 +64,7 @@ require (
 	github.com/admpub/securecookie v1.1.2 // indirect
 	github.com/admpub/service v0.0.2 // indirect
 	github.com/admpub/sessions v0.1.2 // indirect
+	github.com/admpub/sockjs-go/v3 v3.0.1 // indirect
 	github.com/admpub/sonyflake v0.0.1 // indirect
 	github.com/admpub/tail v1.1.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
@@ -81,9 +85,12 @@ require (
 	github.com/goccy/go-json v0.8.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/grafov/m3u8 v0.11.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
@@ -108,6 +115,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tdewolff/minify v2.3.6+incompatible // indirect

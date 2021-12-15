@@ -1,12 +1,24 @@
 package database
 
 import (
-	"github.com/admpub/nging/v4/application/handler"
-	"github.com/admpub/nging/v4/application/library/cron"
+	"github.com/admpub/godownloader/service"
 	"github.com/webx-top/echo"
+
+	"github.com/admpub/nging/v4/application/handler"
+	"github.com/admpub/nging/v4/application/library/config"
+	"github.com/admpub/nging/v4/application/library/cron"
+	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql"
 )
 
+var downloadDir = func() string {
+	if len(config.DefaultConfig.Download.SavePath) == 0 {
+		return service.GetDownloadPath()
+	}
+	return config.DefaultConfig.Download.SavePath
+}
+
 func init() {
+	mysql.SQLTempDir = downloadDir //将SQL文件缓存到下载目录里面方便管理
 	handler.RegisterToGroup(`/db`, func(g echo.RouteRegister) {
 		metaHandler := handler.IRegister().MetaHandler
 
