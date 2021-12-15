@@ -1,10 +1,11 @@
-package database
+package handler
 
 import (
 	"github.com/webx-top/db"
 	"github.com/webx-top/echo"
 
-	"github.com/nging-plugins/dbmanager/pkg/dbschema"
+	ngingdbschema "github.com/admpub/nging/v4/application/dbschema"
+
 	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager"
 	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/pkg/model"
@@ -43,7 +44,7 @@ func clearAuth(ctx echo.Context) {
 	ctx.Session().Delete(`dbAccounts`)
 }
 
-func getLoginInfo(mgr dbmanager.Manager, accountID uint, m *model.DbAccount, user *dbschema.NgingUser) (err error) {
+func getLoginInfo(mgr dbmanager.Manager, accountID uint, m *model.DbAccount, user *ngingdbschema.NgingUser) (err error) {
 	ctx := mgr.Context()
 	if !ctx.IsPost() {
 		return nil

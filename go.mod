@@ -2,6 +2,8 @@ module github.com/nging-plugins/dbmanager
 
 go 1.17
 
+exclude github.com/gomodule/redigo v2.0.0+incompatible
+
 replace github.com/admpub/nging/v4 => ../../admpub/nging
 
 require (
@@ -12,7 +14,7 @@ require (
 	github.com/admpub/mysql-schema-sync v0.2.1
 	github.com/admpub/nging/v4 v4.0.0-00010101000000-000000000000
 	github.com/fatih/color v1.13.0
-	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/gomodule/redigo v1.8.6
 	github.com/russross/blackfriday v1.6.0
 	github.com/webx-top/com v0.3.5
 	github.com/webx-top/db v1.18.4

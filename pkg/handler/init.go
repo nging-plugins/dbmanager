@@ -1,4 +1,4 @@
-package database
+package handler
 
 import (
 	"github.com/admpub/godownloader/service"
