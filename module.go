@@ -26,4 +26,5 @@ var Module = module.Module{
 			Description:  `同步MySQL数据表结构`,
 		},
 	},
+	DBSchemaVer: 0.0000,
 }
