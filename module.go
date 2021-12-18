@@ -11,7 +11,6 @@ import (
 const ID = `db`
 
 var Module = module.Module{
-	Startup: ID,
 	TemplatePath: map[string]string{
 		ID: `dbmanager/template/backend`,
 	},
