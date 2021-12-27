@@ -17,7 +17,7 @@ require (
 	github.com/admpub/nging/v4 v4.0.0-00010101000000-000000000000
 	github.com/fatih/color v1.13.0
 	github.com/gomodule/redigo v1.8.6
-	github.com/nging-plugins/dlmanager v0.0.1
+	github.com/nging-plugins/dlmanager v0.0.2
 	github.com/russross/blackfriday v1.6.0
 	github.com/webx-top/com v0.3.5
 	github.com/webx-top/db v1.18.4
