@@ -17,10 +17,10 @@ require (
 	github.com/admpub/nging/v4 v4.0.0
 	github.com/fatih/color v1.13.0
 	github.com/gomodule/redigo v1.8.8
-	github.com/nging-plugins/dlmanager v0.0.4
+	github.com/nging-plugins/dlmanager v0.1.0
 	github.com/russross/blackfriday v1.6.0
 	github.com/webx-top/com v0.3.6
-	github.com/webx-top/db v1.20.3
+	github.com/webx-top/db v1.20.5
 	github.com/webx-top/echo v2.24.0+incompatible
 	github.com/webx-top/pagination v0.1.1
 )
