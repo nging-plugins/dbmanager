@@ -17,11 +17,11 @@ require (
 	github.com/admpub/nging/v4 v4.0.0
 	github.com/fatih/color v1.13.0
 	github.com/gomodule/redigo v1.8.8
-	github.com/nging-plugins/dlmanager v0.1.0
+	github.com/nging-plugins/dlmanager v0.1.1
 	github.com/russross/blackfriday v1.6.0
 	github.com/webx-top/com v0.3.6
 	github.com/webx-top/db v1.20.5
-	github.com/webx-top/echo v2.24.0+incompatible
+	github.com/webx-top/echo v2.24.1+incompatible
 	github.com/webx-top/pagination v0.1.1
 )
 
@@ -101,6 +101,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grafov/m3u8 v0.11.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
+	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -140,7 +141,7 @@ require (
 	github.com/volatiletech/strmangle v0.0.1 // indirect
 	github.com/webx-top/captcha v0.0.1 // indirect
 	github.com/webx-top/chardet v0.0.1 // indirect
-	github.com/webx-top/client v0.5.0 // indirect
+	github.com/webx-top/client v0.6.6 // indirect
 	github.com/webx-top/codec v0.1.1 // indirect
 	github.com/webx-top/image v0.0.9 // indirect
 	github.com/webx-top/poolx v0.0.0-20210912044716-5cfa2d58e380 // indirect
