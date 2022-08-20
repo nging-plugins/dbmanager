@@ -36,7 +36,11 @@ func (a *mysqlExportMarkdownDoc) Write(c echo.Context, table *TableStatus, field
 			dataType += ` *` + c.T("自动增量") + `*`
 		}
 		if v.Default.Valid {
-			dataType += ` [**` + v.Default.String + `**]`
+			if len(v.Default.String) > 0 {
+				dataType += ` [**` + v.Default.String + `**]`
+			} else {
+				dataType += ` []`
+			}
 		}
 		if len(v.On_update) > 0 {
 			dataType += ` ON UPDATE **` + v.On_update + `**`
