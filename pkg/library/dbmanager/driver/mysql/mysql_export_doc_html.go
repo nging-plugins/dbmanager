@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"strings"
+
 	"github.com/admpub/nging/v4/application/library/common"
 	"github.com/webx-top/echo"
 )
@@ -24,7 +26,7 @@ func (a *mysqlExportHTMLDoc) Open(c echo.Context) error {
 }
 
 func (a *mysqlExportHTMLDoc) Write(c echo.Context, table *TableStatus, fields []*Field) error {
-	c.Response().Write([]byte(`<h2>` + table.Name.String + `</h2>`))
+	c.Response().Write([]byte(`<h2 id="` + strings.ReplaceAll(table.Name.String, `"`, ``) + `">` + table.Name.String + `</h2>`))
 	c.Response().Write([]byte(`<em>` + table.Comment.String + `</em>`))
 	c.Response().Write([]byte(`<table class="table table-bordered table-hover table-condensed">`))
 	c.Response().Write([]byte(`<thead><tr><th>` + c.T(`字段名`) + `</th><th>` + c.T(`数据类型`) + `</th><th>` + c.T(`说明`) + `</th></tr></thead>`))
