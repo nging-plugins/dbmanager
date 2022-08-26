@@ -12,16 +12,16 @@ require (
 	github.com/admpub/archiver v1.1.4
 	github.com/admpub/errors v0.8.2
 	github.com/admpub/godownloader v2.2.0+incompatible
-	github.com/admpub/log v1.3.2
+	github.com/admpub/log v1.3.3
 	github.com/admpub/mysql-schema-sync v0.2.1
 	github.com/admpub/nging/v4 v4.1.1
 	github.com/fatih/color v1.13.0
 	github.com/gomodule/redigo v1.8.9
 	github.com/nging-plugins/dlmanager v0.6.0
 	github.com/russross/blackfriday v1.6.0
-	github.com/webx-top/com v0.6.0
+	github.com/webx-top/com v0.6.1
 	github.com/webx-top/db v1.22.2
-	github.com/webx-top/echo v2.26.9+incompatible
+	github.com/webx-top/echo v2.26.12+incompatible
 	github.com/webx-top/pagination v0.1.1
 )
 
@@ -50,7 +50,7 @@ require (
 	github.com/admpub/gohls v1.3.3 // indirect
 	github.com/admpub/gohls-server v0.3.7 // indirect
 	github.com/admpub/humanize v0.0.0-20190501023926-5f826e92c8ca // indirect
-	github.com/admpub/i18n v0.1.0 // indirect
+	github.com/admpub/i18n v0.1.1 // indirect
 	github.com/admpub/identicon v1.0.2 // indirect
 	github.com/admpub/imageproxy v0.9.3 // indirect
 	github.com/admpub/imaging v1.5.0 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
-	github.com/goccy/go-json v0.9.10 // indirect
+	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -149,11 +149,11 @@ require (
 	github.com/webx-top/validation v0.0.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503 // indirect
 	golang.org/x/image v0.0.0-20220722155232-062f8c9fd539 // indirect
-	golang.org/x/net v0.0.0-20220812174116-3211cb980234 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c // indirect
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
+	golang.org/x/sys v0.0.0-20220823224334-20c2bfdbfe24 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
