@@ -6,9 +6,9 @@ import (
 
 	ngingdbschema "github.com/admpub/nging/v4/application/dbschema"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/pkg/model"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/model"
 )
 
 func addAuth(ctx echo.Context, auth *driver.DbAuth) {

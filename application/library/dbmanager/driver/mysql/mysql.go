@@ -39,8 +39,8 @@ import (
 
 	"github.com/admpub/nging/v4/application/library/common"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql/formdata"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
 )
 
 func init() {

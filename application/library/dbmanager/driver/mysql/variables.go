@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql/utils"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
 )
 
 var (

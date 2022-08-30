@@ -6,8 +6,8 @@ import (
 
 	"github.com/admpub/nging/v4/application/handler"
 	"github.com/admpub/nging/v4/application/library/route"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql"
-	dlconfig "github.com/nging-plugins/dlmanager/pkg/library/config"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
+	dlconfig "github.com/nging-plugins/dlmanager/application/library/config"
 )
 
 var downloadDir = func() string {

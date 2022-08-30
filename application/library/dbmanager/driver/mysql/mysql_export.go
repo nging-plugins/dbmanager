@@ -38,8 +38,8 @@ import (
 	"github.com/admpub/nging/v4/application/handler"
 	"github.com/admpub/nging/v4/application/library/notice"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql/utils"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
 )
 
 // SQLTempDir sql文件缓存目录获取函数(用于导入导出SQL)

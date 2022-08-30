@@ -33,11 +33,11 @@ import (
 	"github.com/admpub/nging/v4/application/library/config"
 	"github.com/admpub/nging/v4/application/library/cron"
 
-	"github.com/nging-plugins/dbmanager/pkg/dbschema"
-	"github.com/nging-plugins/dbmanager/pkg/model"
+	"github.com/nging-plugins/dbmanager/application/dbschema"
+	"github.com/nging-plugins/dbmanager/application/model"
 )
 
-//SchemaSyncJob 计划任务调用方式
+// SchemaSyncJob 计划任务调用方式
 func SchemaSyncJob(id string) cron.Runner {
 	return func(timeout time.Duration) (out string, runingErr string, onErr error, isTimeout bool) {
 		m := model.NewDbSync(nil)
@@ -59,7 +59,7 @@ func SchemaSyncJob(id string) cron.Runner {
 	}
 }
 
-//SchemaSync 表结构同步
+// SchemaSync 表结构同步
 func SchemaSync(ctx echo.Context) error {
 	m := model.NewDbSync(ctx)
 	page, size, totalRows, p := handler.PagingWithPagination(ctx)
@@ -108,7 +108,7 @@ func postAccount(ctx echo.Context, m *model.DbSync) {
 	}
 }
 
-//SchemaSyncAdd 添加表结构同步方案
+// SchemaSyncAdd 添加表结构同步方案
 func SchemaSyncAdd(ctx echo.Context) error {
 	var err error
 	if ctx.IsPost() {
@@ -154,7 +154,7 @@ func setFormData(ctx echo.Context, m *model.DbSync) {
 	ctx.Request().Form().Set(`dsn_destination_database`, dbName)
 }
 
-//SchemaSyncEdit 编辑表结构同步方案
+// SchemaSyncEdit 编辑表结构同步方案
 func SchemaSyncEdit(ctx echo.Context) error {
 	var err error
 	id := ctx.Formx(`id`).Uint()

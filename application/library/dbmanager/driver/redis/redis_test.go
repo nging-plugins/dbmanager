@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/webx-top/echo"
 )
 
@@ -67,15 +67,15 @@ func TestSetString(t *testing.T) {
 }
 
 /*
-func TestFindKeys(t *testing.T) {
-	r := connect()
-	defer r.Close()
-	info, err := r.FindKeys(`*`)
-	if err != nil {
-		panic(err)
+	func TestFindKeys(t *testing.T) {
+		r := connect()
+		defer r.Close()
+		info, err := r.FindKeys(`*`)
+		if err != nil {
+			panic(err)
+		}
+		echo.Dump(info)
 	}
-	echo.Dump(info)
-}
 */
 func TestListKeys(t *testing.T) {
 	r := connect()

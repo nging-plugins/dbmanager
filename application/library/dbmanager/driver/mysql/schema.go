@@ -22,7 +22,7 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql/formdata"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 )

@@ -22,7 +22,7 @@ import (
 	"github.com/webx-top/db"
 	"github.com/webx-top/echo"
 
-	"github.com/nging-plugins/dbmanager/pkg/dbschema"
+	"github.com/nging-plugins/dbmanager/application/dbschema"
 )
 
 func NewDbSyncLog(ctx echo.Context) *DbSyncLog {

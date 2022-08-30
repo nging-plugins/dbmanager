@@ -25,8 +25,8 @@ import (
 	"github.com/webx-top/db"
 	"github.com/webx-top/echo"
 
-	"github.com/nging-plugins/dbmanager/pkg/dbschema"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql"
+	"github.com/nging-plugins/dbmanager/application/dbschema"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
 )
 
 func NewDbAccount(ctx echo.Context) *DbAccount {

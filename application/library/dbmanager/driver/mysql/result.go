@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/result"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/result"
 	"github.com/webx-top/db/lib/factory"
 )
 

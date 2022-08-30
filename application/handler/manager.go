@@ -27,11 +27,11 @@ import (
 
 	"github.com/admpub/log"
 	"github.com/admpub/nging/v4/application/handler"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/mysql"   //mysql
-	_ "github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver/redis" //redis
-	"github.com/nging-plugins/dbmanager/pkg/model"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"   //mysql
+	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/redis" //redis
+	"github.com/nging-plugins/dbmanager/application/model"
 )
 
 var (

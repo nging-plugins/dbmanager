@@ -36,7 +36,7 @@ import (
 	writerPkg "github.com/admpub/nging/v4/application/library/cron/writer"
 	"github.com/admpub/nging/v4/application/library/notice"
 
-	"github.com/nging-plugins/dbmanager/pkg/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 )
 
 /*
