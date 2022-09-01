@@ -17,9 +17,9 @@ require (
 	github.com/admpub/nging/v4 v4.1.1
 	github.com/fatih/color v1.13.0
 	github.com/gomodule/redigo v1.8.9
-	github.com/nging-plugins/dlmanager v0.7.0
+	github.com/nging-plugins/dlmanager v0.8.0
 	github.com/russross/blackfriday v1.6.0
-	github.com/webx-top/com v0.6.1
+	github.com/webx-top/com v0.6.2
 	github.com/webx-top/db v1.22.2
 	github.com/webx-top/echo v2.26.13+incompatible
 	github.com/webx-top/pagination v0.1.1
@@ -86,7 +86,7 @@ require (
 	github.com/fcjr/aia-transport-go v1.2.2 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
-	github.com/garyburd/redigo v1.6.3 // indirect
+	github.com/garyburd/redigo v1.6.4 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
@@ -126,7 +126,7 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
-	github.com/shirou/gopsutil/v3 v3.22.7 // indirect
+	github.com/shirou/gopsutil/v3 v3.22.8 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
@@ -149,11 +149,11 @@ require (
 	github.com/webx-top/validation v0.0.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503 // indirect
+	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/image v0.0.0-20220722155232-062f8c9fd539 // indirect
-	golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c // indirect
+	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
-	golang.org/x/sys v0.0.0-20220823224334-20c2bfdbfe24 // indirect
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
