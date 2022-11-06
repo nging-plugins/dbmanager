@@ -252,7 +252,7 @@ function textareaInputEnum(a){
     };
     te.on('blur',sb).on('keyup',function(event){
         if(event.keyCode!=13)return;
-        sb(event);
+        sb.call(this,event);
     });
     $(a).after(te);
     te.focus();
@@ -298,7 +298,7 @@ function textInputFloat(a,title){
     };
     te.find('input').on('blur',sb).on('keyup',function(event){
         if(event.keyCode!=13)return;
-        sb(event);
+        sb.call(this,event);
     });
     $(a).after(te);
     te.find('input').focus();
