@@ -86,9 +86,7 @@ func (m *mySQL) bgExecManage(op string) error {
 	group := background.ListBy(m.ImportAndOutputOpName(op))
 	bgs := map[string]background.Background{}
 	if group != nil {
-		for k, v := range group.Map() {
-			bgs[k] = *v
-		}
+		bgs = group.Map()
 	}
 	m.Set(`list`, bgs)
 	var title string
