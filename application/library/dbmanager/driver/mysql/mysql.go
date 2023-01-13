@@ -1909,7 +1909,9 @@ func (m *mySQL) RunCommand() error {
 				selects = append(selects, selectData)
 				return nil
 			})
-
+			if !strings.HasSuffix(strings.TrimSpace(query), `;`) {
+				query += `;`
+			}
 			for _, line := range strings.Split(query, "\n") {
 				line = strings.TrimSpace(line)
 				if len(line) == 0 {
