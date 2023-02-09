@@ -13,22 +13,22 @@ require (
 	github.com/admpub/errors v0.8.2
 	github.com/admpub/godownloader v2.2.0+incompatible
 	github.com/admpub/log v1.3.3
-	github.com/admpub/mysql-schema-sync v0.2.1
+	github.com/admpub/mysql-schema-sync v0.2.3
 	github.com/admpub/nging/v5 v5.0.0
-	github.com/fatih/color v1.13.0
+	github.com/fatih/color v1.14.1
 	github.com/gomodule/redigo v1.8.9
-	github.com/nging-plugins/dlmanager v1.1.0
+	github.com/nging-plugins/dlmanager v1.1.1
 	github.com/russross/blackfriday v1.6.0
-	github.com/webx-top/com v0.8.4
+	github.com/webx-top/com v0.9.1
 	github.com/webx-top/db v1.23.13
-	github.com/webx-top/echo v2.33.0+incompatible
+	github.com/webx-top/echo v2.33.1+incompatible
 	github.com/webx-top/pagination v0.2.1
 )
 
 require (
 	github.com/abh/errorutil v0.0.0-20130729183701-f9bd360d00b9 // indirect
 	github.com/admpub/ccs-gm v0.0.3 // indirect
-	github.com/admpub/checksum v1.0.1 // indirect
+	github.com/admpub/checksum v1.1.0 // indirect
 	github.com/admpub/color v1.8.1 // indirect
 	github.com/admpub/confl v0.2.2 // indirect
 	github.com/admpub/cron v0.0.1 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/admpub/gohls v1.3.3 // indirect
 	github.com/admpub/gohls-server v0.3.7 // indirect
 	github.com/admpub/humanize v0.0.0-20190501023926-5f826e92c8ca // indirect
-	github.com/admpub/i18n v0.1.3 // indirect
+	github.com/admpub/i18n v0.2.1 // indirect
 	github.com/admpub/identicon v1.0.2 // indirect
 	github.com/admpub/imageproxy v0.9.3 // indirect
 	github.com/admpub/imaging v1.5.0 // indirect
@@ -89,11 +89,11 @@ require (
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
-	github.com/go-playground/universal-translator v0.18.0 // indirect
-	github.com/go-playground/validator/v10 v10.11.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
-	github.com/gofrs/uuid v4.3.1+incompatible // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -104,7 +104,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.15.14 // indirect
+	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230110061619-bbe2e5e100de // indirect
@@ -130,7 +130,7 @@ require (
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
-	github.com/shirou/gopsutil/v3 v3.22.12 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
@@ -142,7 +142,7 @@ require (
 	github.com/volatiletech/strmangle v0.0.4 // indirect
 	github.com/webx-top/captcha v0.1.0 // indirect
 	github.com/webx-top/chardet v0.0.1 // indirect
-	github.com/webx-top/client v0.8.1 // indirect
+	github.com/webx-top/client v0.8.8 // indirect
 	github.com/webx-top/codec v0.2.1 // indirect
 	github.com/webx-top/image v0.0.9 // indirect
 	github.com/webx-top/poolx v0.0.0-20210912044716-5cfa2d58e380 // indirect
