@@ -220,8 +220,8 @@ function onselectColumns(obj){
 				</table>
                 <fieldset class="sm-margin-top">
                     <legend class="sm-padding-bottom sm-margin-bottom xs-padding-left">{{"已选中"|$.T}} (<span id="selected-items-count">0</span>) {{$.T "共有%d项" $.Stored.total}}</legend>
-                    <div class="row no-margin" style="width:400px">
-                    <div class="col-md-7 no-padding">
+                    <div class="row no-margin">
+                    <div class="col-md-3 no-padding">
                     <div class="btn-group">
                     {{- $editURL := call $.Func.dbMgrURL `createData` $.Stored.dbName $.Stored.table -}}
                     <button type="submit" class="btn btn-primary" name="save" value="edit" onclick="$('#form-list-data').attr('action','{{$editURL}}');return true;">
@@ -237,8 +237,8 @@ function onselectColumns(obj){
                         {{"删除"|$.T}}
                     </button>
                     </div>
-                    </div><!-- /.col-md-7 -->
-                    <div class="col-md-5">
+                    </div><!-- /.col-md-3 -->
+                    <div class="col-md-3">
                     <span class="input-group no-margin">
                     <!-- <select class="form-control" name="output">
                         <option value="text">{{`打开`|$.T}}</option>
@@ -256,9 +256,14 @@ function onselectColumns(obj){
                     <button type="submit" class="btn btn-info" name="save" value="export">
                         <i class="glyphicon glyphicon-export"></i>
                         {{"导出"|$.T}}
-                    </button></span>
+                    </button>
+                    <button type="submit" class="btn btn-primary" name="save" value="download">
+                        <i class="glyphicon glyphicon-cloud-download"></i>
+                        {{"下载"|$.T}}
+                    </button>
+                    </span>
                     </span><!-- /.input-group -->
-                    </div><!-- /.col-md-5 -->
+                    </div><!-- /.col-md-3 -->
                     </div>
                 </fieldset>
              </form>
