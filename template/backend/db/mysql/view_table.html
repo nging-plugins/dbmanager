@@ -233,14 +233,11 @@
 {{Super}}
 <script>
   $(function () {
-    $(window).off().on('resize',function(){
-        $('#show-ddl-modal').css({
-          height:$(window).height(),
-          width:'100%','max-width':'100%',left:0,top:0,transform:'none'
-        });
-        $('#show-ddl-modal .modal-body').css({height:$(window).height()-150,width:'100%','max-width':'100%',overflow:'auto',padding:'0 8px'});
+    $('#show-ddl-modal').css({
+      height:'100%',
+      width:'100%','max-width':'100%',left:0,top:0,transform:'none'
     });
-    $(window).trigger('resize');
+    $('#show-ddl-modal .modal-body').css({height:'calc(100vh - 150px)',width:'100%','max-width':'100%',overflow:'auto',padding:'0 8px'});
     $('[data-modal-url]').on('click', function () {
       var url = $(this).data('modal-url');
       $.get(url, {}, function (r) {
