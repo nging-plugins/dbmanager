@@ -13,16 +13,16 @@ require (
 	github.com/admpub/errors v0.8.2
 	github.com/admpub/godownloader v2.2.0+incompatible
 	github.com/admpub/log v1.3.3
-	github.com/admpub/mysql-schema-sync v0.2.4
+	github.com/admpub/mysql-schema-sync v0.2.5
 	github.com/admpub/nging/v5 v5.0.0
 	github.com/fatih/color v1.15.0
 	github.com/gomodule/redigo v1.8.9
 	github.com/nging-plugins/dlmanager v1.3.0
 	github.com/russross/blackfriday v1.6.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/webx-top/com v0.9.4
 	github.com/webx-top/db v1.23.17
-	github.com/webx-top/echo v2.35.1+incompatible
+	github.com/webx-top/echo v2.35.2+incompatible
 	github.com/webx-top/pagination v0.2.1
 )
 
