@@ -17,12 +17,12 @@ require (
 	github.com/admpub/nging/v5 v5.0.0
 	github.com/fatih/color v1.15.0
 	github.com/gomodule/redigo v1.8.9
-	github.com/nging-plugins/dlmanager v1.3.1
+	github.com/nging-plugins/dlmanager v1.4.0
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/webx-top/com v0.9.5
-	github.com/webx-top/db v1.24.3
-	github.com/webx-top/echo v2.36.2+incompatible
+	github.com/webx-top/db v1.24.4
+	github.com/webx-top/echo v2.37.1+incompatible
 	github.com/webx-top/pagination v0.2.3
 )
 
@@ -115,7 +115,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.24 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.25 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

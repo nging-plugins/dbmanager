@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -92,6 +93,8 @@ func ParseImportFile(cacheDir string, files []string) (*ImportFile, error) {
 			}
 		}
 	}
+	sort.Strings(sqlStructFiles)
+	sort.Strings(sqlDataFiles)
 	return &ImportFile{
 		delDirs:     delDirs,
 		StructFiles: sqlStructFiles,
