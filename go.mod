@@ -20,6 +20,7 @@ require (
 	github.com/nging-plugins/dlmanager v1.4.0
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.8.4
+	github.com/tidwall/collate v1.0.0
 	github.com/webx-top/com v0.9.5
 	github.com/webx-top/db v1.24.4
 	github.com/webx-top/echo v2.37.1+incompatible
@@ -137,6 +138,9 @@ require (
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/tidwall/gjson v1.3.4 // indirect
+	github.com/tidwall/match v1.0.1 // indirect
+	github.com/tidwall/pretty v1.0.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect

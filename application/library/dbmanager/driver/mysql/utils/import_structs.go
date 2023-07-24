@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/admpub/archiver"
 	"github.com/admpub/log"
 	"github.com/webx-top/com"
+
+	dcommon "github.com/nging-plugins/dbmanager/application/library/common"
 )
 
 type ImportFile struct {
@@ -93,8 +94,8 @@ func ParseImportFile(cacheDir string, files []string) (*ImportFile, error) {
 			}
 		}
 	}
-	sort.Strings(sqlStructFiles)
-	sort.Strings(sqlDataFiles)
+	dcommon.SortStrings(sqlStructFiles)
+	dcommon.SortStrings(sqlDataFiles)
 	return &ImportFile{
 		delDirs:     delDirs,
 		StructFiles: sqlStructFiles,
