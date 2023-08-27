@@ -22,7 +22,7 @@ require (
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/webx-top/com v0.9.5
-	github.com/webx-top/db v1.26.1
+	github.com/webx-top/db v1.26.2
 	github.com/webx-top/echo v2.37.3+incompatible
 	github.com/webx-top/pagination v0.2.6
 )
