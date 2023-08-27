@@ -90,7 +90,7 @@ func mysqlBackup(id string) cron.Runner {
 			return
 		}
 
-		out = param.AsString(data.GetInfo()) + `，下载地址：<a href="` + data.GetURL() + `" target="_blank">` + data.GetURL() + `</a>`
+		out = param.AsString(data.GetInfo()) + `，下载地址：` + data.GetURL()
 
 		if keepN > 0 {
 			clearHistoryBackup(auth.Db, keepN)
