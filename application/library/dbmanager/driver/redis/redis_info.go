@@ -46,7 +46,11 @@ func (r *Redis) baseInfo() error {
 		offset := r.Form(`offset`, `0`)
 		q := r.Request().URL().Query()
 		for k := range q {
-			if k != `accountId` {
+			if k == `operation` && q.Get(k) != `listTable` {
+				q.Del(k)
+				continue
+			}
+			if k != `accountId` && k != `size` {
 				q.Del(k)
 			}
 		}
