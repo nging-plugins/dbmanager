@@ -23,9 +23,9 @@ require (
 	github.com/nging-plugins/dlmanager v1.4.2
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.8.4
-	github.com/webx-top/com v1.0.3
-	github.com/webx-top/db v1.27.0
-	github.com/webx-top/echo v2.39.6+incompatible
+	github.com/webx-top/com v1.1.2
+	github.com/webx-top/db v1.27.1
+	github.com/webx-top/echo v2.39.7+incompatible
 	github.com/webx-top/pagination v0.2.7
 )
 
@@ -110,7 +110,7 @@ require (
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.1 // indirect
+	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
