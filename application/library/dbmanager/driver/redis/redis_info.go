@@ -45,6 +45,7 @@ func (r *Redis) baseInfo() error {
 		_, _, _, pagination := handler.PagingWithPagination(r.Context)
 		offset := r.Form(`offset`, `0`)
 		q := r.Request().URL().Query()
+		operation := r.Query(`operation`)
 		for k := range q {
 			if k == `operation` && q.Get(k) != `listTable` {
 				q.Del(k)
@@ -53,6 +54,9 @@ func (r *Redis) baseInfo() error {
 			if k != `accountId` && k != `size` {
 				q.Del(k)
 			}
+		}
+		if operation == `listTable` && q.Get(`operation`) != operation {
+			q.Set(`operation`)
 		}
 		pagination.SetURL(`/db?`+q.Encode()+`&offset={next}&prev={prev}&size={size}`).SetPosition(``, nextOffset, offset)
 		r.Set(`tablePagination`, pagination)
