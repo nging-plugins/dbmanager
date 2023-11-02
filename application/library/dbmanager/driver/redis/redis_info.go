@@ -56,7 +56,7 @@ func (r *Redis) baseInfo() error {
 			}
 		}
 		if operation == `listTable` && q.Get(`operation`) != operation {
-			q.Set(`operation`)
+			q.Set(`operation`, operation)
 		}
 		pagination.SetURL(`/db?`+q.Encode()+`&offset={next}&prev={prev}&size={size}`).SetPosition(``, nextOffset, offset)
 		r.Set(`tablePagination`, pagination)
