@@ -31,7 +31,7 @@ function textInputFloat(a,title,alwayShow,offsetY){
             width=width+'px';
         }
     }
-    te=$('<span id="'+id+'" class="input-group floatup-input-layer" style="position:absolute;z-index:10;width:'+width+';box-shadow:1px 1px 5px #333;margin-top:'+offsetY+'px">'+(title?'<span class="input-group-addon">'+title+'</span>':'')+'<input class="form-control" value="'+v+'"></span>');
+    te=$('<span id="'+id+'" class="input-group floatup-input-layer" style="position:absolute;z-index:10;width:'+width+';box-shadow:1px 1px 5px rgba(51, 51, 51,.3);margin-top:'+offsetY+'px">'+(title?'<span class="input-group-addon">'+title+'</span>':'')+'<input class="form-control" value="'+v+'"></span>');
     var sb=function(event){
         var tv=$(this).val();
         $(a).attr('value',tv).val(tv);
