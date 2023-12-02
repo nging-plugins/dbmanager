@@ -242,7 +242,7 @@
       var url = $(this).data('modal-url');
       $.get(url, {}, function (r) {
         if (r.Code != 1) return App.message({ title: '{{"出错了"|$.T}}', text: r.Info, class_name: 'danger' });
-        $('#show-ddl-modal').find('pre').html(r.Data.ddl);
+        $('#show-ddl-modal').find('pre').html(App.htmlEncode(r.Data.ddl));
         $('#show-ddl-modal').niftyModal('show');
       }, 'json');
     });
