@@ -158,10 +158,11 @@ $(function(){
         $.ajax({type:'post',url:url,dataType:'json',data:data,
         success:function(r){
             if('Code' in r){
+                end();
                 if(r.Code!=1)return App.message({text:r.Info,type:'error'});
                 App.message({text:r.Info,type:'success'});
             }
-        },error:function(xhr,statusText,err){App.message({text:statusText,type:'error'});}
+        },error:function(xhr,statusText,err){end();App.message({text:statusText,type:'error'});}
         });
     })
 });
