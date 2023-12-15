@@ -45,7 +45,7 @@ func responseDropzone(err error, ctx echo.Context) error {
 	if err != nil {
 		if user := handler.User(ctx); user != nil {
 			notice.OpenMessage(user.Username, `upload`)
-			notice.Send(user.Username, notice.NewMessageWithValue(`upload`, ctx.T(`文件上传出错`), err.Error()))
+			notice.Send(user.Username, notice.NewMessageWithValue(`upload`, ctx.T(`文件上传出错`), err.Error(), notice.StateFailure))
 		}
 	}
 	return respond.Dropzone(ctx, err, nil)
