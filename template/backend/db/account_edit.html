@@ -19,7 +19,7 @@
                 <div class="form-group">
                   <label class="col-sm-3 control-label">{{"标题"|$.T}}</label>
                   <div class="col-sm-6">
-                      <input type="text" class="form-control" name="title" placeholder="{{"账号说明"|}}" value="{{$.Form "title"}}" required>
+                      <input type="text" class="form-control" name="title" placeholder="{{`账号说明`|$.T}}" value="{{$.Form `title`}}" required>
                   </div>
                 </div>
                 <div class="form-group">
@@ -36,26 +36,26 @@
                 <div class="form-group">
                   <label class="col-sm-3 control-label">{{"服务器地址"|$.T}}</label>
                   <div class="col-sm-6">
-                      <input type="text" class="form-control" name="host" placeholder="127.0.0.1:3306" value="{{$.Form "host"}}">
+                      <input type="text" class="form-control" name="host" placeholder="127.0.0.1:3306" value="{{$.Form `host`}}">
                   </div>
                 </div>
               <div class="form-group" id="user-container">
                 <label class="col-sm-3 control-label">{{"账户名"|$.T}}</label>
                 <div class="col-sm-6">
-                    <input type="text" class="form-control" name="user" placeholder="root" value="{{$.Form "user"}}">
+                    <input type="text" class="form-control" name="user" placeholder="root" value="{{$.Form `user`}}">
                     <div class="help-block hidden"></div>
                 </div>
               </div>
               <div class="form-group">
                 <label class="col-sm-3 control-label">{{"密码"|$.T}}</label>
                 <div class="col-sm-6">
-                    <input type="password" class="form-control" name="password" placeholder="" value="{{$.Form "password"}}" autocomplete="off">
+                    <input type="password" class="form-control" name="password" placeholder="" value="{{$.Form `password`}}" autocomplete="off">
                 </div>
               </div>
               <div class="form-group" id="dbname-container">
                 <label class="col-sm-3 control-label">{{"数据库名称"|$.T}}</label>
                 <div class="col-sm-6">
-                  <input type="text" class="form-control" name="name" value="{{$.Form "name"}}">
+                  <input type="text" class="form-control" name="name" value="{{$.Form `name`}}">
                 </div>
               </div>
               <div class="form-group" id="charset-container">

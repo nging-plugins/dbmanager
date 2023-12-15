@@ -5,7 +5,7 @@
 {{/Block}}
 {{Block "breadcrumb"}}
 {{Super}}
-<li><a href="{{call $.Func.dbMgrURL "listTable" $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
 <li class="active">{{"导入数据"|$.T}}</li>
 {{/Block}}
 {{Block "main"}}
@@ -16,11 +16,34 @@
             <h3>{{"导入数据"|$.T}}</h3>
           </div>
           <div class="content">
-              <form action="{{$.URI}}" class="dropzone" id="my-awesome-dropzone" accept="application/zip,application/x-zip-compressed"></form>
-              <table>
-                  <tbody id="import-progress">
-                  </tbody>
-              </table>
+        <details class="clearfix">
+            <summary>{{`从备份文件导入`|$.T}}</summary>
+            <div class="col-md-12">
+            <form class="form-horizontal group-border-dashed" id="form-importfrom-dbfile" method="POST" action="{{$.URI}}" notify>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">{{"文件路径"|$.T}}</label>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control" name="dbfile" placeholder="{{`输入备份文件路径`|$.T}}" value="{{$.Form `title`}}" required>
+                    <div class="help-block">{{`仅支持扩展名为“.zip”和“.sql”的文件。如果指定文件夹，需确保含有此类型的文件。`|$.T}}</div>
+                </div>
+              </div>
+              <div class="form-group">
+				<div class="col-sm-8 col-sm-offset-3">
+				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"导入"|$.T}}</button>
+				  <button type="reset" class="btn btn-default btn-lg"><i class="fa fa-refresh"></i> {{"重置"|$.T}}</button>
+				</div>
+				</div>
+            </form>
+            </div>
+        </details>
+        <details class="clearfix sm-margin-top">
+            <summary>{{`从上传文件导入`|$.T}}</summary>
+            <form action="{{$.URI}}" class="dropzone" id="my-awesome-dropzone" accept="application/zip,application/x-zip-compressed"></form>
+        </details>
+            <table class="sm-margin-top">
+                <tbody id="import-progress">
+                </tbody>
+            </table>
           </div><!-- /.content -->
         </div><!-- /.block-flat -->
     </div>
@@ -86,6 +109,14 @@ function recv_notice_databaseImport(m){
 		App.message({title:App.i18n.SYS_INFO,text:m.content,
 		time:5000,sticky:false,class_name:'success'});
         var $previewElement=$("#dz-preview-"+id);
+        if($previewElement.length<1){
+            var cb=box.data('endCallback');
+            if(cb && typeof cb === 'function'){
+                cb();
+                box.data('endCallback',null);
+            }
+            return;
+        }
         $previewElement.addClass("dz-success").removeClass("dz-sql-importing").children(".dz-upload-after").text(m.content);
         while($previewElement.prev(".dz-sql-importing").length>0){
             $previewElement = $previewElement.prev(".dz-sql-importing");
@@ -113,6 +144,26 @@ $(function(){
             }
         }
     });
+    $('#form-importfrom-dbfile').on('submit',function(e){
+        e.preventDefault();
+        var $submit=$(this).find(':submit');
+        $submit.prop('disabled',true);
+        $submit.children('.fa').addClass('fa-spin');
+        var end=function(){
+            $submit.prop('disabled',false);
+            $submit.children('.fa').removeClass('fa-spin')
+        };
+        $('#import-progress').data('endCallback',end);
+        var url=$(this).attr('action'),data=$(this).serializeArray();
+        $.ajax({type:'post',url:url,dataType:'json',data:data,
+        success:function(r){
+            if('Code' in r){
+                if(r.Code!=1)return App.message({text:r.Info,type:'error'});
+                App.message({text:r.Info,type:'success'});
+            }
+        },error:function(xhr,statusText,err){App.message({text:statusText,type:'error'});}
+        });
+    })
 });
 </script>
 {{/Block}}

@@ -20,13 +20,17 @@ package mysql
 
 import (
 	"context"
+	"fmt"
+	"io/fs"
 	"mime/multipart"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/admpub/errors"
 	"github.com/webx-top/echo"
+	"github.com/webx-top/echo/code"
 
 	"github.com/admpub/nging/v5/application/handler"
 	"github.com/admpub/nging/v5/application/library/background"
@@ -68,20 +72,64 @@ func (m *mySQL) Import() error {
 			username = user.Username
 		}
 		async := m.Formx(`async`, `true`).Bool()
+		dbfile := m.Formx(`dbfile`).String()
 		var sqlFiles []string
 		saveDir := TempDir(utils.OpImport)
-		err = m.SaveUploadedFiles(`file`, func(fdr *multipart.FileHeader) (string, error) {
-			extension := filepath.Ext(fdr.Filename)
-			switch strings.ToLower(extension) {
-			case `.sql`:
-			case `.zip`:
-			default:
-				return ``, errors.New(`只能上传扩展名为“.sql”和“.zip”的文件`)
+		if len(dbfile) > 0 {
+			var fi fs.FileInfo
+			fi, err = os.Stat(dbfile)
+			if err != nil {
+				return fmt.Errorf(`%w: %s`, err, dbfile)
 			}
-			sqlFile := filepath.Join(saveDir, fdr.Filename)
-			sqlFiles = append(sqlFiles, sqlFile)
-			return sqlFile, nil
-		})
+			if fi.IsDir() {
+				err = filepath.Walk(dbfile, func(path string, info fs.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+					if info.IsDir() {
+						return filepath.SkipDir
+					}
+					extension := filepath.Ext(info.Name())
+					switch strings.ToLower(extension) {
+					case `.sql`:
+					case `.zip`:
+					default:
+						return nil
+					}
+
+					sqlFiles = append(sqlFiles, path)
+					return nil
+				})
+				if err != nil {
+					return fmt.Errorf(`%w: %s`, err, dbfile)
+				}
+				if len(sqlFiles) == 0 {
+					return m.NewError(code.DataNotFound, `没有找到扩展名为“.sql”和“.zip”的文件`).SetZone(`dbfile`)
+				}
+			} else {
+				extension := filepath.Ext(dbfile)
+				switch strings.ToLower(extension) {
+				case `.sql`:
+				case `.zip`:
+				default:
+					return m.NewError(code.DataFormatIncorrect, `只支持扩展名为“.sql”和“.zip”的文件`).SetZone(`dbfile`)
+				}
+				sqlFiles = append(sqlFiles, dbfile)
+			}
+		} else {
+			err = m.SaveUploadedFiles(`file`, func(fdr *multipart.FileHeader) (string, error) {
+				extension := filepath.Ext(fdr.Filename)
+				switch strings.ToLower(extension) {
+				case `.sql`:
+				case `.zip`:
+				default:
+					return ``, errors.New(`只能上传扩展名为“.sql”和“.zip”的文件`)
+				}
+				sqlFile := filepath.Join(saveDir, fdr.Filename)
+				sqlFiles = append(sqlFiles, sqlFile)
+				return sqlFile, nil
+			})
+		}
 		if err != nil {
 			return responseDropzone(err, m.Context)
 		}
