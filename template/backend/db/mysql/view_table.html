@@ -14,7 +14,7 @@
 <div class="row">
   <div class="col-md-12">
     {{Include "db/mysql/results"}}
-    <div class="block-flat">
+    <div class="block-flat no-padding">
       <div class="header">
         <div class="btn-group pull-right">
           <a href="{{call $.Func.dbMgrURL `listData` $.Stored.dbName $table}}" class="btn btn-default" data-pjax="#pcont"
@@ -72,7 +72,7 @@
       </div><!-- /.content -->
     </div><!-- /.block-flat -->
     {{if not $.Stored.tableStatus.IsView}}
-    <div class="block-flat">
+    <div class="block-flat no-padding">
       <div class="header">
         <a href="{{call $.Func.dbMgrURL `indexes` $.Stored.dbName $table}}" data-pjax="#pcont" data-keepjs="true" class="btn btn-default pull-right">
           <i class="fa fa-pencil"></i>
@@ -125,7 +125,7 @@
     {{end}}
 
     {{if $.Stored.tableStatus.FKSupport $.Stored.version}}
-    <div class="block-flat">
+    <div class="block-flat no-padding">
       <div class="header">
         <a href="{{call $.Func.dbMgrURL `foreign` $.Stored.dbName $table}}" data-pjax="#pcont" data-keepjs="true" class="btn btn-default pull-right">
           <i class="fa fa-pencil"></i>
@@ -183,7 +183,7 @@
     {{end}}
 
     {{if $.Stored.supportTrigger}}
-    <div class="block-flat">
+    <div class="block-flat no-padding">
       <div class="header">
         <a href="{{call $.Func.dbMgrURL `trigger` $.Stored.dbName $table}}" class="btn btn-default pull-right">
           <i class="fa fa-pencil"></i>

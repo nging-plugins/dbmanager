@@ -7,7 +7,7 @@
 {{Block "main"}}
 <div class="row">
     <div class="col-md-12">
-        <div class="block-flat">
+        <div class="block-flat no-padding">
           <div class="header">
 			<a href="{{call $.Func.dbMgrURL "createTable" $.Stored.dbName}}" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
 				<i class="fa fa-plus"></i>
@@ -58,6 +58,7 @@
 				</table>
 			    </div>
                 {{- if gt (len $.Stored.tableList) 0 -}}
+                <div class="footer">
                 <fieldset>
                      <legend class="sm-padding-bottom sm-margin-bottom">{{"已选中"|$.T}} (<span id="selected-items-count">0</span>)</legend>
                      <button type="button" class="btn btn-default no-margin-left" id="collate-selected">{{"字符集"|$.T}}</button>
@@ -72,6 +73,7 @@
                      <button type="button" class="btn btn-warning" id="export-selected">{{"导出"|$.T}}</button>
                      <button type="button" class="btn btn-warning" id="export-doc-selected">{{"文档"|$.T}}</button>
                 </fieldset>
+                </div><!-- /.footer -->
                 {{- end -}}
           </div><!-- /.content -->
         </div><!-- /.block-flat -->

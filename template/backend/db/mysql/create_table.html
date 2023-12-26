@@ -12,7 +12,7 @@
 <div class="row">
     <div class="col-md-12">
         {{Include "db/mysql/results"}}
-        <div class="block-flat">
+        <div class="block-flat no-padding">
           <div class="header">							
             <h3>
                 {{if eq ($.Form "operation") "modifyTable"}}{{"修改表"|$.T}}: {{$.Stored.table}}{{else}}{{"创建表"|$.T}}{{end}}
@@ -148,6 +148,7 @@
 
 {{if $.Stored.supportPartitioning}}
 {{$partitionTable := or (Contains $.Stored.partition.Method.String "RANGE") (Contains $.Stored.partition.Method.String "LIST")}}
+                <div class="footer">
                 <fieldset>
                      <legend class="sm-padding-bottom"><a href="javascript:;" onclick="$('#partition-setting').toggleClass('hidden')">{{"分区设置"|$.T}}</a></legend>
 <div class="row no-margin-top{{if le (len $.Stored.partition.Names) 1}} hidden{{end}}" id="partition-setting">
@@ -192,6 +193,7 @@
     </div>
 </div><!-- /.col-sm-12 -->
                 </fieldset>
+                </div><!-- /.footer -->
 {{end}}
 
                 </div><!-- /.form-group -->

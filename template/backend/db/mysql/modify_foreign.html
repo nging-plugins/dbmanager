@@ -12,11 +12,9 @@
 <div class="row">
     <div class="col-md-12">
         {{Include "db/mysql/results"}}
-        <div class="block-flat">
+        <div class="block-flat no-padding">
           <div class="header">							
-            <h3>
-                {{"外键"|$.T}}: {{$.Stored.table}}
-            </h3>
+            <h3>{{"外键"|$.T}}: {{$.Stored.table}}</h3>
           </div>
           <div class="content">
               <form class="form-horizontal group-border-dashed" method="POST" action="">

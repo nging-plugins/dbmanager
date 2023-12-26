@@ -3,7 +3,7 @@
 <div class="row">
     <div class="col-md-12">
         {{Include "db/mysql/dbinfo_btn"}}
-        <div class="block-flat">
+        <div class="block-flat no-padding">
           <div class="header">							
             <h3>{{"进程列表"|$.T}}</h3>
           </div>
@@ -46,11 +46,13 @@
 				</table>
 			    </div>
 			{{- if gt (len $.Stored.processList) 0 -}}
+			<div class="footer">
 			<button type="submit" class="btn btn-danger no-margin-left">
 				<i class="fa fa-minus-circle"></i>
 				{{"终止"|$.T}}
 			</button>
 			{{- end -}}
+			</div><!-- /.footer -->
 			</form>
           </div><!-- /.content -->
         </div><!-- /.block-flat -->

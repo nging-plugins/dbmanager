@@ -21,7 +21,7 @@ require (
 	github.com/nging-plugins/dlmanager v1.4.4
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.8.4
-	github.com/webx-top/com v1.2.10
+	github.com/webx-top/com v1.2.11
 	github.com/webx-top/db v1.27.1
 	github.com/webx-top/echo v2.42.22+incompatible
 	github.com/webx-top/pagination v0.2.8
@@ -68,7 +68,7 @@ require (
 	github.com/admpub/once v0.0.1 // indirect
 	github.com/admpub/pester v0.0.0-20200411024648-005672a2bd48 // indirect
 	github.com/admpub/randomize v0.0.2 // indirect
-	github.com/admpub/realip v0.0.0-20210421084339-374cf5df122d // indirect
+	github.com/admpub/realip v0.0.1 // indirect
 	github.com/admpub/redistore v1.2.1 // indirect
 	github.com/admpub/resty/v2 v2.7.1 // indirect
 	github.com/admpub/securecookie v1.3.0 // indirect
@@ -90,6 +90,7 @@ require (
 	github.com/fcjr/aia-transport-go v1.2.2 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
+	github.com/fynelabs/selfupdate v0.2.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/garyburd/redigo v1.6.4 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
@@ -159,7 +160,7 @@ require (
 	github.com/webx-top/validator v0.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.15.0 // indirect
@@ -168,7 +169,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

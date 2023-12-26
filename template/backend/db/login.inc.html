@@ -1,12 +1,12 @@
 {{Strip}}
 <div class="row">
     <div class="col-md-12">
-        <div class="block-flat">
+        <div class="block-flat no-padding">
           <div class="header">							
             <h3>{{"连接数据库"|$.T}} <span style="font-size:15px">{{"或"|$.T}} <a href="{{BackendURL}}/db/account">{{"从已保存的数据库账号中选择"|$.T}}</a></span></h3>
           </div>
-          <div class="content">
-            <div class="row">{{$hasLoginedAccount := gt (len $.Stored.accounts) 0}}
+          <div class="content padding">
+            <div class="row no-margin-top">{{$hasLoginedAccount := gt (len $.Stored.accounts) 0}}
             {{if $hasLoginedAccount}}
             <div class="col-md-4">
                 <ul class="nav nav-pills nav-stacked margin-bottom">

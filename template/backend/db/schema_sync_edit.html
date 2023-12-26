@@ -9,16 +9,16 @@
 
 <div class="row">
     <div class="col-md-12">
-        <div class="block-flat">
-          <div class="header">							
-            <h3>{{if HasSuffix $.URL.Path "_add"}}{{"添加表结构同步方案"|$.T}}{{else}}{{"修改表结构同步方案"|$.T}}{{end}}</h3>
-          </div>
-          <div class="content">
+        <div class="block-flat no-padding">
+          <div class="header">
             <div class="alert alert-success">
                 <ul>
                     <li>{{"仅支持MySQL数据表结构的同步"|$.T}}</li>
                 </ul>
             </div>
+            <h3>{{if HasSuffix $.URL.Path "_add"}}{{"添加表结构同步方案"|$.T}}{{else}}{{"修改表结构同步方案"|$.T}}{{end}}</h3>
+          </div>
+          <div class="content">
               <form class="form-horizontal group-border-dashed" method="POST" action="">
                 <div class="form-group">
                   <label class="col-sm-2 control-label">{{"方案名"|$.T}}</label>
