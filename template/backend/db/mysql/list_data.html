@@ -154,8 +154,8 @@ function onselectColumns(obj){
 
 <div class="row no-margin-top" id="block-data-list" style="position:absolute;min-width:99%;">
     <div class="col-md-12">
-        <div class="block-flat row no-margin-top">
-          <div class="header">
+        <div class="block-flat no-padding row no-margin-top">
+          <div class="header no-border">
             <h3 class="pull-left">{{"数据"|$.T}}</h3>
             <div class="btn-group pull-left" style="margin-left:10px">
 			<a href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $.Stored.table}}" class="btn btn-default" data-pjax="#pcont" data-keepjs="true">
@@ -222,7 +222,8 @@ function onselectColumns(obj){
 				</table>
                 {{- $hasData := gt (len $.Stored.values) 0 -}}
                 {{- if $hasData -}}
-                <fieldset class="sm-margin-top">
+                <div class="footer no-padding-bottom">
+                <fieldset>
                     <legend class="sm-padding-bottom sm-margin-bottom">{{"已选中"|$.T}} (<span id="selected-items-count">0</span>) {{$.T "共有%d项" $.Stored.total}}</legend>
                     <div class="row no-margin">
                     <div class="col-md-12 no-padding">
@@ -268,6 +269,7 @@ function onselectColumns(obj){
                     </div><!-- /.col-md-12 -->
                     </div><!-- /.row -->
                 </fieldset>
+                </div><!-- /.footer -->
                 {{- end -}}
              </form>
             <!-- </div>.table-responsive -->

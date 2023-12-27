@@ -1,7 +1,9 @@
 {{- $results := call $.Func.Results -}}
 {{- if $results -}}
+<div class="row">
 {{- range $k,$v:=$results -}}
 {{- $.Set `partial.result` $v -}}
 {{Include "db/mysql/result" $}}
 {{- end -}}
+</div>
 {{- end -}}
