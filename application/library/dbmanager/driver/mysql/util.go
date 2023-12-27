@@ -250,7 +250,11 @@ func processInput(field *Field, value string, function string) string {
 	case `now`, `getdate`, `uuid`:
 		return function + `()`
 	case `current_date`, `current_timestamp`:
-		return function
+		return function + `()`
+	case `unix_timestamp(now)`: // 秒数字
+		return `unix_timestamp(now())`
+	case `unix_timestamp_ms(now)`: // 毫秒数字
+		return `REPLACE(unix_timestamp(current_timestamp(3)),'.','')`
 	case `addtime`, `subtime`, `concat`:
 		return function + `(` + quoteCol(field.Field) + `,` + quoteVal(value) + `)`
 	case `md5`, `sha1`, `password`, `encrypt`:

@@ -18,7 +18,7 @@ require (
 	github.com/admpub/nging/v5 v5.0.0
 	github.com/fatih/color v1.16.0
 	github.com/gomodule/redigo v1.8.9
-	github.com/nging-plugins/dlmanager v1.4.4
+	github.com/nging-plugins/dlmanager v1.5.0
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/webx-top/com v1.2.11
@@ -51,7 +51,6 @@ require (
 	github.com/admpub/godotenv v1.4.3 // indirect
 	github.com/admpub/gohls v1.3.3 // indirect
 	github.com/admpub/gohls-server v0.3.7 // indirect
-	github.com/admpub/gohttp v0.0.0-20190322032039-b55c707b8f1e // indirect
 	github.com/admpub/goth v0.0.1 // indirect
 	github.com/admpub/humanize v0.0.0-20190501023926-5f826e92c8ca // indirect
 	github.com/admpub/i18n v0.2.6 // indirect

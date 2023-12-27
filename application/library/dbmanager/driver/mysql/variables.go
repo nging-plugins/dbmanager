@@ -170,6 +170,8 @@ var (
 			"char":      []string{"md5", "sha1", "password", "encrypt", "uuid"}, //! JavaScript for disabling maxlength
 			"binary":    []string{"md5", "sha1"},
 			"date|time": []string{"now"},
+			"^int$":     []string{"unix_timestamp(now)"},
+			"^bigint$":  []string{"unix_timestamp(now)", "unix_timestamp_ms(now)"},
 		},
 		{
 			"(^|[^o])int|float|double|decimal": []string{"+", "-"}, // not point
