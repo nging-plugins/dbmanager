@@ -108,36 +108,33 @@
 {{Super}}
 {{call $.Func.Modal "__TMPL__/db/mysql/analysis.yaml"}}
 <script>
-var editor;
+var editor, tables = {
+    {{- $tableList := $.Stored.Get "tableList" -}}
+    {{- if $tableList -}}
+    {{- range $k,$v := $tableList -}}
+    "{{$v}}": [],
+    {{- end -}}
+    {{- end -}}
+};
 CodeMirror.modeURL = "{{AssetsURL}}/js/editor/markdown/lib/codemirror/mode/%N/%N.js";
 function initCodeMirrorEditor() { // if(editor)return;
     editor = CodeMirror.fromTextArea($("#query")[0], {
         lineNumbers: true,
         extraKeys: {"Tab": "autocomplete"},
         hintOptions: { // 针对sql的自定义表和字段，这样可以把自己的表和字段也放入提示里(table1: [ 'col_A', 'col_B', 'col_C'])。如果数据是异步请求获取的，可以通过editor.setOption('hintOptions', data);
-            tables: {
-              {{- $tableList := $.Stored.Get "tableList" -}}
-              {{- if $tableList -}}
-              {{- range $k,$v := $tableList -}}
-              "{{$v}}": [],
-              {{- end -}}
-              {{- end -}}
-            }
+            tables: tables
         }, theme:'ambiance'
     });
     editor.setOption('lineWrapping', true);//editor.setSize('auto', 'auto');//editor.setOption("readOnly", true); //设置为只读
     editor.setOption("mode", "text/x-{{$.Form `driver` `mysql`}}");
     CodeMirror.autoLoadMode(editor, "sql");
-    //editor.on('cursorActivity', function () {editor.showHint();});
+    editor.on('keypress', function(){editor.showHint();});
 }
 $(function(){
     initCodeMirrorEditor();
-    $('#sql-analysis-modal').find('.modal-body').css({"max-height":$(window).height()-200});
-    $(window).on('resize',function(){
-        $('#sql-analysis-modal').find('.modal-body').css({"max-height":$(window).height()-200});
-    });
     $('#btn-sql-analysis').on('click',function(){
-        var query=$('#query').text();
+        editor.save();
+        var query=$('#query').val();
         $.post('{{call $.Func.dbMgrURL "analysis" $.Stored.dbName}}',{sql:query},function(r){
             if(r.Code!=1){
                 return App.message({title: '{{"系统消息"|$.T}}', text: r.Info, class_name: "danger"});
