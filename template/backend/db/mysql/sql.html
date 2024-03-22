@@ -112,7 +112,7 @@ var editor, tables = {
     {{- $tableList := $.Stored.Get "tableList" -}}
     {{- if $tableList -}}
     {{- range $k,$v := $tableList -}}
-    "{{$v}}": [],
+    "{{$v}}": {{call $.Func.getFieldsByTable $v}},
     {{- end -}}
     {{- end -}}
 };

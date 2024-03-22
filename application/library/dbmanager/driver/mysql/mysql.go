@@ -1990,5 +1990,12 @@ func (m *mySQL) RunCommand() error {
 		}
 		err = m.E(strings.Join(errMessages, "\n"))
 	}
+	m.SetFunc(`getFieldsByTable`, func(table string) []string {
+		_, sortFields, _ := m.tableFields(table)
+		if sortFields == nil {
+			return []string{}
+		}
+		return sortFields
+	})
 	return m.Render(`db/mysql/sql`, m.checkErr(err))
 }
