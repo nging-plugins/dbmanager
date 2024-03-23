@@ -1764,6 +1764,7 @@ func (m *mySQL) modifyTrigger() error {
 	}
 	m.Set(`trigger`, trigger)
 	m.Set(`triggerOptions`, m.TriggerOptions)
+	m.SetFunc(`getFieldsByTable`, m.getFieldsByTable)
 	return m.Render(`db/mysql/modify_trigger`, m.checkErr(err))
 }
 func (m *mySQL) RunCommand() error {
@@ -1990,12 +1991,14 @@ func (m *mySQL) RunCommand() error {
 		}
 		err = m.E(strings.Join(errMessages, "\n"))
 	}
-	m.SetFunc(`getFieldsByTable`, func(table string) []string {
-		_, sortFields, _ := m.tableFields(table)
-		if sortFields == nil {
-			return []string{}
-		}
-		return sortFields
-	})
+	m.SetFunc(`getFieldsByTable`, m.getFieldsByTable)
 	return m.Render(`db/mysql/sql`, m.checkErr(err))
+}
+
+func (m *mySQL) getFieldsByTable(table string) []string {
+	_, sortFields, _ := m.tableFields(table)
+	if sortFields == nil {
+		return []string{}
+	}
+	return sortFields
 }

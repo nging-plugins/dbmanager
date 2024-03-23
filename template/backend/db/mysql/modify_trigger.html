@@ -10,10 +10,13 @@
 <!-- codemirror -->
 <link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.css?t={{BuildTime}}">
 <link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/fold/foldgutter.css?t={{BuildTime}}">
-<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/theme/night.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/hint/show-hint.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/theme/ambiance.css?t={{BuildTime}}">
 <script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.js?t={{BuildTime}}"></script>
 <script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/modes.min.js?t={{BuildTime}}"></script>
 <script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addons.min.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/hint/show-hint.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/hint/sql-hint.js?t={{BuildTime}}"></script>
 <style>
 .CodeMirror {
     border: 1px solid #ccc;
@@ -95,16 +98,25 @@
 {{Block "footer"}}
 {{Super}}
 <script>
-var editor;
+var editor, tables = {
+    {{- $tableList := $.Stored.Get "tableList" -}}
+    {{- if $tableList -}}
+    {{- range $k,$v := $tableList -}}
+    "{{$v}}": {{call $.Func.getFieldsByTable $v}},
+    {{- end -}}
+    {{- end -}}
+};
 CodeMirror.modeURL = "{{AssetsURL}}/js/editor/markdown/lib/codemirror/mode/%N/%N.js";
 function initCodeMirrorEditor() {
     if(editor)return;
     editor = CodeMirror.fromTextArea($("#statement")[0], {
-        lineNumbers: true
+        extraKeys: {"Tab": "autocomplete"},
+        hintOptions: { tables: tables},
+        lineNumbers: true, theme:'ambiance'
     });
     editor.setOption('lineWrapping', true);
     //editor.setSize('auto', 'auto');
-    editor.setOption("mode", "text/x-{{$.Form "driver"}}");
+    editor.setOption("mode", "text/x-{{$.Form `driver` `mysql`}}");
 }
 $(function(){
     initCodeMirrorEditor();
