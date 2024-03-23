@@ -8,10 +8,12 @@
 {{/Block}}
 {{Block "head"}}
 <!-- codemirror -->
-<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.css">
-<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/theme/night.css">
-<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.js"></script>
-<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/mode/loadmode.js"></script>
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/fold/foldgutter.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/theme/night.css?t={{BuildTime}}">
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/modes.min.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addons.min.js?t={{BuildTime}}"></script>
 <style>
 .CodeMirror {
     border: 1px solid #ccc;
@@ -103,7 +105,6 @@ function initCodeMirrorEditor() {
     editor.setOption('lineWrapping', true);
     //editor.setSize('auto', 'auto');
     editor.setOption("mode", "text/x-{{$.Form "driver"}}");
-    CodeMirror.autoLoadMode(editor, "sql");
 }
 $(function(){
     initCodeMirrorEditor();
