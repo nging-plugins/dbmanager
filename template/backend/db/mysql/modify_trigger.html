@@ -114,9 +114,9 @@ function initCodeMirrorEditor() {
         hintOptions: { tables: tables},
         lineNumbers: true, theme:'ambiance'
     });
-    editor.setOption('lineWrapping', true);
-    //editor.setSize('auto', 'auto');
+    editor.setOption('lineWrapping', true);//editor.setSize('auto', 'auto');
     editor.setOption("mode", "text/x-{{$.Form `driver` `mysql`}}");
+    editor.on('keypress', function(){if(typeof(editor.showHint)=='function')editor.showHint();});
 }
 $(function(){
     initCodeMirrorEditor();
