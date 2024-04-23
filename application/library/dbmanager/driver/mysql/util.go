@@ -577,7 +577,7 @@ func diffIndexes(c echo.Context, formData map[string][]string, indexes map[strin
 		keys = append(keys, i)
 	}
 	sort.Ints(keys)
-	for i := range keys {
+	for _, i := range keys {
 		indexSet, ok := recv.Indexes[strconv.Itoa(i)]
 		if !ok {
 			continue

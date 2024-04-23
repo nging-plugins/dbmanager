@@ -17,35 +17,35 @@ func TestDiffIndexes(t *testing.T) {
 	*/
 	//echo.Dump(forms)
 	forms := url.Values{
-		"indexes[0][columns][]":     []string{"id", ""},
+		"indexes[0][columns][]":     []string{"id", ""}, //id
 		"indexes[0][descs][]":       []string{"ASC", ""},
 		"indexes[0][expressions][]": []string{"", ""},
 		"indexes[0][lengths][]":     []string{"", ""},
 		"indexes[0][name]":          []string{"PRIMARY"},
 		"indexes[0][type]":          []string{"PRIMARY"},
 		"indexes[0][with]":          []string{""},
-		"indexes[1][columns][]":     []string{"customer_id", ""},
+		"indexes[1][columns][]":     []string{"customer_id", ""}, //customer_id
 		"indexes[1][descs][]":       []string{"ASC", ""},
 		"indexes[1][expressions][]": []string{"", ""},
 		"indexes[1][lengths][]":     []string{"", ""},
 		"indexes[1][name]":          []string{"software_license_customer_id"},
 		"indexes[1][type]":          []string{"INDEX"},
 		"indexes[1][with]":          []string{""},
-		"indexes[2][columns][]":     []string{"package_ident", ""},
+		"indexes[2][columns][]":     []string{"package_ident", ""}, //package_ident
 		"indexes[2][descs][]":       []string{"ASC", ""},
 		"indexes[2][expressions][]": []string{"", ""},
 		"indexes[2][lengths][]":     []string{"", ""},
 		"indexes[2][name]":          []string{"software_license_package_ident"},
 		"indexes[2][type]":          []string{"INDEX"},
 		"indexes[2][with]":          []string{""},
-		"indexes[3][columns][]":     []string{"product_id", "version", ""},
+		"indexes[3][columns][]":     []string{"product_id", "version", ""}, //product_id+version
 		"indexes[3][descs][]":       []string{"ASC", "ASC", ""},
 		"indexes[3][expressions][]": []string{"", "", ""},
 		"indexes[3][lengths][]":     []string{"", "", ""},
 		"indexes[3][name]":          []string{"software_license_product_id_version"},
 		"indexes[3][type]":          []string{"INDEX"},
 		"indexes[3][with]":          []string{""},
-		"indexes[6][columns][]":     []string{"sn", ""},
+		"indexes[6][columns][]":     []string{"sn", ""}, //sn
 		"indexes[6][descs][]":       []string{"ASC", ""},
 		"indexes[6][expressions][]": []string{"", ""},
 		"indexes[6][lengths][]":     []string{"", ""},
@@ -175,6 +175,33 @@ func TestDiffIndexes(t *testing.T) {
 			Set: []string{
 				"`product_id` ASC",
 				"`version` ASC",
+			},
+			Operation: "",
+		},
+		{
+			Indexes: &Indexes{
+				Name: "sn",
+				Type: "INDEX",
+				Columns: []string{
+					"sn",
+					"",
+				},
+				Lengths: []string{
+					"",
+					"",
+				},
+				Descs: []string{
+					"ASC",
+					"",
+				},
+				Expressions: []string{
+					"",
+					"",
+				},
+				With: "",
+			},
+			Set: []string{
+				"`sn` ASC",
 			},
 			Operation: "",
 		},
