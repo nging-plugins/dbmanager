@@ -20,9 +20,11 @@ package mysql
 import (
 	"bytes"
 	"database/sql"
+	"fmt"
 	"io"
 	"math"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -551,4 +553,125 @@ func safeScan(rows *sql.Rows, colNum int, recv ...interface{}) error {
 		return rows.Scan(recv...)
 	}
 	return rows.Scan(recv[0:colNum]...)
+}
+
+type indexForm struct {
+	Indexes map[string]*Indexes
+}
+
+func diffIndexes(c echo.Context, formData map[string][]string, indexes map[string]*Indexes, indexTypes []string) ([]*indexItems, error) {
+	recv := &indexForm{
+		Indexes: map[string]*Indexes{},
+	}
+	err := c.MapData(recv, formData)
+	if err != nil {
+		return nil, err
+	}
+	alter := []*indexItems{}
+	keys := make([]int, 0, len(recv.Indexes))
+	for key := range recv.Indexes {
+		i, e := strconv.Atoi(key)
+		if e != nil {
+			continue
+		}
+		keys = append(keys, i)
+	}
+	sort.Ints(keys)
+	for i := range keys {
+		indexSet, ok := recv.Indexes[strconv.Itoa(i)]
+		if !ok {
+			continue
+		}
+		indexSet.Name = strings.TrimSpace(indexSet.Name)
+		indexSet.Type = strings.TrimSpace(indexSet.Type)
+		indexSet.With = strings.TrimSpace(indexSet.With)
+		item := &indexItems{
+			Indexes: indexSet,
+			Set:     []string{},
+		}
+		if !com.InSlice(item.Type, indexTypes) {
+			continue
+		}
+		lenSize := len(item.Lengths)
+		descSize := len(item.Descs)
+		expSize := len(item.Expressions)
+		columns := []string{}
+		lengths := []string{}
+		descs := []string{}
+		expressions := []string{}
+		for key, col := range item.Columns {
+			if len(col) == 0 {
+				continue
+			}
+			var length, desc, exp, set string
+			if col == `$` {
+				if key < expSize {
+					exp = item.Expressions[key]
+				}
+				if len(exp) == 0 {
+					continue
+				}
+				set = `((` + exp + `))`
+			} else {
+				set = quoteCol(col)
+				if key < lenSize {
+					length = item.Lengths[key]
+				}
+				if len(length) > 0 {
+					set += `(` + length + `)`
+				}
+				if key < descSize {
+					desc = item.Descs[key]
+				}
+				if len(desc) > 0 {
+					switch desc {
+					case `DESC`:
+						set += ` DESC`
+					case `ASC`:
+						set += ` ASC`
+					}
+				}
+			}
+			item.Set = append(item.Set, set)
+			columns = append(columns, col)
+			lengths = append(lengths, length)
+			descs = append(descs, desc)
+			expressions = append(expressions, exp)
+		}
+		if len(columns) < 1 {
+			continue
+		}
+		if existing, ok := indexes[item.Name]; ok {
+			/*
+				fmt.Println(item.Type, `==`, existing.Type)
+				fmt.Printf(`columns：%#v`+" == %#v\n", columns, existing.Columns)
+				fmt.Printf(`lengths：%#v`+" == %#v\n", lengths, existing.Lengths)
+				fmt.Printf(`descs：%#v`+" == %#v\n", descs, existing.Descs)
+			// */
+			if len(item.With) > 0 && len(existing.With) > 0 && !strings.Contains(item.With, "`") {
+				existing.With = strings.ReplaceAll(existing.With, "`", "")
+			}
+			if item.Type == existing.Type &&
+				fmt.Sprintf(`%#v`, columns) == fmt.Sprintf(`%#v`, existing.Columns) &&
+				fmt.Sprintf(`%#v`, lengths) == fmt.Sprintf(`%#v`, existing.Lengths) &&
+				fmt.Sprintf(`%#v`, descs) == fmt.Sprintf(`%#v`, existing.Descs) &&
+				item.With == existing.With &&
+				fmt.Sprintf(`%#v`, expressions) == fmt.Sprintf(`%#v`, existing.Expressions) {
+				delete(indexes, item.Name)
+				continue
+			}
+		}
+		alter = append(alter, item)
+	}
+	for name, existing := range indexes {
+		alter = append(alter, &indexItems{
+			Indexes: &Indexes{
+				Name: name,
+				Type: existing.Type,
+			},
+			Set:       []string{},
+			Operation: `DROP`,
+		})
+	}
+	return alter, err
 }

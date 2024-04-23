@@ -195,6 +195,9 @@ var (
 	reFunctionInterval   = regexp.MustCompile(`^[+-] interval$`)
 	reSQLValue           = regexp.MustCompile(`^(\d+|'[0-9.: -]') [A-Z_]+$`)
 	reFieldName          = regexp.MustCompile(`^([\w(]+)(` + strings.Replace(regexp.QuoteMeta(quoteCol(`_`)), "_", ".*", -1) + `)([ \w)]+)$`)
+
+	indexTypes             = []string{"PRIMARY", "UNIQUE", "INDEX", "SPATIAL"}
+	indexTypesWithFulltext = []string{"PRIMARY", "UNIQUE", "INDEX", "SPATIAL", "FULLTEXT"}
 )
 
 func init() {

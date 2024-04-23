@@ -1460,9 +1460,9 @@ func (m *mySQL) CreateData() error {
 func (m *mySQL) Indexes() error {
 	return m.modifyIndexes()
 }
+
 func (m *mySQL) modifyIndexes() error {
 	table := m.Form(`table`)
-	indexTypes := []string{"PRIMARY", "UNIQUE", "INDEX", "SPATIAL"}
 	rule := `(?i)MyISAM|M?aria`
 	if com.VersionCompare(m.getVersion(), `5.6`) >= 0 {
 		rule += `|InnoDB`
@@ -1476,125 +1476,19 @@ func (m *mySQL) modifyIndexes() error {
 		return m.String(err.Error())
 	}
 	tableStatus, ok := status[table]
+	_indexTypes := indexTypes
 	if ok && re.MatchString(tableStatus.Engine.String) {
-		indexTypes = append(indexTypes, "FULLTEXT")
+		_indexTypes = indexTypesWithFulltext
 	}
 	indexes, sorts, err := m.tableIndexes(table)
 	if err != nil {
 		return m.String(err.Error())
 	}
 	if m.IsPost() {
-		mapx := echo.NewMapx(m.Forms())
-		mapx = mapx.Get(`indexes`)
-		alter := []*indexItems{}
-		if mapx != nil {
-			size := len(mapx.Map)
-			for i := 0; i < size; i++ {
-				ii := strconv.Itoa(i)
-				indexSet := &Indexes{
-					Name:        strings.TrimSpace(mapx.Value(ii, `name`)),
-					Type:        strings.TrimSpace(mapx.Value(ii, `type`)),
-					Columns:     mapx.Values(ii, `columns`),
-					Lengths:     mapx.Values(ii, `lengths`),
-					Descs:       mapx.Values(ii, `descs`),
-					With:        strings.TrimSpace(mapx.Value(ii, `with`)),
-					Expressions: mapx.Values(ii, `expressions`),
-				}
-				item := &indexItems{
-					Indexes: indexSet,
-					Set:     []string{},
-				}
-				var typeOk bool
-				for _, indexType := range indexTypes {
-					if item.Type == indexType {
-						typeOk = true
-						break
-					}
-				}
-				if !typeOk {
-					continue
-				}
-				lenSize := len(item.Lengths)
-				descSize := len(item.Descs)
-				expSize := len(item.Expressions)
-				columns := []string{}
-				lengths := []string{}
-				descs := []string{}
-				expressions := []string{}
-				for key, col := range item.Columns {
-					if len(col) == 0 {
-						continue
-					}
-					var length, desc, exp, set string
-					if col == `$` {
-						if key < expSize {
-							exp = item.Expressions[key]
-						}
-						if len(exp) == 0 {
-							continue
-						}
-						set = `((` + exp + `))`
-					} else {
-						set = quoteCol(col)
-						if key < lenSize {
-							length = item.Lengths[key]
-						}
-						if len(length) > 0 {
-							set += `(` + length + `)`
-						}
-						if key < descSize {
-							desc = item.Descs[key]
-						}
-						if len(desc) > 0 {
-							switch desc {
-							case `DESC`:
-								set += ` DESC`
-							case `ASC`:
-								set += ` ASC`
-							}
-						}
-					}
-					item.Set = append(item.Set, set)
-					columns = append(columns, col)
-					lengths = append(lengths, length)
-					descs = append(descs, desc)
-					expressions = append(expressions, exp)
-				}
-				if len(columns) < 1 {
-					continue
-				}
-				if existing, ok := indexes[item.Name]; ok {
-					/*
-						fmt.Println(item.Type, `==`, existing.Type)
-						fmt.Printf(`columns：%#v`+" == %#v\n", columns, existing.Columns)
-						fmt.Printf(`lengths：%#v`+" == %#v\n", lengths, existing.Lengths)
-						fmt.Printf(`descs：%#v`+" == %#v\n", descs, existing.Descs)
-					// */
-					if len(item.With) > 0 && len(existing.With) > 0 && !strings.Contains(item.With, "`") {
-						existing.With = strings.ReplaceAll(existing.With, "`", "")
-					}
-					if item.Type == existing.Type &&
-						fmt.Sprintf(`%#v`, columns) == fmt.Sprintf(`%#v`, existing.Columns) &&
-						fmt.Sprintf(`%#v`, lengths) == fmt.Sprintf(`%#v`, existing.Lengths) &&
-						fmt.Sprintf(`%#v`, descs) == fmt.Sprintf(`%#v`, existing.Descs) &&
-						item.With == existing.With &&
-						fmt.Sprintf(`%#v`, expressions) == fmt.Sprintf(`%#v`, existing.Expressions) {
-						delete(indexes, item.Name)
-						continue
-					}
-				}
-				alter = append(alter, item)
-			}
-		}
-		for name, existing := range indexes {
-			alter = append(alter, &indexItems{
-				Indexes: &Indexes{
-					Name: name,
-					Type: existing.Type,
-				},
-				Set:       []string{},
-				Operation: `DROP`,
-			})
+		alter, err := diffIndexes(m.Context, m.Forms(), indexes, _indexTypes)
+		if err != nil {
+			m.fail(err.Error())
+			return m.returnTo(m.GenURL(`viewTable`, m.dbName, table))
 		}
 		if len(alter) > 0 {
 			err = m.alterIndexes(table, alter)
@@ -1627,7 +1521,7 @@ func (m *mySQL) modifyIndexes() error {
 		fieldsSlice[k] = fields[name]
 	}
 	m.Set(`indexes`, indexesSlice)
-	m.Set(`indexTypes`, indexTypes)
+	m.Set(`indexTypes`, _indexTypes)
 	m.Set(`fields`, fieldsSlice)
 	return m.Render(`db/mysql/modify_index`, m.checkErr(err))
 }
