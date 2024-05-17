@@ -127,7 +127,7 @@ function recv_notice_databaseImport(m){
 Dropzone.autoDiscover = false;
 $(function(){
     $('#my-awesome-dropzone').dropzone({
-        url:'{{$.URI}}',
+        url:'{{$.URI}}', timeout: 3600000, // 1h
         params: function(files){
             return {clientID:App.clientID['notify'],id:files[files.length-1].upload.uuid};
         },
