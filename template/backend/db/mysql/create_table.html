@@ -307,16 +307,18 @@ function delRow(obj) {
         App.message({text:'{{"请至少保留一个字段，不能全部删除"|$.T}}',class_name:'warning',title:'{{"提醒"|$.T}}'},false);
         return;
     }
-    $(obj).parent().parent().hide().find('input[name$="][field]"]').remove();
+    $(obj).parent('td').parent('tr').remove();
     reorder();
 }
 function reorder(){
+    var nr=new RegExp('\\[[0-9]+\\]'),fr=/\[field\]$/;
     $('#tbody-content input[name="auto_increment"]').each(function(index,elem){
         $(this).val(index);
         
         $(this).parent().parent().parent().find('[name^="fields["]').each(function(){
             var name=$(this).attr('name');
-            $(this).attr('name',name.replace(new RegExp('\\[[0-9]+\\]'),'['+index+']'));
+            $(this).attr('name',name.replace(nr,'['+index+']'));
+            if(fr.test(name)) $(this).prev('input[name="fieldIndexes[]"]').val(index);
         });
     });
 }

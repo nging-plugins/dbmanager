@@ -462,6 +462,10 @@ func (m *mySQL) CreateTable() error {
 	}
 
 	referencablePrimary, _, err := m.referencablePrimary(``)
+	if err != nil {
+		m.fail(err.Error())
+		return m.returnTo(m.GenURL(`listTable`, m.dbName))
+	}
 	foreignKeys := map[string]string{}
 	for tblName, field := range referencablePrimary {
 		foreignKeys[strings.Replace(tblName, "`", "``", -1)+"`"+strings.Replace(field.Field, "`", "``", -1)] = tblName
@@ -490,7 +494,7 @@ func (m *mySQL) CreateTable() error {
 				field.CopyFromRequest(reqField)
 				var typeField *Field
 				if foreignKey, ok := foreignKeys[field.Type]; ok {
-					typeField, _ = referencablePrimary[foreignKey]
+					typeField = referencablePrimary[foreignKey]
 					foreignK, err := m.formatForeignKey(&ForeignKeyParam{
 						Table:  foreignKey,
 						Source: []string{field.Field},
@@ -586,11 +590,15 @@ func (m *mySQL) ModifyTable() error {
 	}
 
 	referencablePrimary, _, err := m.referencablePrimary(``)
+	if err != nil {
+		m.fail(err.Error())
+		return m.returnTo(m.GenURL(`listTable`, m.dbName))
+	}
 	foreignKeys := map[string]string{}
 	for tblName, field := range referencablePrimary {
 		foreignKeys[strings.Replace(tblName, "`", "``", -1)+"`"+strings.Replace(field.Field, "`", "``", -1)] = tblName
 	}
-	postFields := []*Field{}
+	//postFields := []*Field{}
 	var origFields map[string]*Field
 	var sortFields []string
 	var tableStatus *TableStatus
@@ -651,7 +659,7 @@ func (m *mySQL) ModifyTable() error {
 					field.CopyFromRequest(reqField)
 					var typeField *Field
 					if foreignKey, ok := foreignKeys[field.Type]; ok {
-						typeField, _ = referencablePrimary[foreignKey]
+						typeField = referencablePrimary[foreignKey]
 						foreignK, err := m.formatForeignKey(&ForeignKeyParam{
 							Table:    foreignKey,
 							Source:   []string{field.Field},
@@ -695,7 +703,7 @@ func (m *mySQL) ModifyTable() error {
 						}
 					}
 					after = " AFTER " + quoteCol(field.Field)
-					postFields = append(postFields, field)
+					//postFields = append(postFields, field)
 				}
 				if len(reqField.Orig) > 0 {
 					if origFieldsNum > j {
@@ -742,7 +750,7 @@ func (m *mySQL) ModifyTable() error {
 			return m.returnTo(returnURLs...)
 		}
 	}
-	postFields = make([]*Field, len(sortFields))
+	postFields := make([]*Field, len(sortFields))
 	for k, v := range sortFields {
 		postFields[k] = origFields[v]
 	}

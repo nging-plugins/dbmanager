@@ -23,7 +23,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/webx-top/com v1.2.13
 	github.com/webx-top/db v1.27.6
-	github.com/webx-top/echo v1.6.8
+	github.com/webx-top/echo v1.6.9
 	github.com/webx-top/pagination v0.2.8
 )
 
