@@ -598,16 +598,12 @@ func (m *mySQL) ModifyTable() error {
 	for tblName, field := range referencablePrimary {
 		foreignKeys[strings.Replace(tblName, "`", "``", -1)+"`"+strings.Replace(field.Field, "`", "``", -1)] = tblName
 	}
-	//postFields := []*Field{}
-	var origFields map[string]*Field
-	var sortFields []string
 	var tableStatus *TableStatus
-	val, sort, err := m.tableFields(oldTable)
+	origFields, sortFields, err := m.tableFields(oldTable)
 	if err != nil {
 		return err
 	}
-	origFields = val
-	sortFields = sort
+	postFields := make([]*Field, 0, len(sortFields))
 	stt, _, err := m.getTableStatus(m.dbName, oldTable, false)
 	if err != nil {
 		return err
@@ -623,19 +619,12 @@ func (m *mySQL) ModifyTable() error {
 		tableDef := &formdata.Table{}
 		err = m.MustBindAndValidate(tableDef)
 		if err == nil {
-			var origField *Field
-			origFieldsNum := len(sortFields)
-			if origFieldsNum > 0 {
-				fieldName := sortFields[0]
-				origField = origFields[fieldName]
-			}
 			var useAllFields bool
 			fields := []*fieldItem{}
 			allFields := []*fieldItem{}
 			after := " FIRST"
 			foreign := map[string]string{}
 			driverName := strings.ToLower(m.DbAuth.Driver)
-			j := 1
 			postOrigFields := map[string]struct{}{}
 			for _, index := range tableDef.FieldIndexes {
 				reqField, ok := tableDef.Fields[index]
@@ -645,18 +634,15 @@ func (m *mySQL) ModifyTable() error {
 				if len(reqField.Field) == 0 && len(reqField.Orig) == 0 {
 					break
 				}
+				var origField *Field
 				if len(reqField.Orig) > 0 {
 					postOrigFields[reqField.Orig] = struct{}{}
+					origField = origFields[reqField.Orig]
 				}
 				reqField.Init(tableDef, index)
 				if len(reqField.Field) < 1 {
 					if len(reqField.Orig) > 0 {
-						useAllFields = true
-						item := &fieldItem{
-							Original:     reqField.Orig,
-							ProcessField: []string{},
-						}
-						fields = append(fields, item)
+						delete(postOrigFields, reqField.Orig)
 					}
 				} else {
 					field := &Field{}
@@ -684,22 +670,26 @@ func (m *mySQL) ModifyTable() error {
 					}
 					field.Original = reqField.Orig
 					item := &fieldItem{
-						Original:     field.Original,
-						ProcessField: []string{},
-						After:        after,
+						Original: field.Original,
+						After:    after,
 					}
 					item.ProcessField, err = m.processField(oldTable, field, typeField, tableDef.Auto_increment)
 					if err != nil {
 						return err
 					}
 					allFields = append(allFields, item)
-					processField, err := m.processField(oldTable, origField, origField, tableDef.Auto_increment)
-					if err != nil {
-						return err
+					var isChanged bool
+					if origField != nil {
+						processField, err := m.processField(oldTable, origField, origField, tableDef.Auto_increment)
+						if err != nil {
+							return err
+						}
+						//fmt.Printf(`%#v`+"\n", item.ProcessField)
+						//fmt.Printf(`%#v`+"\n", processField)
+						isChanged = fmt.Sprintf(`%#v`, item.ProcessField) != fmt.Sprintf(`%#v`, processField)
+					} else {
+						isChanged = true
 					}
-					//fmt.Printf(`%#v`+"\n", item.ProcessField)
-					//fmt.Printf(`%#v`+"\n", processField)
-					isChanged := fmt.Sprintf(`%#v`, item.ProcessField) != fmt.Sprintf(`%#v`, processField)
 					if isChanged {
 						fields = append(fields, item)
 						if len(field.Original) > 0 || len(after) > 0 {
@@ -707,15 +697,7 @@ func (m *mySQL) ModifyTable() error {
 						}
 					}
 					after = " AFTER " + quoteCol(field.Field)
-					//postFields = append(postFields, field)
-				}
-				if len(reqField.Orig) > 0 {
-					if origFieldsNum > j {
-						origField = origFields[sortFields[j]]
-						j++
-					} else {
-						after = ``
-					}
+					postFields = append(postFields, field)
 				}
 			}
 
@@ -725,9 +707,10 @@ func (m *mySQL) ModifyTable() error {
 				if ok {
 					continue
 				}
+				useAllFields = true
 				item := &fieldItem{
 					Original:     field.Field,
-					ProcessField: []string{},
+					ProcessField: []string{}, //DROP
 				}
 				allFields = append(allFields, item)
 				fields = append(fields, item)
@@ -768,9 +751,10 @@ func (m *mySQL) ModifyTable() error {
 			return m.returnTo(returnURLs...)
 		}
 	}
-	postFields := make([]*Field, len(sortFields))
-	for k, v := range sortFields {
-		postFields[k] = origFields[v]
+	if len(postFields) == 0 {
+		for _, v := range sortFields {
+			postFields = append(postFields, origFields[v])
+		}
 	}
 	engines, err := m.getEngines()
 	m.Set(`engines`, engines)
