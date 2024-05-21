@@ -694,13 +694,7 @@ func (m *mySQL) ModifyTable() error {
 					if _i < len(sortFieldsTemp) && sortFieldsTemp[_i] != reqField.Field { // 字段的顺序已经不同
 						isChanged = true
 						if len(reqField.Orig) > 0 { //旧字段更改顺序
-							_j := -1
-							for j, fieldName := range sortFieldsTemp {
-								if reqField.Field == fieldName {
-									_j = j
-									break
-								}
-							}
+							_j := slices.Index(sortFieldsTemp, reqField.Field)
 							if _j > -1 {
 								sortFieldsTemp[_i], sortFieldsTemp[_j] = sortFieldsTemp[_j], sortFieldsTemp[_i]
 							}
