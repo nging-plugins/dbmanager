@@ -629,7 +629,10 @@ func (m *mySQL) ModifyTable() error {
 			postOrigFields := map[string]struct{}{}
 			sortFieldsTemp := make([]string, len(sortFields))
 			copy(sortFieldsTemp, sortFields)
+
 			reqFields := make([]*formdata.Field, 0, len(tableDef.FieldIndexes))
+
+			// 收集提交上来的字段数据
 			for _, index := range tableDef.FieldIndexes {
 				reqField, ok := tableDef.Fields[index]
 				if !ok {
@@ -638,11 +641,10 @@ func (m *mySQL) ModifyTable() error {
 				if len(reqField.Field) == 0 && len(reqField.Orig) == 0 {
 					continue
 				}
-				var origField *Field
 				if len(reqField.Orig) > 0 {
 					postOrigFields[reqField.Orig] = struct{}{}
-					origField = origFields[reqField.Orig]
-					if origField == nil {
+					_, ok := origFields[reqField.Orig]
+					if !ok {
 						continue
 					}
 				}
@@ -655,7 +657,8 @@ func (m *mySQL) ModifyTable() error {
 				}
 				reqFields = append(reqFields, reqField)
 			}
-			// 删除字段
+
+			// 生成需要删除的字段信息
 			var deletedFields []*fieldItem
 			for fieldName, field := range origFields {
 				_, ok := postOrigFields[fieldName]
@@ -676,6 +679,8 @@ func (m *mySQL) ModifyTable() error {
 				allFields = append(allFields, deletedFields...)
 				fields = append(fields, deletedFields...)
 			}
+
+			// 生成表结构更新数据
 			var _i int
 			for _, reqField := range reqFields {
 				field := &Field{}
@@ -764,6 +769,8 @@ func (m *mySQL) ModifyTable() error {
 					tableDef.Collation = ``
 				}
 			}
+
+			// 修改表结构
 			if driverName == `sqlite` && (useAllFields || len(foreign) > 0) {
 				err = m.alterTable(oldTable, tableDef.Name, allFields, foreign,
 					sql.NullString{String: tableDef.Comment, Valid: len(tableDef.Comment) > 0},
