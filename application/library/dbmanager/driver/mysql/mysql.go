@@ -629,7 +629,7 @@ func (m *mySQL) ModifyTable() error {
 			postOrigFields := map[string]struct{}{}
 			sortFieldsTemp := make([]string, len(sortFields))
 			copy(sortFieldsTemp, sortFields)
-			reqFields := make([]formdata.Field, 0, len(tableDef.FieldIndexes))
+			reqFields := make([]*formdata.Field, 0, len(tableDef.FieldIndexes))
 			for _, index := range tableDef.FieldIndexes {
 				reqField, ok := tableDef.Fields[index]
 				if !ok {
@@ -653,7 +653,7 @@ func (m *mySQL) ModifyTable() error {
 					}
 					continue
 				}
-				reqFields = append(reqFields, *reqField)
+				reqFields = append(reqFields, reqField)
 			}
 			// 删除字段
 			var deletedFields []*fieldItem
@@ -679,7 +679,7 @@ func (m *mySQL) ModifyTable() error {
 			var _i int
 			for _, reqField := range reqFields {
 				field := &Field{}
-				field.CopyFromRequest(&reqField)
+				field.CopyFromRequest(reqField)
 				var typeField *Field
 				if foreignKey, ok := foreignKeys[field.Type]; ok {
 					typeField = referencablePrimary[foreignKey]
