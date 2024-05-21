@@ -636,6 +636,7 @@ func (m *mySQL) ModifyTable() error {
 			foreign := map[string]string{}
 			driverName := strings.ToLower(m.DbAuth.Driver)
 			j := 1
+			postOrigFields := map[string]struct{}{}
 			for _, index := range tableDef.FieldIndexes {
 				reqField, ok := tableDef.Fields[index]
 				if !ok {
@@ -643,6 +644,9 @@ func (m *mySQL) ModifyTable() error {
 				}
 				if len(reqField.Field) == 0 && len(reqField.Orig) == 0 {
 					break
+				}
+				if len(reqField.Orig) > 0 {
+					postOrigFields[reqField.Orig] = struct{}{}
 				}
 				reqField.Init(tableDef, index)
 				if len(reqField.Field) < 1 {
@@ -713,6 +717,20 @@ func (m *mySQL) ModifyTable() error {
 						after = ``
 					}
 				}
+			}
+
+			// 删除字段
+			for fieldName, field := range origFields {
+				_, ok := postOrigFields[fieldName]
+				if ok {
+					continue
+				}
+				item := &fieldItem{
+					Original:     field.Field,
+					ProcessField: []string{},
+				}
+				allFields = append(allFields, item)
+				fields = append(fields, item)
 			}
 			partitioning := m.tablePartitioning(partitions, tableStatus)
 			if tableStatus != nil {
