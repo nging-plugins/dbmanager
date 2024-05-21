@@ -650,80 +650,83 @@ func (m *mySQL) ModifyTable() error {
 				if len(reqField.Field) < 1 {
 					if len(reqField.Orig) > 0 {
 						delete(postOrigFields, reqField.Orig)
-					}
-				} else {
-					field := &Field{}
-					field.CopyFromRequest(reqField)
-					var typeField *Field
-					if foreignKey, ok := foreignKeys[field.Type]; ok {
-						typeField = referencablePrimary[foreignKey]
-						foreignK, err := m.formatForeignKey(&ForeignKeyParam{
-							Table:    foreignKey,
-							Source:   []string{field.Field},
-							Target:   []string{typeField.Field},
-							OnDelete: field.On_delete,
+						sortFieldsTemp = slices.DeleteFunc(sortFieldsTemp, func(fieldName string) bool {
+							return reqField.Field == fieldName
 						})
-						if err != nil {
-							return err
-						}
-						if driverName == `sqlite` || len(oldTable) == 0 {
-							foreign[quoteCol(field.Field)] = ` ` + foreignK
-						} else {
-							foreign[quoteCol(field.Field)] = `ADD` + foreignK
-						}
 					}
-					if typeField == nil {
-						typeField = field
-					}
-					field.Original = reqField.Orig
-					item := &fieldItem{
-						Original: field.Original,
-						After:    after,
-					}
-					item.ProcessField, err = m.processField(oldTable, field, typeField, tableDef.Auto_increment)
+					continue
+				}
+				field := &Field{}
+				field.CopyFromRequest(reqField)
+				var typeField *Field
+				if foreignKey, ok := foreignKeys[field.Type]; ok {
+					typeField = referencablePrimary[foreignKey]
+					foreignK, err := m.formatForeignKey(&ForeignKeyParam{
+						Table:    foreignKey,
+						Source:   []string{field.Field},
+						Target:   []string{typeField.Field},
+						OnDelete: field.On_delete,
+					})
 					if err != nil {
 						return err
 					}
-					allFields = append(allFields, item)
-					var isChanged bool
-					if origField != nil {
-						if _i < len(sortFieldsTemp) && sortFieldsTemp[_i] != reqField.Field { // 字段的顺序已经不同
-							isChanged = true
-							if len(reqField.Orig) > 0 { //旧字段更改顺序
-								_j := -1
-								for j, fieldName := range sortFieldsTemp {
-									if reqField.Field == fieldName {
-										_j = j
-										break
-									}
+					if driverName == `sqlite` || len(oldTable) == 0 {
+						foreign[quoteCol(field.Field)] = ` ` + foreignK
+					} else {
+						foreign[quoteCol(field.Field)] = `ADD` + foreignK
+					}
+				}
+				if typeField == nil {
+					typeField = field
+				}
+				field.Original = reqField.Orig
+				item := &fieldItem{
+					Original: field.Original,
+					After:    after,
+				}
+				item.ProcessField, err = m.processField(oldTable, field, typeField, tableDef.Auto_increment)
+				if err != nil {
+					return err
+				}
+				allFields = append(allFields, item)
+				var isChanged bool
+				if origField != nil {
+					if _i < len(sortFieldsTemp) && sortFieldsTemp[_i] != reqField.Field { // 字段的顺序已经不同
+						isChanged = true
+						if len(reqField.Orig) > 0 { //旧字段更改顺序
+							_j := -1
+							for j, fieldName := range sortFieldsTemp {
+								if reqField.Field == fieldName {
+									_j = j
+									break
 								}
-								if _j > -1 {
-									sortFieldsTemp[_i], sortFieldsTemp[_j] = sortFieldsTemp[_j], sortFieldsTemp[_i]
-								}
-							} else { //新字段插入
-								sortFieldsTemp = slices.Insert(sortFieldsTemp, _i, reqField.Field)
 							}
-						} else {
-							processField, err := m.processField(oldTable, origField, origField, tableDef.Auto_increment)
-							if err != nil {
-								return err
+							if _j > -1 {
+								sortFieldsTemp[_i], sortFieldsTemp[_j] = sortFieldsTemp[_j], sortFieldsTemp[_i]
 							}
-							//fmt.Printf(`%#v`+"\n", item.ProcessField)
-							//fmt.Printf(`%#v`+"\n", processField)
-							isChanged = fmt.Sprintf(`%#v`, item.ProcessField) != fmt.Sprintf(`%#v`, processField)
+						} else { //新字段插入
+							sortFieldsTemp = slices.Insert(sortFieldsTemp, _i, reqField.Field)
 						}
 					} else {
-						isChanged = true
-					}
-					if isChanged {
-						fields = append(fields, item)
-						if len(field.Original) > 0 || len(after) > 0 {
-							useAllFields = true
+						processField, err := m.processField(oldTable, origField, origField, tableDef.Auto_increment)
+						if err != nil {
+							return err
 						}
+						//fmt.Printf(`%#v`+"\n", item.ProcessField)
+						//fmt.Printf(`%#v`+"\n", processField)
+						isChanged = fmt.Sprintf(`%#v`, item.ProcessField) != fmt.Sprintf(`%#v`, processField)
 					}
-					after = " AFTER " + quoteCol(field.Field)
-					postFields = append(postFields, field)
+				} else {
+					isChanged = true
 				}
+				if isChanged {
+					fields = append(fields, item)
+					if len(field.Original) > 0 || len(after) > 0 {
+						useAllFields = true
+					}
+				}
+				after = " AFTER " + quoteCol(field.Field)
+				postFields = append(postFields, field)
 				if len(reqField.Orig) > 0 {
 					_i++
 				}
