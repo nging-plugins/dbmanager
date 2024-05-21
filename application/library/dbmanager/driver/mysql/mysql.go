@@ -629,14 +629,14 @@ func (m *mySQL) ModifyTable() error {
 			postOrigFields := map[string]struct{}{}
 			sortFieldsTemp := make([]string, len(sortFields))
 			copy(sortFieldsTemp, sortFields)
-			var _i int
+			reqFields := make([]formdata.Field, 0, len(tableDef.FieldIndexes))
 			for _, index := range tableDef.FieldIndexes {
 				reqField, ok := tableDef.Fields[index]
 				if !ok {
 					continue
 				}
 				if len(reqField.Field) == 0 && len(reqField.Orig) == 0 {
-					break
+					continue
 				}
 				var origField *Field
 				if len(reqField.Orig) > 0 {
@@ -650,14 +650,36 @@ func (m *mySQL) ModifyTable() error {
 				if len(reqField.Field) < 1 {
 					if len(reqField.Orig) > 0 {
 						delete(postOrigFields, reqField.Orig)
-						sortFieldsTemp = slices.DeleteFunc(sortFieldsTemp, func(fieldName string) bool {
-							return reqField.Field == fieldName
-						})
 					}
 					continue
 				}
+				reqFields = append(reqFields, *reqField)
+			}
+			// 删除字段
+			var deletedFields []*fieldItem
+			for fieldName, field := range origFields {
+				_, ok := postOrigFields[fieldName]
+				if ok {
+					continue
+				}
+				item := &fieldItem{
+					Original:     field.Field,
+					ProcessField: []string{}, //DROP
+				}
+				deletedFields = append(deletedFields, item)
+				sortFieldsTemp = slices.DeleteFunc(sortFieldsTemp, func(fieldName string) bool {
+					return field.Field == fieldName
+				})
+			}
+			if len(deletedFields) > 0 {
+				useAllFields = true
+				allFields = append(allFields, deletedFields...)
+				fields = append(fields, deletedFields...)
+			}
+			var _i int
+			for _, reqField := range reqFields {
 				field := &Field{}
-				field.CopyFromRequest(reqField)
+				field.CopyFromRequest(&reqField)
 				var typeField *Field
 				if foreignKey, ok := foreignKeys[field.Type]; ok {
 					typeField = referencablePrimary[foreignKey]
@@ -690,6 +712,10 @@ func (m *mySQL) ModifyTable() error {
 				}
 				allFields = append(allFields, item)
 				var isChanged bool
+				var origField *Field
+				if len(reqField.Orig) > 0 {
+					origField = origFields[reqField.Orig]
+				}
 				if origField != nil {
 					if _i < len(sortFieldsTemp) && sortFieldsTemp[_i] != reqField.Field { // 字段的顺序已经不同
 						isChanged = true
@@ -726,24 +752,6 @@ func (m *mySQL) ModifyTable() error {
 				}
 			}
 
-			// 删除字段
-			var deletedFields []*fieldItem
-			for fieldName, field := range origFields {
-				_, ok := postOrigFields[fieldName]
-				if ok {
-					continue
-				}
-				item := &fieldItem{
-					Original:     field.Field,
-					ProcessField: []string{}, //DROP
-				}
-				deletedFields = append(deletedFields, item)
-			}
-			if len(deletedFields) > 0 {
-				useAllFields = true
-				allFields = slices.Concat(deletedFields, allFields)
-				fields = slices.Concat(deletedFields, fields)
-			}
 			partitioning := m.tablePartitioning(partitions, tableStatus)
 			if tableStatus != nil {
 				if tableDef.Comment == tableStatus.Comment.String {
