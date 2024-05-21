@@ -702,18 +702,26 @@ func (m *mySQL) ModifyTable() error {
 			}
 
 			// 删除字段
+			var deletedFields []*fieldItem
 			for fieldName, field := range origFields {
 				_, ok := postOrigFields[fieldName]
 				if ok {
 					continue
 				}
-				useAllFields = true
 				item := &fieldItem{
 					Original:     field.Field,
 					ProcessField: []string{}, //DROP
 				}
-				allFields = append(allFields, item)
-				fields = append(fields, item)
+				deletedFields = append(deletedFields, item)
+			}
+			if len(deletedFields) > 0 {
+				useAllFields = true
+				allFieldsTemp := append([]*fieldItem{}, deletedFields...)
+				allFieldsTemp = append(allFieldsTemp, allFields...)
+				allFields = allFieldsTemp
+				fieldsTemp := append([]*fieldItem{}, deletedFields...)
+				fieldsTemp = append(fieldsTemp, fields...)
+				fields = fieldsTemp
 			}
 			partitioning := m.tablePartitioning(partitions, tableStatus)
 			if tableStatus != nil {
