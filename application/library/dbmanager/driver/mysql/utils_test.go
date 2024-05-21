@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"net/url"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -207,4 +208,10 @@ func TestDiffIndexes(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expected, alter)
+}
+
+func TestSlicesInsert(t *testing.T) {
+	r := []string{`1`, `2`, `3`}
+	v := slices.Insert(r, 1, `02`)
+	assert.Equal(t, []string{`1`, `02`, `2`, `3`}, v)
 }

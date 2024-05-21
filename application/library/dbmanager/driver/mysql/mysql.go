@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -626,6 +627,9 @@ func (m *mySQL) ModifyTable() error {
 			foreign := map[string]string{}
 			driverName := strings.ToLower(m.DbAuth.Driver)
 			postOrigFields := map[string]struct{}{}
+			sortFieldsTemp := make([]string, len(sortFields))
+			copy(sortFieldsTemp, sortFields)
+			var _i int
 			for _, index := range tableDef.FieldIndexes {
 				reqField, ok := tableDef.Fields[index]
 				if !ok {
@@ -638,6 +642,9 @@ func (m *mySQL) ModifyTable() error {
 				if len(reqField.Orig) > 0 {
 					postOrigFields[reqField.Orig] = struct{}{}
 					origField = origFields[reqField.Orig]
+					if origField == nil {
+						continue
+					}
 				}
 				reqField.Init(tableDef, index)
 				if len(reqField.Field) < 1 {
@@ -680,13 +687,31 @@ func (m *mySQL) ModifyTable() error {
 					allFields = append(allFields, item)
 					var isChanged bool
 					if origField != nil {
-						processField, err := m.processField(oldTable, origField, origField, tableDef.Auto_increment)
-						if err != nil {
-							return err
+						if _i < len(sortFieldsTemp) && sortFieldsTemp[_i] != reqField.Field { // 字段的顺序已经不同
+							isChanged = true
+							if len(reqField.Orig) > 0 { //旧字段更改顺序
+								_j := -1
+								for j, fieldName := range sortFieldsTemp {
+									if reqField.Field == fieldName {
+										_j = j
+										break
+									}
+								}
+								if _j > -1 {
+									sortFieldsTemp[_i], sortFieldsTemp[_j] = sortFieldsTemp[_j], sortFieldsTemp[_i]
+								}
+							} else { //新字段插入
+								sortFieldsTemp = slices.Insert(sortFieldsTemp, _i, reqField.Field)
+							}
+						} else {
+							processField, err := m.processField(oldTable, origField, origField, tableDef.Auto_increment)
+							if err != nil {
+								return err
+							}
+							//fmt.Printf(`%#v`+"\n", item.ProcessField)
+							//fmt.Printf(`%#v`+"\n", processField)
+							isChanged = fmt.Sprintf(`%#v`, item.ProcessField) != fmt.Sprintf(`%#v`, processField)
 						}
-						//fmt.Printf(`%#v`+"\n", item.ProcessField)
-						//fmt.Printf(`%#v`+"\n", processField)
-						isChanged = fmt.Sprintf(`%#v`, item.ProcessField) != fmt.Sprintf(`%#v`, processField)
 					} else {
 						isChanged = true
 					}
@@ -698,6 +723,9 @@ func (m *mySQL) ModifyTable() error {
 					}
 					after = " AFTER " + quoteCol(field.Field)
 					postFields = append(postFields, field)
+				}
+				if len(reqField.Orig) > 0 {
+					_i++
 				}
 			}
 
@@ -970,12 +998,10 @@ func (m *mySQL) ViewTable() error {
 		tableStatus  *TableStatus
 	)
 	if len(oldTable) > 0 {
-		val, sort, err := m.tableFields(oldTable)
+		origFields, sortFields, err = m.tableFields(oldTable)
 		if err != nil {
 			return err
 		}
-		origFields = val
-		sortFields = sort
 		stt, _, err := m.getTableStatus(m.dbName, oldTable, false)
 		if err != nil {
 			return err
@@ -983,12 +1009,10 @@ func (m *mySQL) ViewTable() error {
 		if ts, ok := stt[oldTable]; ok {
 			tableStatus = ts
 		}
-		val2, sort2, err := m.tableIndexes(oldTable)
+		origIndexes, sortIndexes, err = m.tableIndexes(oldTable)
 		if err != nil {
 			return err
 		}
-		origIndexes = val2
-		sortIndexes = sort2
 	} else {
 		origFields = map[string]*Field{}
 		sortFields = []string{}
