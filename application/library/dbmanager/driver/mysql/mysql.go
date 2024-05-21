@@ -741,12 +741,8 @@ func (m *mySQL) ModifyTable() error {
 			}
 			if len(deletedFields) > 0 {
 				useAllFields = true
-				allFieldsTemp := append([]*fieldItem{}, deletedFields...)
-				allFieldsTemp = append(allFieldsTemp, allFields...)
-				allFields = allFieldsTemp
-				fieldsTemp := append([]*fieldItem{}, deletedFields...)
-				fieldsTemp = append(fieldsTemp, fields...)
-				fields = fieldsTemp
+				allFields = slices.Concat(deletedFields, allFields)
+				fields = slices.Concat(deletedFields, fields)
 			}
 			partitioning := m.tablePartitioning(partitions, tableStatus)
 			if tableStatus != nil {
