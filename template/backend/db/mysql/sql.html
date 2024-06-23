@@ -124,7 +124,7 @@ function initCodeMirrorEditor() { // if(editor)return;
         lineNumbers: true,
         extraKeys: {"Tab": "autocomplete"},
         hintOptions: { // 针对sql的自定义表和字段，这样可以把自己的表和字段也放入提示里(table1: [ 'col_A', 'col_B', 'col_C'])。如果数据是异步请求获取的，可以通过editor.setOption('hintOptions', data);
-            tables: tables
+            tables: tables,completeSingle: false
         }, theme:'ambiance'
     });
     editor.setOption('lineWrapping', true);//editor.setSize('auto', 'auto');//editor.setOption("readOnly", true); //设置为只读

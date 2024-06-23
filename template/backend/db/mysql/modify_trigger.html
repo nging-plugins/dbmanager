@@ -111,7 +111,7 @@ function initCodeMirrorEditor() {
     if(editor)return;
     editor = CodeMirror.fromTextArea($("#statement")[0], {
         extraKeys: {"Tab": "autocomplete"},
-        hintOptions: { tables: tables},
+        hintOptions: {tables: tables,completeSingle: false},
         lineNumbers: true, theme:'ambiance'
     });
     editor.setOption('lineWrapping', true);//editor.setSize('auto', 'auto');
