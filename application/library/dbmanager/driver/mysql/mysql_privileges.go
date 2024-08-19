@@ -23,14 +23,16 @@ import (
 )
 
 func (m *mySQL) listPrivileges() (bool, []map[string]string, error) {
-	sqlStr := "SELECT User, Host, plugin FROM mysql."
+	var sqlStr string
+	var otherFields []string
 	if len(m.dbName) == 0 {
-		sqlStr += `user`
+		sqlStr = `SELECT User, Host, plugin FROM mysql.user`
+		otherFields = append(otherFields, `plugin`)
 	} else {
-		sqlStr += "db WHERE Db LIKE " + quoteVal(m.dbName)
+		sqlStr = "SELECT User, Host FROM mysql.db WHERE Db LIKE " + quoteVal(m.dbName)
 	}
 	sqlStr += " ORDER BY Host, User"
-	res, err := m.kvVal(sqlStr, `plugin`)
+	res, err := m.kvVal(sqlStr, otherFields...)
 	sysUser := true
 	if err != nil || res == nil || len(res) == 0 {
 		sysUser = false
