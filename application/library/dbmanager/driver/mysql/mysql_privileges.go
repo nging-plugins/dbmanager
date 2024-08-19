@@ -99,6 +99,9 @@ func (m *mySQL) showAuthPlugins() ([]*Plugin, error) {
 			break
 		}
 		if v.Type.String == `AUTHENTICATION` {
+			if !hasNativePassword && v.Name.String == `mysql_native_password` {
+				hasNativePassword = true
+			}
 			v.Title = v.Name.String
 			if len(v.Status.String) > 0 && v.Status.String != `ACTIVE` {
 				v.Title += ` (` + strings.ToLower(v.Status.String) + `)`
