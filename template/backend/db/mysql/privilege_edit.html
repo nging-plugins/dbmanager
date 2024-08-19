@@ -29,6 +29,7 @@
                 </div>
               </div>
               <div class="form-group">
+                {{- $modifyPassword := eq ($.Form `modifyPassword`) `1` -}}
                 <label class="col-sm-2 control-label">{{"密码"|$.T}}</label>
                 <div class="col-sm-9">
                     <input type="hidden" name="oldUser" value="{{$.Stored.oldUser}}">
@@ -36,7 +37,6 @@
                     <input type="hidden" name="oldPlugin" value="{{$.Stored.oldPlugin}}">
                     <div class="input-group">
                         {{if $.Stored.oldHost}}
-                        {{- $modifyPassword := eq ($.Form `modifyPassword`) `1` -}}
                         <input type="password" name="pass" class="form-control" value="{{$.Form `pass`}}" id="passwd-input"{{if not $modifyPassword}} placeholder="{{`保持不变`|$.T}}" disabled="disabled"{{end}}>
                         <label class="input-group-addon">
                             <input type="checkbox" id="show-password"> 
