@@ -76,7 +76,7 @@
 		  <label>{{`主机名`|$.T}}</label> 
 		  <select id="mdf-plugin" class="form-control">
 			<option value="">- {{`认证插件`|$.T}} -</option>
-			  {{- for $k, $v := $.Stored.authPlugins -}}
+			  {{- range $k, $v := $.Stored.authPlugins -}}
 			  <option value="{{$v.Name.String}}">{{$v.Name.String}}</option>
 			  {{- end -}}
 		  </select>
