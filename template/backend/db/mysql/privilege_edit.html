@@ -57,7 +57,7 @@
                             <option value="">- {{`认证插件`|$.T}} -</option>
                             {{- $authPlugin := $.Form `authPlugin` $.Stored.oldPlugin -}}
                             {{- range $k, $v := $.Stored.authPlugins -}}
-                            <option value="{{$v.Name.String}}"{{if eq $authPlugin $v.Name.String}} selected{{end}}>{{$v.Name.String}}</option>
+                            <option value="{{$v.Name.String}}"{{if eq $authPlugin $v.Name.String}} selected{{end}}>{{$v.Title}}</option>
                             {{- end -}}
                         </select>
                     </div>

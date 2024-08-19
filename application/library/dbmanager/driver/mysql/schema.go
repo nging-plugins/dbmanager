@@ -110,10 +110,11 @@ func NewCollations() *Collations {
 
 type Plugin struct {
 	Name    sql.NullString
-	Status  sql.NullString
-	Type    sql.NullString
+	Status  sql.NullString // ACTIVE / DISABLED
+	Type    sql.NullString // AUTHENTICATION / STORAGE ENGINE / AUDIT / DAEMON / INFORMATION SCHEMA / FTPARSER
 	Library sql.NullString
-	License sql.NullString
+	License sql.NullString // GPL
+	Title   string
 }
 
 type Privilege struct {

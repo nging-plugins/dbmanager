@@ -17,6 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 package mysql
 
+import (
+	"database/sql"
+	"strings"
+)
+
 func (m *mySQL) listPrivileges() (bool, []map[string]string, error) {
 	sqlStr := "SELECT User, Host, plugin FROM mysql."
 	if len(m.dbName) == 0 {
@@ -86,6 +91,7 @@ func (m *mySQL) showAuthPlugins() ([]*Plugin, error) {
 		return r, err
 	}
 	n := len(cols)
+	var hasNativePassword bool
 	for rows.Next() {
 		v := &Plugin{}
 		err = safeScan(rows, n, &v.Name, &v.Status, &v.Type, &v.Library, &v.License)
@@ -93,8 +99,20 @@ func (m *mySQL) showAuthPlugins() ([]*Plugin, error) {
 			break
 		}
 		if v.Type.String == `AUTHENTICATION` {
+			v.Title = v.Name.String
+			if len(v.Status.String) > 0 && v.Status.String != `ACTIVE` {
+				v.Title += ` (` + strings.ToLower(v.Status.String) + `)`
+			}
 			r = append(r, v)
 		}
+	}
+	if !hasNativePassword {
+		r = append(r, &Plugin{
+			Name:   sql.NullString{String: `mysql_native_password`},
+			Status: sql.NullString{String: `DISABLED`},
+			Type:   sql.NullString{String: `AUTHENTICATION`},
+			Title:  `mysql_native_password (unsupported)`,
+		})
 	}
 	return r, err
 }

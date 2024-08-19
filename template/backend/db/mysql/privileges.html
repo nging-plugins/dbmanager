@@ -77,7 +77,7 @@
 		  <select id="mdf-plugin" class="form-control">
 			<option value="">- {{`请选择`|$.T}} -</option>
 			  {{- range $k, $v := $.Stored.authPlugins -}}
-			  <option value="{{$v.Name.String}}">{{$v.Name.String}}</option>
+			  <option value="{{$v.Name.String}}">{{$v.Title}}</option>
 			  {{- end -}}
 		  </select>
 		</div>
