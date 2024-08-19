@@ -53,9 +53,9 @@
                             {{`显示密码`|$.T}}
                         </label>
                         {{end}}
-                        <select name="authPlugin" id="authPlugin" class="form-control">
+                        <select name="authPlugin" id="auth-plugin-select" class="form-control"{{if not $modifyPassword}} disabled="disabled"{{end}}>
                             <option value="">- {{`认证插件`|$.T}} -</option>
-                            {{- $authPlugin := $.Form `authPlugin` -}}
+                            {{- $authPlugin := $.Form `authPlugin` $.Stored.oldPlugin -}}
                             {{- range $k, $v := $.Stored.authPlugins -}}
                             <option value="{{$v.Name.String}}"{{if eq $authPlugin $v.Name.String}} selected{{end}}>{{$v.Name.String}}</option>
                             {{- end -}}
@@ -111,25 +111,25 @@ MySQL grant 权限，分别可以作用在多个层次上
                                 <div class="input-group">
                                 <span class="input-group-addon">{{"作用范围"|$.T}}</span>
                                 <select id="select-priv-type-{{$k}}" name="scopes[]" data-col="{{$k}}" class="select-priv-type form-control">
-                                    <option value=""{{if eq $grant.Scope ""}} selected{{end}}>{{"无"|$.T}}</option>
+                                    <option value=""{{if eq $grant.Scope ``}} selected{{end}}>{{"无"|$.T}}</option>
                                     {{if not $.Stored.hasGlobalScope}}
-                                    <option value="all"{{if eq $grant.Scope "all"}} selected{{end}}>{{"全局"|$.T}}</option>
+                                    <option value="all"{{if eq $grant.Scope `all`}} selected{{end}}>{{"全局"|$.T}}</option>
                                     {{end}}
-                                    <option value="database"{{if eq $grant.Scope "database"}} selected{{end}}>{{"数据库"|$.T}}</option>
-                                    <option value="table"{{if eq $grant.Scope "table"}} selected{{end}}>{{"表"|$.T}}</option>
-                                    <option value="column"{{if eq $grant.Scope "column"}} selected{{end}}>{{"列"|$.T}}</option>
-                                    <option value="proxy"{{if eq $grant.Scope "proxy"}} selected{{end}}>{{"代理"|$.T}}</option>
+                                    <option value="database"{{if eq $grant.Scope `database`}} selected{{end}}>{{"数据库"|$.T}}</option>
+                                    <option value="table"{{if eq $grant.Scope `table`}} selected{{end}}>{{"表"|$.T}}</option>
+                                    <option value="column"{{if eq $grant.Scope `column`}} selected{{end}}>{{"列"|$.T}}</option>
+                                    <option value="proxy"{{if eq $grant.Scope `proxy`}} selected{{end}}>{{"代理"|$.T}}</option>
                                 </select>
                                 </div>
                                 <div class="input-group onselect-priv-type" id="onselect-priv-type-{{$k}}">
-                                <span class="input-group-addon proxy-user" title="{{"用户名@主机"|$.T}}">{{"用户"|$.T}}</span>
-                                <input data-original="{{if eq $grant.Scope "proxy"}}{{$object}}{{end}}" type='hidden' id="objects-{{$k}}" class="form-control proxy-user" name='objects[]' value='{{$object}}'>
+                                <span class="input-group-addon proxy-user" title="{{`用户名@主机`|$.T}}">{{"用户"|$.T}}</span>
+                                <input data-original="{{if eq $grant.Scope `proxy`}}{{$object}}{{end}}" type='hidden' id="objects-{{$k}}" class="form-control proxy-user" name='objects[]' value='{{$object}}'>
                                 <span class="input-group-addon database-name">{{"库名"|$.T}}</span>
-                                <input id='input-database-{{$k}}' name="databases[]" data-col="{{$k}}" class="form-control database-name" value='{{$grant.Database}}' pattern='^[a-zA-Z0-9_]+$' title="{{"库名仅支持输入字母、数字、下划线"|$.T}}">
+                                <input id='input-database-{{$k}}' name="databases[]" data-col="{{$k}}" class="form-control database-name" value='{{$grant.Database}}' pattern='^[a-zA-Z0-9_]+$' title="{{`库名仅支持输入字母、数字、下划线`|$.T}}">
                                 <span class="input-group-addon table-name">{{"表名"|$.T}}</span>
-                                <input id='input-table-{{$k}}' name="tables[]" data-col="{{$k}}" class="form-control table-name" value='{{$grant.Table}}' pattern='^[a-zA-Z0-9_]+$' title="{{"表名仅支持输入字母、数字、下划线"|$.T}}">
+                                <input id='input-table-{{$k}}' name="tables[]" data-col="{{$k}}" class="form-control table-name" value='{{$grant.Table}}' pattern='^[a-zA-Z0-9_]+$' title="{{`表名仅支持输入字母、数字、下划线`|$.T}}">
                                 <span class="input-group-addon column-name">{{"列名"|$.T}}</span>
-                                <input id='input-column-{{$k}}' name="columns[]" data-col="{{$k}}" class="form-control column-name" value='{{$grant.Columns}}' pattern='^[a-zA-Z0-9_]+(,[a-zA-Z0-9_]+)*$' title="{{"列名仅支持输入字母、数字、下划线，多列请用半角逗号隔开"|$.T}}">
+                                <input id='input-column-{{$k}}' name="columns[]" data-col="{{$k}}" class="form-control column-name" value='{{$grant.Columns}}' pattern='^[a-zA-Z0-9_]+(,[a-zA-Z0-9_]+)*$' title="{{`列名仅支持输入字母、数字、下划线，多列请用半角逗号隔开`|$.T}}">
                                 </div>
                                 <!-- 
                                 <div class="input-group">
@@ -190,7 +190,7 @@ MySQL grant 权限，分别可以作用在多个层次上
               <div class="form-group form-submit-group">
 				<div class="col-sm-9 col-sm-offset-2">
 				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
-				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL "privileges"}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `privileges`}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
 				</div>
 			</div>
               </form>
@@ -207,9 +207,11 @@ if($('input[name="modifyPassword"]').length>0){
     $('input[name="modifyPassword"]').on('click change', function() {
         if(this.checked){
             $('#passwd-input').attr('required','required').removeAttr('disabled').attr('placeholder','{{`请设置新密码`|$.T}}');
+            $('#auth-plugin-select').attr('required','required').removeAttr('disabled');
             $('#show-password').parent('label').show();
         }else{
             $('#passwd-input').removeAttr('required').attr('disabled', 'disabled').attr('placeholder','{{`保持不变`|$.T}}');
+            $('#auth-plugin-select').removeAttr('required').attr('disabled', 'disabled');
             $('#show-password').parent('label').hide();
         }
     }).trigger('change');

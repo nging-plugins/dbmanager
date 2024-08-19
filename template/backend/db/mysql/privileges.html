@@ -73,9 +73,9 @@
 		  <label>{{`主机名`|$.T}}</label> <input type="text" id="mdf-host" class="form-control" readonly="readonly">
 		</div>
 		<div class="form-group">
-		  <label>{{`主机名`|$.T}}</label> 
+		  <label>{{`认证插件`|$.T}}</label> 
 		  <select id="mdf-plugin" class="form-control">
-			<option value="">- {{`认证插件`|$.T}} -</option>
+			<option value="">- {{`请选择`|$.T}} -</option>
 			  {{- range $k, $v := $.Stored.authPlugins -}}
 			  <option value="{{$v.Name.String}}">{{$v.Name.String}}</option>
 			  {{- end -}}

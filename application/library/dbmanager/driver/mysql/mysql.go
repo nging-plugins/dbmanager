@@ -214,7 +214,10 @@ func (m *mySQL) Privileges() error {
 		case `edit`:
 			oldUser := m.Query(`user`)
 			oldHost := m.Query(`host`)
-			oldPlugin := m.Query(`authPlugin`)
+			oldPlugin, err := m.getAuthPluginByUser(oldUser, oldHost)
+			if err != nil {
+				return err
+			}
 			if m.IsPost() {
 				if oldUser == m.DbAuth.Username {
 					m.Session().AddFlash(errors.New(m.T(`不可修改你自己的权限`)))

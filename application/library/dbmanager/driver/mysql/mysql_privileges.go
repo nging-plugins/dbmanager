@@ -35,6 +35,20 @@ func (m *mySQL) listPrivileges() (bool, []map[string]string, error) {
 	return sysUser, res, err
 }
 
+func (m *mySQL) getAuthPluginByUser(user, host string) (string, error) {
+	sqlStr := "SELECT plugin FROM mysql.user WHERE User=" + quoteVal(user) + " AND Host=" + quoteVal(host) + " LIMIT 1"
+	rows, err := m.newParam().SetCollection(sqlStr).Query()
+	if err != nil {
+		return ``, err
+	}
+	defer rows.Close()
+	var plugin string
+	for rows.Next() {
+		err = rows.Scan(&plugin)
+	}
+	return plugin, err
+}
+
 func (m *mySQL) showPrivileges() (*Privileges, error) {
 	r := NewPrivileges()
 	sqlStr := "SHOW PRIVILEGES"
