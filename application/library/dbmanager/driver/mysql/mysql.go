@@ -214,24 +214,35 @@ func (m *mySQL) Privileges() error {
 		case `edit`:
 			oldUser := m.Query(`user`)
 			oldHost := m.Query(`host`)
+			oldPlugin := m.Query(`authPlugin`)
 			if m.IsPost() {
 				if oldUser == m.DbAuth.Username {
 					m.Session().AddFlash(errors.New(m.T(`不可修改你自己的权限`)))
 					return m.returnTo()
 				}
-				modifyPassword := m.Formx(`modifyPassword`).Bool()
-				oldUser = m.Form(`oldUser`)
-				oldHost = m.Form(`oldHost`)
-				newHost := m.Form(`host`)
-				newUser := m.Form(`user`)
-				newPasswd := m.Form(`pass`)
-				err = m.editUser(oldUser, oldHost, newUser, newHost, newPasswd, modifyPassword)
-				if err == nil {
-					m.ok(m.T(`操作成功`))
-					return m.returnTo(m.GenURL(`privileges`) + `&act=edit&user=` + url.QueryEscape(newUser) + `&host=` + url.QueryEscape(newHost))
+				authPlugin := m.Form(`authPlugin`)
+				if len(authPlugin) > 0 && !com.IsAlphaNumericUnderscore(authPlugin) {
+					err = m.NewError(code.InvalidParameter, `无效的参数%v值: %v`, `authPlugin`, authPlugin).SetZone(`authPlugin`)
+				} else {
+					modifyPassword := m.Formx(`modifyPassword`).Bool()
+					oldUser = m.Form(`oldUser`)
+					oldHost = m.Form(`oldHost`)
+					newHost := m.Form(`host`)
+					newUser := m.Form(`user`)
+					newPasswd := m.Form(`pass`)
+					err = m.editUser(oldUser, oldHost, newUser, newHost, newPasswd, modifyPassword, authPlugin)
+					if err == nil {
+						m.ok(m.T(`操作成功`))
+						return m.returnTo(m.GenURL(`privileges`) + `&act=edit&user=` + url.QueryEscape(newUser) + `&host=` + url.QueryEscape(newHost))
+					}
 				}
 				m.fail(err.Error())
 			}
+			authPlugins, err := m.showAuthPlugins()
+			if err != nil {
+				return err
+			}
+			m.Set(`authPlugins`, authPlugins)
 			privs, err := m.showPrivileges()
 			if err == nil {
 				privs.Parse()
@@ -256,6 +267,7 @@ func (m *mySQL) Privileges() error {
 			m.Set(`grants`, grants)
 			m.Set(`oldHost`, oldHost)
 			m.Set(`oldUser`, oldUser)
+			m.Set(`oldPlugin`, oldPlugin)
 			m.SetFunc(`getGrantByPrivilege`, func(grant map[string]bool, index int, group string, privilege string) bool {
 				priv := strings.ToUpper(privilege)
 				value := m.Form(fmt.Sprintf(`grants[%v][%v][%v]`, index, group, priv))
@@ -295,8 +307,12 @@ func (m *mySQL) Privileges() error {
 				host := m.Form(`host`)
 				user := m.Form(`user`)
 				pass := m.Form(`pass`)
-				err = m.modifyPassword(user, host, pass)
+				authPlugin := m.Form(`authPlugin`)
 				data := m.Data()
+				if len(authPlugin) > 0 && !com.IsAlphaNumericUnderscore(authPlugin) {
+					return m.JSON(data.SetError(m.NewError(code.InvalidParameter, `无效的参数%v值: %v`, `authPlugin`, authPlugin).SetZone(`authPlugin`)))
+				}
+				err = m.modifyPassword(user, host, pass, authPlugin)
 				if err != nil {
 					data.SetError(err)
 				} else {
@@ -306,6 +322,11 @@ func (m *mySQL) Privileges() error {
 			}
 		}
 	}
+	authPlugins, err := m.showAuthPlugins()
+	if err != nil {
+		return err
+	}
+	m.Set(`authPlugins`, authPlugins)
 	isSysUser, list, err := m.listPrivileges()
 	ret = common.Err(m.Context, err)
 	m.Set(`isSysUser`, isSysUser)

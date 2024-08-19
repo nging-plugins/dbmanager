@@ -33,6 +33,7 @@
                 <div class="col-sm-9">
                     <input type="hidden" name="oldUser" value="{{$.Stored.oldUser}}">
                     <input type="hidden" name="oldHost" value="{{$.Stored.oldHost}}">
+                    <input type="hidden" name="oldPlugin" value="{{$.Stored.oldPlugin}}">
                     <div class="input-group">
                         {{if $.Stored.oldHost}}
                         {{- $modifyPassword := eq ($.Form `modifyPassword`) `1` -}}
@@ -52,6 +53,13 @@
                             {{`显示密码`|$.T}}
                         </label>
                         {{end}}
+                        <select name="authPlugin" id="authPlugin" class="form-control">
+                            <option value="">- {{`认证插件`|$.T}} -</option>
+                            {{- $authPlugin := $.Form `authPlugin` -}}
+                            {{- for $k, $v := $.Stored.authPlugins -}}
+                            <option value="{{$v.Name.String}}"{{if eq $authPlugin $v.Name.String}} selected{{end}}>{{$v.Name.String}}</option>
+                            {{- end -}}
+                        </select>
                     </div>
                 </div>
               </div>

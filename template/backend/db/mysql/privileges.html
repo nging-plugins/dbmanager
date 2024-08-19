@@ -5,7 +5,7 @@
         {{Include "db/mysql/dbinfo_btn"}}
         <div class="block-flat no-padding">
           <div class="header">
-			<a href="{{call $.Func.dbMgrURL "privileges"}}&act=edit" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
+			<a href="{{call $.Func.dbMgrURL `privileges`}}&act=edit" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
 				<i class="fa fa-plus"></i>
 				{{"创建用户"|$.T}}
 			</a>
@@ -19,6 +19,7 @@
 						<tr>
                             <th style="width:30%;"><strong>{{"用户名"|$.T}}</strong></th>
 							<th><strong>{{"服务器"|$.T}}</strong></th>
+							<th style="width:60px;"><strong>{{"认证插件"|$.T}}</strong></th>
 							<th style="width:60px;"><strong>{{"密码"|$.T}}</strong></th>
 							<th style="width:100px;"><strong>{{"操作"|$.T}}</strong></th>
 						</tr>
@@ -28,7 +29,8 @@
 						<tr>
 							<td>{{$v.k}}</td>
 							<td>{{$v.v}}</td>
-							<td><a href="javascript:;" data-user="{{$v.k}}" data-host="{{$v.v}}" data-modal="modal-modify-password">{{`修改`|$.T}}</a></td>
+							<td>{{$v.plugin}}</td>
+							<td><a href="javascript:;" data-user="{{$v.k}}" data-host="{{$v.v}}" data-plugin="{{$v.plugin}}" data-modal="modal-modify-password">{{`修改`|$.T}}</a></td>
 							<td>
 								{{- if not (call $.Func.isMyself $v.k) -}}
 								<a title="{{`编辑`|$.T}}" class="label label-success" href="{{call $.Func.dbMgrURL `privileges`}}&act=edit&user={{$v.k}}&host={{$v.v}}" data-pjax="#pcont" data-keepjs="true">
@@ -71,6 +73,15 @@
 		  <label>{{`主机名`|$.T}}</label> <input type="text" id="mdf-host" class="form-control" readonly="readonly">
 		</div>
 		<div class="form-group">
+		  <label>{{`主机名`|$.T}}</label> 
+		  <select id="mdf-plugin" class="form-control">
+			<option value="">- {{`认证插件`|$.T}} -</option>
+			  {{- for $k, $v := $.Stored.authPlugins -}}
+			  <option value="{{$v.Name.String}}">{{$v.Name.String}}</option>
+			  {{- end -}}
+		  </select>
+		</div>
+		<div class="form-group">
 		  <label>{{`新密码`|$.T}}</label> <span class="input-group">
 			  <input type="password" id="mdf-password" class="form-control" placeholder="">
 			  <label class="input-group-addon"><input type="checkbox" id="mdf-show-password">
@@ -93,7 +104,8 @@ $(function () {
 		var pass=modal.find('#mdf-password').val();
 		var user=modal.find('#mdf-user').val();
 		var host=modal.find('#mdf-host').val();
-		$.post('{{call $.Func.dbMgrURL `privileges`}}',{act:'modifyPassword',user:user,host:host,pass:pass},function(r){
+		var authPlugin=modal.find('#mdf-plugin').val();
+		$.post('{{call $.Func.dbMgrURL `privileges`}}',{act:'modifyPassword',user:user,host:host,pass:pass,authPlugin:authPlugin},function(r){
 			if(r.Code!=1) return App.message({text:r.Info, type:'error'});
 			App.message({text:r.Info, type:'success'});
 			modal.niftyModal('hide');
@@ -108,10 +120,11 @@ $(function () {
 		}
 	}).trigger('change');
 	$('a[data-modal="modal-modify-password"]').off().on('click',function(){
-		var user = $(this).data('user'), host = $(this).data('host');
+		var user = $(this).data('user'), host = $(this).data('host'), authPlugin=$(this).data('plugin');
 		$('#modal-modify-password').niftyModal('show',{afterOpen:function(modal){
 			modal.find('#mdf-user').val(user);
 			modal.find('#mdf-host').val(host);
+			modal.find('#mdf-plugin').val(authPlugin);
     	}});
 	});
 });

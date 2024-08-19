@@ -33,24 +33,29 @@ import (
 	"github.com/webx-top/echo"
 )
 
-func (m *mySQL) kvVal(sqlStr string) ([]map[string]string, error) {
+func (m *mySQL) kvVal(sqlStr string, other ...string) ([]map[string]string, error) {
 	r := []map[string]string{}
 	rows, err := m.newParam().SetCollection(sqlStr).Query()
 	if err != nil {
 		return r, err
 	}
 	defer rows.Close()
+	cols := []string{`k`, `v`}
+	cols = append(cols, other...)
 	for rows.Next() {
-		var k sql.NullString
-		var v sql.NullString
-		err = rows.Scan(&k, &v)
+		results := make([]interface{}, len(cols))
+		for idx := range cols {
+			results[idx] = &sql.NullString{}
+		}
+		err = rows.Scan(results...)
 		if err != nil {
 			break
 		}
-		r = append(r, map[string]string{
-			"k": k.String,
-			"v": v.String,
-		})
+		mp := map[string]string{}
+		for idx, key := range cols {
+			mp[key] = results[idx].(*sql.NullString).String
+		}
+		r = append(r, mp)
 	}
 	return r, err
 }

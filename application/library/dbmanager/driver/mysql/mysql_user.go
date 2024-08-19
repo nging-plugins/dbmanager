@@ -47,7 +47,7 @@ func (m *mySQL) dropUser(user string, host string) error {
 	return r2.err
 }
 
-func (m *mySQL) modifyPassword(user string, host string, password string) error {
+func (m *mySQL) modifyPassword(user string, host string, password string, authPlugin string) error {
 	v8plus := m.isV8Plus()
 	if len(password) == 0 {
 		return errors.New(m.T(`密码不能为空`))
@@ -55,7 +55,10 @@ func (m *mySQL) modifyPassword(user string, host string, password string) error 
 	userAndHost := quoteVal(user) + `@` + quoteVal(host)
 	r := &Result{}
 	if v8plus {
-		r.SQL = `ALTER USER ` + userAndHost + ` IDENTIFIED WITH MYSQL_NATIVE_PASSWORD BY ` + quoteVal(password)
+		if len(authPlugin) == 0 {
+			authPlugin = `MYSQL_NATIVE_PASSWORD`
+		}
+		r.SQL = `ALTER USER ` + userAndHost + ` IDENTIFIED WITH ` + authPlugin + ` BY ` + quoteVal(password)
 	} else {
 		r.SQL = `SET PASSWORD FOR ` + userAndHost + `=PASSWORD(` + quoteVal(password) + `)`
 	}
@@ -64,7 +67,7 @@ func (m *mySQL) modifyPassword(user string, host string, password string) error 
 	return r.err
 }
 
-func (m *mySQL) addUser(user string, host string, password string) error {
+func (m *mySQL) addUser(user string, host string, password string, authPlugin string) error {
 	v8plus := m.isV8Plus()
 	r := &Result{}
 	if len(password) == 0 {
@@ -72,7 +75,10 @@ func (m *mySQL) addUser(user string, host string, password string) error {
 	}
 	userAndHost := quoteVal(user) + `@` + quoteVal(host)
 	if v8plus {
-		r.SQL = `CREATE USER ` + userAndHost + ` IDENTIFIED WITH MYSQL_NATIVE_PASSWORD BY ` + quoteVal(password)
+		if len(authPlugin) == 0 {
+			authPlugin = `MYSQL_NATIVE_PASSWORD`
+		}
+		r.SQL = `CREATE USER ` + userAndHost + ` IDENTIFIED WITH ` + authPlugin + ` BY ` + quoteVal(password)
 	} else {
 		r.SQL = `GRANT USAGE ON *.* TO`
 		if com.VersionCompare(m.getVersion(), `5`) >= 0 {
@@ -98,12 +104,11 @@ func (m *mySQL) isV8Plus() bool {
 	return m._isV8Plus.Bool
 }
 
-func (m *mySQL) editUser(oldUser string, oldHost string, newUser string, newHost string, newPasswd string, modifyPassword bool) error {
+func (m *mySQL) editUser(oldUser string, oldHost string, newUser string, newHost string, newPasswd string, modifyPassword bool, authPlugin string) error {
 	oldUserAndHost := quoteVal(oldUser) + `@` + quoteVal(oldHost)
 	if len(newUser) == 0 {
 		return errors.New(m.T(`用户名不能为空`))
 	}
-
 	_, grants, _, err := m.getUserGrants(oldHost, oldUser)
 	if err != nil {
 		return err
@@ -115,7 +120,7 @@ func (m *mySQL) editUser(oldUser string, oldHost string, newUser string, newHost
 	}
 	if oldUserAndHost != newUserAndHost { // 新建账号
 		created = true
-		if err = m.addUser(newUser, newHost, newPasswd); err != nil {
+		if err = m.addUser(newUser, newHost, newPasswd, authPlugin); err != nil {
 			return err
 		}
 		onerror = func(err error) error {
@@ -129,7 +134,7 @@ func (m *mySQL) editUser(oldUser string, oldHost string, newUser string, newHost
 			return err
 		}
 	} else if modifyPassword {
-		if err = m.modifyPassword(newUser, newHost, newPasswd); err != nil {
+		if err = m.modifyPassword(newUser, newHost, newPasswd, authPlugin); err != nil {
 			return err
 		}
 	}

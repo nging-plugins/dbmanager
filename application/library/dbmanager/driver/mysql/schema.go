@@ -108,6 +108,14 @@ func NewCollations() *Collations {
 	}
 }
 
+type Plugin struct {
+	Name    sql.NullString
+	Status  sql.NullString
+	Type    sql.NullString
+	Library sql.NullString
+	License sql.NullString
+}
+
 type Privilege struct {
 	Privilege sql.NullString
 	Context   sql.NullString
