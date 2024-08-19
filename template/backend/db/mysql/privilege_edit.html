@@ -53,7 +53,7 @@
                             {{`显示密码`|$.T}}
                         </label>
                         {{end}}
-                        <select name="authPlugin" id="auth-plugin-select" class="form-control"{{if not $modifyPassword}} disabled="disabled"{{end}}>
+                        <select name="authPlugin" id="auth-plugin-select" class="form-control"{{if and $.Stored.oldHost (not $modifyPassword)}} disabled="disabled"{{end}}>
                             <option value="">- {{`认证插件`|$.T}} -</option>
                             {{- $authPlugin := $.Form `authPlugin` $.Stored.oldPlugin -}}
                             {{- range $k, $v := $.Stored.authPlugins -}}
