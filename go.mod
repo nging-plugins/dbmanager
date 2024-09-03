@@ -1,6 +1,6 @@
 module github.com/nging-plugins/dbmanager
 
-go 1.22.0
+go 1.23
 
 toolchain go1.23.0
 
@@ -14,6 +14,7 @@ require (
 	github.com/admpub/archiver v1.1.4
 	github.com/admpub/collate v1.1.0
 	github.com/admpub/errors v0.8.2
+	github.com/admpub/go-download v2.1.3+incompatible
 	github.com/admpub/godownloader v2.2.0+incompatible
 	github.com/admpub/log v1.3.6
 	github.com/admpub/mysql-schema-sync v0.2.6
@@ -23,9 +24,9 @@ require (
 	github.com/nging-plugins/dlmanager v1.5.5
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.9.0
-	github.com/webx-top/com v1.2.13
-	github.com/webx-top/db v1.27.7
-	github.com/webx-top/echo v1.7.19
+	github.com/webx-top/com v1.3.0
+	github.com/webx-top/db v1.27.9
+	github.com/webx-top/echo v1.8.1
 	github.com/webx-top/pagination v0.3.1
 )
 
@@ -117,7 +118,7 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
+	github.com/lufia/plan9stats v0.0.0-20240819163618-b1d8f4d146e7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -133,9 +134,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
-	github.com/prometheus/client_golang v1.19.1 // indirect
+	github.com/prometheus/client_golang v1.20.2 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.55.0 // indirect
+	github.com/prometheus/common v0.57.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect

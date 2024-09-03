@@ -19,12 +19,20 @@
 package mysql
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	dl "github.com/admpub/go-download"
+	"github.com/admpub/log"
+	"github.com/admpub/nging/v5/application/handler"
+	"github.com/admpub/nging/v5/application/library/config"
+	"github.com/admpub/nging/v5/application/library/notice"
 	md2html "github.com/russross/blackfriday"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
@@ -69,12 +77,28 @@ func (m *mySQL) Analysis() error {
 		command += extension
 	}
 	if err != nil {
-		data.SetError(err)
-		return m.JSON(data)
+		var downloaded bool
+		if errors.Is(err, exec.ErrNotFound) {
+			if config.FromFile().Extend.GetStore(`dbmanager`).Bool(`downloadSOAR`) {
+				downloaded, _ = downloadSOAR(m.Context)
+			}
+			if !downloaded {
+				err = m.E(m.T(`没有找到 soar 命令，请取保已经安装。`))
+			}
+		}
+		if !downloaded {
+			data.SetError(err)
+			return m.JSON(data)
+		}
 	}
-
+	charset := m.DbAuth.Charset
+	if len(charset) == 0 {
+		charset = `utf8`
+	}
 	params := []string{
 		command,
+		//`-online-dsn`, url.QueryEscape(m.DbAuth.Username) + `:` + url.QueryEscape(m.DbAuth.Password) + `@tcp(` + m.DbAuth.Host + `)/` + m.dbName + `?timeout=3s&charset=` + charset,
+		//`-test-dsn`, url.QueryEscape(m.DbAuth.Username) + `:` + url.QueryEscape(m.DbAuth.Password) + `@tcp(` + m.DbAuth.Host + `)/` + m.dbName + `?timeout=3s&charset=` + charset,
 	}
 	output := []byte{}
 	cmd := com.CreateCmd(params, func(b []byte) error {
@@ -91,4 +115,50 @@ func (m *mySQL) Analysis() error {
 		data.SetData(com.Bytes2str(output))
 	}
 	return m.JSON(data)
+}
+
+func downloadSOAR(ctx echo.Context) (bool, error) {
+	command := `soar`
+	if com.IsWindows {
+		command += `.exe`
+	}
+	var downloaded bool
+	if runtime.GOARCH == `amd64` || runtime.GOARCH == `x86_64` {
+		var extension string
+		switch {
+		case runtime.GOOS == `darwin`:
+			extension = `darwin-amd64`
+		case runtime.GOOS == `linux`:
+			extension = `linux-amd64`
+		case runtime.GOOS == `linux`:
+			extension = `windows-amd64 `
+		default:
+		}
+		if len(extension) > 0 {
+			fileURL := `https://github.com/XiaoMi/soar/releases/download/0.11.0/soar.` + extension
+			savePath := filepath.Join(echo.Wd(), `support`, command)
+			var username string
+			user := handler.User(ctx)
+			if user != nil {
+				username = user.Username
+			}
+			np := notice.NewP(ctx, `downloadSOAR`, username, context.Background()).AutoComplete(true)
+			np.Send(`start downloading soar...`, notice.StateSuccess)
+			dlCfg := &dl.Options{
+				Proxy: notice.DownloadProxyFn(np),
+			}
+			_, derr := dl.Download(fileURL, savePath, dlCfg)
+			if derr != nil {
+				derr = fmt.Errorf(`failed to download soar from %s: %v`, fileURL, derr)
+				log.Error(derr)
+				np.Send(derr.Error(), notice.StateFailure)
+			} else {
+				os.Chmod(savePath, os.ModeExclusive)
+				downloaded = true
+				np.Send(`downloading soar successfully`, notice.StateSuccess)
+			}
+			np.Complete()
+		}
+	}
+	return downloaded, nil
 }
