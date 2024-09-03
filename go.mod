@@ -14,7 +14,7 @@ require (
 	github.com/admpub/archiver v1.1.4
 	github.com/admpub/collate v1.1.0
 	github.com/admpub/errors v0.8.2
-	github.com/admpub/go-download v2.1.3+incompatible
+	github.com/admpub/go-download/v2 v2.1.15
 	github.com/admpub/godownloader v2.2.0+incompatible
 	github.com/admpub/log v1.3.6
 	github.com/admpub/mysql-schema-sync v0.2.6
@@ -47,7 +47,6 @@ require (
 	github.com/admpub/fsnotify v1.7.0 // indirect
 	github.com/admpub/gifresize v1.0.2 // indirect
 	github.com/admpub/go-bindata-assetfs v0.0.0-20170428090253-36eaa4c19588 // indirect
-	github.com/admpub/go-download/v2 v2.1.15 // indirect
 	github.com/admpub/go-isatty v0.0.11 // indirect
 	github.com/admpub/go-password v0.1.3 // indirect
 	github.com/admpub/go-pretty/v6 v6.0.4 // indirect

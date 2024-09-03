@@ -28,7 +28,7 @@ import (
 	"runtime"
 	"strings"
 
-	dl "github.com/admpub/go-download"
+	dl "github.com/admpub/go-download/v2"
 	"github.com/admpub/log"
 	"github.com/admpub/nging/v5/application/handler"
 	"github.com/admpub/nging/v5/application/library/config"
