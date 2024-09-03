@@ -123,42 +123,59 @@ func downloadSOAR(ctx echo.Context) (bool, error) {
 		command += `.exe`
 	}
 	var downloaded bool
-	if runtime.GOARCH == `amd64` || runtime.GOARCH == `x86_64` {
-		var extension string
+	cfg := config.FromFile().Extend.GetStore(`dbmanager`)
+	urlLayout := cfg.String(`soarDownloadURL`)
+	if len(urlLayout) == 0 {
+		urlLayout = `https://github.com/XiaoMi/soar/releases/download/{version}/soar.{platform}`
+	}
+	var platform string
+	if strings.HasPrefix(urlLayout, `https://github.com/XiaoMi/soar/`) && (runtime.GOARCH == `amd64` || runtime.GOARCH == `x86_64`) {
 		switch {
 		case runtime.GOOS == `darwin`:
-			extension = `darwin-amd64`
+			platform = `darwin-amd64`
 		case runtime.GOOS == `linux`:
-			extension = `linux-amd64`
+			platform = `linux-amd64`
 		case runtime.GOOS == `linux`:
-			extension = `windows-amd64 `
+			platform = `windows-amd64`
 		default:
 		}
-		if len(extension) > 0 {
-			fileURL := `https://github.com/XiaoMi/soar/releases/download/0.11.0/soar.` + extension
-			savePath := filepath.Join(echo.Wd(), `support`, command)
-			var username string
-			user := handler.User(ctx)
-			if user != nil {
-				username = user.Username
-			}
-			np := notice.NewP(ctx, `downloadSOAR`, username, context.Background()).AutoComplete(true)
-			np.Send(`start downloading soar...`, notice.StateSuccess)
-			dlCfg := &dl.Options{
-				Proxy: notice.DownloadProxyFn(np),
-			}
-			_, derr := dl.Download(fileURL, savePath, dlCfg)
-			if derr != nil {
-				derr = fmt.Errorf(`failed to download soar from %s: %v`, fileURL, derr)
-				log.Error(derr)
-				np.Send(derr.Error(), notice.StateFailure)
-			} else {
-				os.Chmod(savePath, os.ModeExclusive)
-				downloaded = true
-				np.Send(`downloading soar successfully`, notice.StateSuccess)
-			}
-			np.Complete()
+	} else {
+		platform = runtime.GOOS + `-` + runtime.GOARCH
+	}
+	if len(platform) > 0 {
+		version := cfg.String(`soarVersion`)
+		if len(version) == 0 {
+			version = `0.11.0`
 		}
+		repl := strings.NewReplacer(
+			`{version}`, version,
+			`{platform}`, platform,
+			`{os}`, runtime.GOOS,
+			`{arch}`, runtime.GOARCH,
+		)
+		fileURL := repl.Replace(urlLayout)
+		savePath := filepath.Join(echo.Wd(), `support`, command)
+		var username string
+		user := handler.User(ctx)
+		if user != nil {
+			username = user.Username
+		}
+		np := notice.NewP(ctx, `downloadSOAR`, username, context.Background()).AutoComplete(true)
+		np.Send(`start downloading soar...`, notice.StateSuccess)
+		dlCfg := &dl.Options{
+			Proxy: notice.DownloadProxyFn(np),
+		}
+		_, derr := dl.Download(fileURL, savePath, dlCfg)
+		if derr != nil {
+			derr = fmt.Errorf(`failed to download soar from %s: %v`, fileURL, derr)
+			log.Error(derr)
+			np.Send(derr.Error(), notice.StateFailure)
+		} else {
+			os.Chmod(savePath, os.ModeExclusive)
+			downloaded = true
+			np.Send(`downloading soar successfully`, notice.StateSuccess)
+		}
+		np.Complete()
 	}
 	return downloaded, nil
 }
