@@ -175,7 +175,7 @@ func downloadSOAR(ctx echo.Context) (bool, error) {
 			log.Error(derr)
 			np.Send(derr.Error(), notice.StateFailure)
 		} else {
-			os.Chmod(savePath, os.ModeExclusive)
+			os.Chmod(savePath, 0750)
 			downloaded = true
 			np.Send(`downloading soar successfully`, notice.StateSuccess)
 		}
