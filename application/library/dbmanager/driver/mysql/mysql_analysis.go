@@ -81,6 +81,9 @@ func (m *mySQL) Analysis() error {
 		if errors.Is(err, exec.ErrNotFound) {
 			if config.FromFile().Extend.GetStore(`dbmanager`).Bool(`downloadSOAR`) {
 				downloaded, _ = downloadSOAR(m.Context)
+				if downloaded {
+					command = filepath.Join(echo.Wd(), `support`, command) + extension
+				}
 			}
 			if !downloaded {
 				err = m.E(m.T(`没有找到 soar 命令，请取保已经安装。`))
@@ -90,6 +93,7 @@ func (m *mySQL) Analysis() error {
 			data.SetError(err)
 			return m.JSON(data)
 		}
+
 	}
 	charset := m.DbAuth.Charset
 	if len(charset) == 0 {
