@@ -81,7 +81,7 @@
         {{end}}
         <div class="block-flat no-padding">
           <div class="content no-padding">
-              <form class="form-horizontal group-border-dashed" method="POST" action="">
+              <form class="form-horizontal group-border-dashed" method="POST" action="" id="form-sql-query" notify>
               <div class="form-group">
 				<div class="col-sm-12">
                     <textarea name="query" id="query" class="form-control">{{$.Form "query"}}</textarea>
@@ -136,7 +136,7 @@ $(function(){
     $('#btn-sql-analysis').on('click',function(){
         editor.save();
         var query=$('#query').val();
-        $.post('{{call $.Func.dbMgrURL "analysis" $.Stored.dbName}}',{sql:query},function(r){
+        $.post('{{call $.Func.dbMgrURL "analysis" $.Stored.dbName}}',{sql:query,notifyClientID:$('#form-sql-query').find('[name=notifyClientID]').val()},function(r){
             if(r.Code!=1){
                 return App.message({title: '{{"系统消息"|$.T}}', text: r.Info, class_name: "danger"});
             }
