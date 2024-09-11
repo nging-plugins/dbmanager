@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/common"
 	"github.com/webx-top/db"
 	"github.com/webx-top/echo"
 
 	"github.com/admpub/log"
-	"github.com/admpub/nging/v5/application/handler"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"   //mysql
@@ -39,7 +40,7 @@ var (
 		return ``
 	}
 	defaultGenBaseURL = func(auth *driver.DbAuth) string {
-		baseURL := handler.URLFor(`/db`)
+		baseURL := backend.URLFor(`/db`)
 		if auth.AccountID > 0 {
 			return baseURL + `?accountId=` + fmt.Sprint(auth.AccountID)
 		}
@@ -52,7 +53,7 @@ var (
 )
 
 func Manager(ctx echo.Context) error {
-	user := handler.User(ctx)
+	user := backend.User(ctx)
 	m := model.NewDbAccount(ctx)
 	var err error
 	driverName := ctx.Form(`driver`)
@@ -87,7 +88,7 @@ func Manager(ctx echo.Context) error {
 			err, _ = authentication(mgr, m)
 			if err != nil {
 				deleteAuth(ctx, auth)
-				handler.SendFail(ctx, err.Error())
+				common.SendFail(ctx, err.Error())
 				err = nil
 			}
 		} else if err = getLoginInfo(mgr, accountID, m, user); err != nil {
@@ -131,7 +132,7 @@ func Manager(ctx echo.Context) error {
 		} else {
 			if err != nil { //登录失败
 				deleteAuth(ctx, auth)
-				handler.SendFail(ctx, err.Error())
+				common.SendFail(ctx, err.Error())
 				err = nil
 			}
 			driverName = ``
@@ -162,7 +163,7 @@ func Manager(ctx echo.Context) error {
 			}
 		}
 	}
-	ret := handler.Err(ctx, err)
+	ret := common.Err(ctx, err)
 	driverList := map[string]string{}
 	for driverName, driver := range driver.GetAll() {
 		driverList[driverName] = driver.Name()

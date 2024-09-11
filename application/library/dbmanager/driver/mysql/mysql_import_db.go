@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/admpub/errors"
-	"github.com/admpub/nging/v5/application/library/notice"
+	"github.com/coscms/webcore/library/notice"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
 	"github.com/webx-top/com"

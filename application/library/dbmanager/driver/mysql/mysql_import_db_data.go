@@ -4,8 +4,8 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/admpub/nging/v5/application/library/common"
-	"github.com/admpub/nging/v5/application/library/notice"
+	"github.com/coscms/webcore/library/common"
+	"github.com/coscms/webcore/library/notice"
 	"github.com/webx-top/com"
 	"github.com/webx-top/db/lib/factory"
 )

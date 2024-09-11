@@ -29,9 +29,10 @@ import (
 	"github.com/webx-top/db"
 	"github.com/webx-top/echo"
 
-	"github.com/admpub/nging/v5/application/handler"
-	"github.com/admpub/nging/v5/application/library/config"
-	"github.com/admpub/nging/v5/application/library/cron"
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/common"
+	"github.com/coscms/webcore/library/config"
+	"github.com/coscms/webcore/library/cron"
 
 	"github.com/nging-plugins/dbmanager/application/dbschema"
 	"github.com/nging-plugins/dbmanager/application/model"
@@ -62,7 +63,7 @@ func SchemaSyncJob(id string) cron.Runner {
 // SchemaSync 表结构同步
 func SchemaSync(ctx echo.Context) error {
 	m := model.NewDbSync(ctx)
-	page, size, totalRows, p := handler.PagingWithPagination(ctx)
+	page, size, totalRows, p := common.PagingWithPagination(ctx)
 	listData := []*model.DbSyncWithAccount{}
 	cnt, err := m.List(&listData, func(r db.Result) db.Result {
 		return r.OrderBy(`-id`)
@@ -71,7 +72,7 @@ func SchemaSync(ctx echo.Context) error {
 		totalRows = int(cnt())
 		p.SetRows(totalRows)
 	}
-	ret := handler.Err(ctx, err)
+	ret := common.Err(ctx, err)
 	ctx.Set(`pagination`, p)
 	for k, v := range listData {
 		if len(v.DsnSource) > 0 {
@@ -118,8 +119,8 @@ func SchemaSyncAdd(ctx echo.Context) error {
 			postAccount(ctx, m)
 			_, err = m.Add()
 			if err == nil {
-				handler.SendOk(ctx, ctx.T(`操作成功`))
-				return ctx.Redirect(handler.URLFor(`/db/schema_sync`))
+				common.SendOk(ctx, ctx.T(`操作成功`))
+				return ctx.Redirect(backend.URLFor(`/db/schema_sync`))
 			}
 		}
 	}
@@ -137,7 +138,7 @@ func SchemaSyncAdd(ctx echo.Context) error {
 	accountM := model.NewDbAccount(ctx)
 	accountM.ListByOffset(nil, nil, 0, -1, db.Cond{`engine`: `mysql`})
 	ctx.Set(`accounts`, accountM.Objects())
-	return ctx.Render(`db/schema_sync_edit`, handler.Err(ctx, err))
+	return ctx.Render(`db/schema_sync_edit`, common.Err(ctx, err))
 }
 
 func setFormData(ctx echo.Context, m *model.DbSync) {
@@ -167,8 +168,8 @@ func SchemaSyncEdit(ctx echo.Context) error {
 			postAccount(ctx, m)
 			err = m.Edit(nil, cond)
 			if err == nil {
-				handler.SendOk(ctx, ctx.T(`操作成功`))
-				return ctx.Redirect(handler.URLFor(`/db/schema_sync`))
+				common.SendOk(ctx, ctx.T(`操作成功`))
+				return ctx.Redirect(backend.URLFor(`/db/schema_sync`))
 			}
 		}
 	} else if err == nil {
@@ -178,7 +179,7 @@ func SchemaSyncEdit(ctx echo.Context) error {
 	accountM := model.NewDbAccount(ctx)
 	accountM.ListByOffset(nil, nil, 0, -1, db.Cond{`engine`: `mysql`})
 	ctx.Set(`accounts`, accountM.Objects())
-	return ctx.Render(`db/schema_sync_edit`, handler.Err(ctx, err))
+	return ctx.Render(`db/schema_sync_edit`, common.Err(ctx, err))
 }
 
 func SchemaSyncDelete(ctx echo.Context) error {
@@ -189,15 +190,15 @@ func SchemaSyncDelete(ctx echo.Context) error {
 		logM := model.NewDbSyncLog(ctx)
 		err := logM.Delete(nil, db.Cond{`sync_id`: id})
 		if err == nil {
-			handler.SendOk(ctx, ctx.T(`操作成功`))
+			common.SendOk(ctx, ctx.T(`操作成功`))
 		} else {
-			handler.SendFail(ctx, err.Error())
+			common.SendFail(ctx, err.Error())
 		}
 	} else {
-		handler.SendFail(ctx, err.Error())
+		common.SendFail(ctx, err.Error())
 	}
 
-	return ctx.Redirect(handler.URLFor(`/db/schema_sync`))
+	return ctx.Redirect(backend.URLFor(`/db/schema_sync`))
 }
 
 func execSync(a *model.DbSync, preview bool) (*dbschema.NgingDbSyncLog, error) {
@@ -259,7 +260,7 @@ func SchemaSyncPreview(ctx echo.Context) error {
 	err := m.Get(nil, db.Cond{`id`: id})
 	var previewData string
 	if err != nil {
-		handler.SendFail(ctx, err.Error())
+		common.SendFail(ctx, err.Error())
 		previewData = err.Error()
 	} else {
 		var result *dbschema.NgingDbSyncLog
@@ -269,7 +270,7 @@ func SchemaSyncPreview(ctx echo.Context) error {
 
 	ctx.Set(`previewData`, previewData)
 	ctx.Set(`activeURL`, `/db/schema_sync`)
-	return ctx.Render(`db/schema_sync_preview`, handler.Err(ctx, err))
+	return ctx.Render(`db/schema_sync_preview`, common.Err(ctx, err))
 }
 
 func SchemaSyncRun(ctx echo.Context) error {
@@ -278,7 +279,7 @@ func SchemaSyncRun(ctx echo.Context) error {
 	err := m.Get(nil, db.Cond{`id`: id})
 	var previewData string
 	if err != nil {
-		handler.SendFail(ctx, err.Error())
+		common.SendFail(ctx, err.Error())
 		previewData = err.Error()
 	} else {
 		var result *dbschema.NgingDbSyncLog
@@ -288,7 +289,7 @@ func SchemaSyncRun(ctx echo.Context) error {
 
 	ctx.Set(`previewData`, previewData)
 	ctx.Set(`activeURL`, `/db/schema_sync`)
-	return ctx.Render(`db/schema_sync_preview`, handler.Err(ctx, err))
+	return ctx.Render(`db/schema_sync_preview`, common.Err(ctx, err))
 }
 
 func SchemaSyncLog(ctx echo.Context) error {
@@ -296,15 +297,15 @@ func SchemaSyncLog(ctx echo.Context) error {
 	syncM := model.NewDbSync(ctx)
 	err := syncM.Get(nil, db.Cond{`id`: id})
 	if err != nil {
-		handler.SendFail(ctx, err.Error())
-		return ctx.Redirect(handler.URLFor(`/db/schema_sync`))
+		common.SendFail(ctx, err.Error())
+		return ctx.Redirect(backend.URLFor(`/db/schema_sync`))
 	}
 	syncM.NgingDbSync.DsnSource = syncM.HidePassword(syncM.NgingDbSync.DsnSource)
 	syncM.NgingDbSync.DsnDestination = syncM.HidePassword(syncM.NgingDbSync.DsnDestination)
 	ctx.Set(`data`, syncM.NgingDbSync)
 
 	m := model.NewDbSyncLog(ctx)
-	page, size, totalRows, p := handler.PagingWithPagination(ctx)
+	page, size, totalRows, p := common.PagingWithPagination(ctx)
 	cnt, err := m.List(nil, func(r db.Result) db.Result {
 		return r.OrderBy(`-id`)
 	}, page, size, `sync_id`, id)
@@ -312,7 +313,7 @@ func SchemaSyncLog(ctx echo.Context) error {
 		totalRows = int(cnt())
 		p.SetRows(totalRows)
 	}
-	ret := handler.Err(ctx, err)
+	ret := common.Err(ctx, err)
 	ctx.Set(`pagination`, p)
 	ctx.Set(`listData`, m.Objects())
 	ctx.Set(`activeURL`, `/db/schema_sync`)
@@ -324,12 +325,12 @@ func SchemaSyncLogView(ctx echo.Context) error {
 	m := model.NewDbSyncLog(ctx)
 	err := m.Get(nil, db.Cond{`id`: id})
 	if err != nil {
-		handler.SendFail(ctx, err.Error())
-		return ctx.Redirect(handler.URLFor(`/db/schema_sync`))
+		common.SendFail(ctx, err.Error())
+		return ctx.Redirect(backend.URLFor(`/db/schema_sync`))
 	}
 	ctx.Set(`data`, m.NgingDbSyncLog)
 	ctx.Set(`activeURL`, `/db/schema_sync`)
-	return ctx.Render(`db/schema_sync_log_view`, handler.Err(ctx, err))
+	return ctx.Render(`db/schema_sync_log_view`, common.Err(ctx, err))
 }
 
 func SchemaSyncLogDelete(ctx echo.Context) error {
@@ -346,7 +347,7 @@ func SchemaSyncLogDelete(ctx echo.Context) error {
 	} else {
 		ago := ctx.Form(`ago`)
 		if len(ago) < 2 {
-			handler.SendFail(ctx, ctx.T(`missing param`))
+			common.SendFail(ctx, ctx.T(`missing param`))
 			goto END
 		}
 
@@ -354,7 +355,7 @@ func SchemaSyncLogDelete(ctx echo.Context) error {
 		case 'd': //删除几天前的。例如：7d
 			n, err = strconv.Atoi(strings.TrimSuffix(ago, `d`))
 			if err != nil {
-				handler.SendFail(ctx, err.Error()+`:`+ago)
+				common.SendFail(ctx, err.Error()+`:`+ago)
 				goto END
 			}
 
@@ -362,7 +363,7 @@ func SchemaSyncLogDelete(ctx echo.Context) error {
 		case 'm': //删除几个月前的。例如：1m
 			n, err = strconv.Atoi(strings.TrimSuffix(ago, `m`))
 			if err != nil {
-				handler.SendFail(ctx, err.Error()+`:`+ago)
+				common.SendFail(ctx, err.Error()+`:`+ago)
 				goto END
 			}
 
@@ -370,13 +371,13 @@ func SchemaSyncLogDelete(ctx echo.Context) error {
 		case 'y': //删除几年前的。例如：1y
 			n, err = strconv.Atoi(strings.TrimSuffix(ago, `y`))
 			if err != nil {
-				handler.SendFail(ctx, err.Error()+`:`+ago)
+				common.SendFail(ctx, err.Error()+`:`+ago)
 				goto END
 			}
 
 			cond = db.Cond{`created`: db.Lt(time.Now().AddDate(-n, 0, 0).Unix())}
 		default:
-			handler.SendFail(ctx, ctx.T(`invalid param`))
+			common.SendFail(ctx, ctx.T(`invalid param`))
 			goto END
 		}
 		if syncId > 0 {
@@ -385,11 +386,11 @@ func SchemaSyncLogDelete(ctx echo.Context) error {
 	}
 	err = m.Delete(nil, cond)
 	if err == nil {
-		handler.SendOk(ctx, ctx.T(`操作成功`))
+		common.SendOk(ctx, ctx.T(`操作成功`))
 	} else {
-		handler.SendFail(ctx, err.Error())
+		common.SendFail(ctx, err.Error())
 	}
 
 END:
-	return ctx.Redirect(handler.URLFor(`/db/schema_sync_log/`) + fmt.Sprint(syncId))
+	return ctx.Redirect(backend.URLFor(`/db/schema_sync_log/`) + fmt.Sprint(syncId))
 }

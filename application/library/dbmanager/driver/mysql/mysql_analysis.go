@@ -30,9 +30,9 @@ import (
 
 	dl "github.com/admpub/go-download/v2"
 	"github.com/admpub/log"
-	"github.com/admpub/nging/v5/application/handler"
-	"github.com/admpub/nging/v5/application/library/config"
-	"github.com/admpub/nging/v5/application/library/notice"
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/config"
+	"github.com/coscms/webcore/library/notice"
 	md2html "github.com/russross/blackfriday"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
@@ -160,7 +160,7 @@ func downloadSOAR(ctx echo.Context) (bool, error) {
 		fileURL := repl.Replace(urlLayout)
 		savePath := filepath.Join(echo.Wd(), `support`, command)
 		var username string
-		user := handler.User(ctx)
+		user := backend.User(ctx)
 		if user != nil {
 			username = user.Username
 		}

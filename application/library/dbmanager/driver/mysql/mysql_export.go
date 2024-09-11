@@ -34,9 +34,9 @@ import (
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/code"
 
-	"github.com/admpub/nging/v5/application/handler"
-	"github.com/admpub/nging/v5/application/library/background"
-	"github.com/admpub/nging/v5/application/library/notice"
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/background"
+	"github.com/coscms/webcore/library/notice"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
@@ -96,7 +96,7 @@ func (m *mySQL) bgExecManage(op string) error {
 		title = m.T(`导入SQL`)
 	}
 	m.Set(`title`, title)
-	m.Set(`cacheDir`, handler.URLFor(`/download/file?path=dbmanager/cache/`+op))
+	m.Set(`cacheDir`, backend.URLFor(`/download/file?path=dbmanager/cache/`+op))
 	return m.Render(`db/mysql/process_store`, m.checkErr(err))
 }
 
@@ -207,7 +207,7 @@ func (m *mySQL) Export() error {
 		cfg.Db = m.dbName
 		cfg.Charset = strings.SplitN(coll, `_`, 2)[0]
 
-		user := handler.User(m.Context)
+		user := backend.User(m.Context)
 		var username string
 		if user != nil {
 			username = user.Username
@@ -300,7 +300,7 @@ func (m *mySQL) Export() error {
 		}
 		data := m.Data()
 		data.SetInfo(m.T(`任务已经在后台成功启动`))
-		data.SetURL(handler.URLFor(`/download/file?path=dbmanager/cache/` + utils.OpExport + `/` + m.dbName))
+		data.SetURL(backend.URLFor(`/download/file?path=dbmanager/cache/` + utils.OpExport + `/` + m.dbName))
 		go worker(bgExec.Context(), cfg)
 		return m.JSON(data)
 	}

@@ -15,7 +15,7 @@ import (
 	"github.com/webx-top/echo/param"
 
 	"github.com/admpub/log"
-	"github.com/admpub/nging/v5/application/library/cron"
+	"github.com/coscms/webcore/library/cron"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"

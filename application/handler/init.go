@@ -4,9 +4,9 @@ import (
 	"github.com/admpub/godownloader/service"
 	"github.com/webx-top/echo"
 
-	"github.com/admpub/nging/v5/application/handler"
-	"github.com/admpub/nging/v5/application/library/cron"
-	"github.com/admpub/nging/v5/application/library/route"
+	"github.com/coscms/webcore/library/cron"
+	"github.com/coscms/webcore/library/route"
+	routeRegistry "github.com/coscms/webcore/registry/route"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
 	dlconfig "github.com/nging-plugins/dlmanager/application/library/config"
 )
@@ -23,7 +23,7 @@ func RegisterRoute(r *route.Collection) {
 }
 
 func registerRoute(g echo.RouteRegister) {
-	metaHandler := handler.IRegister().MetaHandler
+	metaHandler := routeRegistry.IRegister().MetaHandler
 
 	// dbmanager
 	g.Route(`GET,POST`, ``, Manager)

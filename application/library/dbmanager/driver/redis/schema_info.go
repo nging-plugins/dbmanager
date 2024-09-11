@@ -22,12 +22,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/coscms/webcore/library/common"
 	dbPagination "github.com/webx-top/db/lib/factory/pagination"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/param"
 	"github.com/webx-top/pagination"
-
-	"github.com/admpub/nging/v5/application/handler"
 )
 
 func NewValue(c echo.Context) *Value {
@@ -122,7 +121,7 @@ func (a *Value) CursorPaging(vkeys ...string) *pagination.Pagination {
 			prevOffsetKey = v
 		}
 	}
-	_, _, _, a.paging = handler.PagingWithPagination(a.context)
+	_, _, _, a.paging = common.PagingWithPagination(a.context)
 	offset := a.context.Form(currOffsetKey, `0`)
 	q := a.context.Request().URL().Query()
 	q.Del(currOffsetKey)

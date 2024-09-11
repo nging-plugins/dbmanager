@@ -32,9 +32,9 @@ import (
 	"github.com/webx-top/com"
 	"github.com/webx-top/db"
 
-	"github.com/admpub/nging/v5/application/library/common"
-	writerPkg "github.com/admpub/nging/v5/application/library/cron/writer"
-	"github.com/admpub/nging/v5/application/library/notice"
+	"github.com/coscms/webcore/library/common"
+	writerPkg "github.com/coscms/webcore/library/cron/writer"
+	"github.com/coscms/webcore/library/notice"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 )

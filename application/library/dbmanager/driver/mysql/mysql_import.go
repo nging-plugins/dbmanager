@@ -32,10 +32,10 @@ import (
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/code"
 
-	"github.com/admpub/nging/v5/application/handler"
-	"github.com/admpub/nging/v5/application/library/background"
-	"github.com/admpub/nging/v5/application/library/notice"
-	"github.com/admpub/nging/v5/application/library/respond"
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/background"
+	"github.com/coscms/webcore/library/notice"
+	"github.com/coscms/webcore/library/respond"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
@@ -43,7 +43,7 @@ import (
 
 func responseDropzone(err error, ctx echo.Context) error {
 	if err != nil {
-		if user := handler.User(ctx); user != nil {
+		if user := backend.User(ctx); user != nil {
 			notice.OpenMessage(user.Username, `upload`)
 			notice.Send(user.Username, notice.NewMessageWithValue(`upload`, ctx.T(`文件上传出错`), err.Error(), notice.StateFailure))
 		}
@@ -66,7 +66,7 @@ func (m *mySQL) Import() error {
 			m.fail(m.T(`请选择数据库`))
 			return m.returnTo(m.GenURL(`listDb`))
 		}
-		user := handler.User(m.Context)
+		user := backend.User(m.Context)
 		var username string
 		if user != nil {
 			username = user.Username

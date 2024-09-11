@@ -22,8 +22,9 @@ import (
 	"github.com/webx-top/db"
 	"github.com/webx-top/echo"
 
-	"github.com/admpub/nging/v5/application/handler"
-	"github.com/admpub/nging/v5/application/library/config/subconfig/sdb"
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/common"
+	"github.com/coscms/webcore/library/config/subconfig/sdb"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
@@ -31,9 +32,9 @@ import (
 )
 
 func AccountIndex(ctx echo.Context) error {
-	user := handler.User(ctx)
+	user := backend.User(ctx)
 	m := model.NewDbAccount(ctx)
-	page, size, totalRows, p := handler.PagingWithPagination(ctx)
+	page, size, totalRows, p := common.PagingWithPagination(ctx)
 	cond := db.Compounds{
 		db.Cond{`uid`: user.Id},
 	}
@@ -48,7 +49,7 @@ func AccountIndex(ctx echo.Context) error {
 		totalRows = int(cnt())
 		p.SetRows(totalRows)
 	}
-	ret := handler.Err(ctx, err)
+	ret := common.Err(ctx, err)
 	driverList := map[string]string{}
 	for driverName, driver := range driver.GetAll() {
 		driverList[driverName] = driver.Name()
@@ -65,7 +66,7 @@ func setOptions(ctx echo.Context, m *model.DbAccount) error {
 }
 
 func AccountAdd(ctx echo.Context) error {
-	user := handler.User(ctx)
+	user := backend.User(ctx)
 	var err error
 	if ctx.IsPost() {
 		m := model.NewDbAccount(ctx)
@@ -81,15 +82,15 @@ func AccountAdd(ctx echo.Context) error {
 					data := ctx.Data().SetInfo(ctx.T(`数据库账号成功`)).SetData(m.NgingDbAccount)
 					return ctx.JSON(data)
 				}
-				handler.SendOk(ctx, ctx.T(`操作成功`))
-				return ctx.Redirect(handler.URLFor(`/db/account`))
+				common.SendOk(ctx, ctx.T(`操作成功`))
+				return ctx.Redirect(backend.URLFor(`/db/account`))
 			}
 		}
 		if err != nil && ctx.IsAjax() {
 			return ctx.JSON(ctx.Data().SetError(err))
 		}
 	}
-	ret := handler.Err(ctx, err)
+	ret := common.Err(ctx, err)
 	driverList := map[string]string{}
 	for driverName, driver := range driver.GetAll() {
 		driverList[driverName] = driver.Name()
@@ -101,7 +102,7 @@ func AccountAdd(ctx echo.Context) error {
 }
 
 func AccountEdit(ctx echo.Context) error {
-	user := handler.User(ctx)
+	user := backend.User(ctx)
 	var err error
 	id := ctx.Formx(`id`).Uint()
 	m := model.NewDbAccount(ctx)
@@ -116,8 +117,8 @@ func AccountEdit(ctx echo.Context) error {
 			m.Id = id
 			err = m.Edit(id, nil, cond)
 			if err == nil {
-				handler.SendOk(ctx, ctx.T(`操作成功`))
-				return ctx.Redirect(handler.URLFor(`/db/account`))
+				common.SendOk(ctx, ctx.T(`操作成功`))
+				return ctx.Redirect(backend.URLFor(`/db/account`))
 			}
 		}
 	} else if err == nil {
@@ -134,7 +135,7 @@ func AccountEdit(ctx echo.Context) error {
 		ctx.Request().Form().Set(`charset`, charset)
 	}
 
-	ret := handler.Err(ctx, err)
+	ret := common.Err(ctx, err)
 	driverList := map[string]string{}
 	for driverName, driver := range driver.GetAll() {
 		driverList[driverName] = driver.Name()
@@ -150,10 +151,10 @@ func AccountDelete(ctx echo.Context) error {
 	m := model.NewDbAccount(ctx)
 	err := m.Delete(nil, db.Cond{`id`: id})
 	if err == nil {
-		handler.SendOk(ctx, ctx.T(`操作成功`))
+		common.SendOk(ctx, ctx.T(`操作成功`))
 	} else {
-		handler.SendFail(ctx, err.Error())
+		common.SendFail(ctx, err.Error())
 	}
 
-	return ctx.Redirect(handler.URLFor(`/db/account`))
+	return ctx.Redirect(backend.URLFor(`/db/account`))
 }

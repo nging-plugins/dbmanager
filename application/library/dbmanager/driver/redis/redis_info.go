@@ -21,7 +21,7 @@ package redis
 import (
 	"errors"
 
-	"github.com/admpub/nging/v5/application/handler"
+	"github.com/coscms/webcore/library/common"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -42,7 +42,7 @@ func (r *Redis) baseInfo() error {
 		}
 		r.Set(`tableList`, tableList)
 		r.Set(`nextOffset`, nextOffset)
-		_, _, _, pagination := handler.PagingWithPagination(r.Context)
+		_, _, _, pagination := common.PagingWithPagination(r.Context)
 		offset := r.Form(`offset`, `0`)
 		q := r.Request().URL().Query()
 		operation := r.Query(`operation`)

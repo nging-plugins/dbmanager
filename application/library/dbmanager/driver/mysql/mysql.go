@@ -38,7 +38,7 @@ import (
 	"github.com/webx-top/echo/code"
 	"github.com/webx-top/pagination"
 
-	"github.com/admpub/nging/v5/application/library/common"
+	"github.com/coscms/webcore/library/common"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
