@@ -133,15 +133,15 @@ function onselectColumn(obj){
   switch($(obj).val()){
     case '':return;
     case '$':
-      $(obj).siblings().hide();
+      var ipts = $(obj).next('.normal-field-inputs');
+      ipts.find('input[name*="[expressions]"]').show().siblings().hide();
       span = $(obj).closest('.columm-info');
-      span.find('input[name*="[expressions]"]').show();
       span.siblings('.columm-info').remove();
       return;
     default:
-      $(obj).siblings(':not(input[name*="[expressions]"])').show();
+      var ipts = $(obj).next('.normal-field-inputs');
+      ipts.find('input[name*="[expressions]"]').hide().siblings().show();
       span = $(obj).closest('.columm-info');
-      span.find('input[name*="[expressions]"]').hide();
       span.find('.floatup-input-layer').remove();
   }
   if(span.next('.columm-info').length<1){
