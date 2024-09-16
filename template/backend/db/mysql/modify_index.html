@@ -171,6 +171,7 @@ $(function(){
     var code=$(this).html();
     var obj=$('#expression-example-modal').data('targetObject');
     $(obj).val(code);
+    $('#expression-example-modal').niftyModal('hide');
   })
   $('select.select-index-column option[value="$"]:selected').each(function(){
     onselectColumn($(this).parent('select')[0]);

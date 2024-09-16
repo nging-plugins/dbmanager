@@ -45,7 +45,7 @@ Content : """
 								<li><code>UNSIGNED</code> 将字段值转换为 UNSIGNED（无符号 64 位整数）</li>
 								<li><code>BINARY</code> 将字段值转换为 BINARY（二进制字符串）</li>
 							</ol>
-							支持支持的其它值可以参考文档: <a href="https://dev.mysql.com/doc/refman/8.0/en/cast-functions.html" target="_blank">官方文档</a> <a href="https://mysql.net.cn/doc/refman/8.0/en/cast-functions.html" target="_blank">第三方文档(翻译)</a><br />
+							支持的其它值可以参考文档: <a href="https://dev.mysql.com/doc/refman/8.0/en/cast-functions.html" target="_blank">官方文档</a> <a href="https://mysql.net.cn/doc/refman/8.0/en/cast-functions.html" target="_blank">第三方文档(翻译)</a><br />
 							查询条件指定字段时必须与索引中指定的一致才能用到索引；<br />
 							查询条件提供匹配值时值的数据类型必须与索引中指定的一致才能用到索引。<br />
 						</td>
