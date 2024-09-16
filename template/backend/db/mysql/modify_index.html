@@ -101,7 +101,8 @@ function onselectType(obj){
   if(indexType=='FULLTEXT'){
     currentTR.find('input[name*="[lengths]"]').hide().val('');
     currentTR.find('select[name*="[descs]"]').hide().val('');
-    currentTR.find('input[name*="[expressions]"]').hide().val('');
+    currentTR.find('.input-expression').hide()
+    currentTR.find('input[name*="[expressions]"]').val('');
     currentTR.find('select[name*="[columns]"]').children('option:selected[value="$"]').prop('selected',false);
     currentTR.find('.input-group-item-with').css('display','inline-block');
   }else{
@@ -119,7 +120,8 @@ function onselectType(obj){
       first.find('input[name*="[lengths]"]').val('').show();
       first.find('select[name*="[descs]"]').show();
       first.siblings('.columm-info').remove();
-      clone.find('input[name*="[expressions]"]').hide().val('');
+      clone.find('.input-expression').hide()
+      clone.find('input[name*="[expressions]"]').val('');
       clone.find('.input-group-item-with').hide().find('input').val('');
       clone.find('.floatup-input-layer').remove();
       currentTR.after(clone);
