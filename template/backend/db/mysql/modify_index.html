@@ -168,11 +168,6 @@ $(function(){
   $('#expression-example-modal').find('code.clickable').on('click',function(){
     var code=$(this).html();
     var obj=$('#expression-example-modal').data('targetObject');
-    var old=$(obj).val();
-    if(old){
-      var m=old.match(/cast\((.+) as /i);
-      if(m) code='cast('+m[1]+code.substring(code.indexOf(' '));
-    }
     $(obj).val(code);
   })
   $('select.select-index-column option[value="$"]:selected').each(function(){
