@@ -2,8 +2,8 @@
 {{Block "title"}}{{"索引"|$.T}}: {{$.Stored.table}} - {{Super}}{{/Block}}
 {{Block "breadcrumb"}}
 {{Super}}
-<li><a href="{{call $.Func.dbMgrURL "listTable" $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
-<li><a href="{{call $.Func.dbMgrURL "viewTable" $.Stored.dbName $.Stored.table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$.Stored.table}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $.Stored.table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$.Stored.table}}</a></li>
 <li class="active">{{"索引"|$.T}}</li>
 {{/Block}}
 {{Block "main"}}
@@ -56,7 +56,9 @@
                                 <option value="ASC"{{if eq $desc `ASC`}} selected{{end}}>{{"升序▲"|$.T}}</option>
                                 <option value="DESC"{{if eq $desc `DESC`}} selected{{end}}>{{"降序▼"|$.T}}</option>
                               </select>
-                              <input type='text' name='indexes[{{$k}}][expressions][]' class="form-control inline" value='{{$exp}}' style="{{if not $exp}}display:none;{{end}}" onfocus="textInputFloat(this,'{{`表达式`|$.T}}',true,-35)">
+                              <span class="input-expression nowrap" style="{{if not $exp}}display:none;{{end}}">
+                              <input type='text' name='indexes[{{$k}}][expressions][]' class="form-control inline" value='{{$exp}}' onfocus="textInputFloat(this,'{{`表达式`|$.T}}',true,-35)"><a href="javascript:;" onclick="openExpressionExample(this)" title="{{`常用表达式范例`|$.T}}"><i class="fa fa-info"></i></a>
+                              </span><!-- input-expression -->
                               </span><!-- normal-field-inputs -->
                               {{end}}
                             </span>
@@ -134,13 +136,13 @@ function onselectColumn(obj){
     case '':return;
     case '$':
       var ipts = $(obj).next('.normal-field-inputs');
-      ipts.find('input[name*="[expressions]"]').show().siblings().hide();
+      ipts.find('.input-expression').show().siblings().hide();
       span = $(obj).closest('.columm-info');
       span.siblings('.columm-info').remove();
       return;
     default:
       var ipts = $(obj).next('.normal-field-inputs');
-      ipts.find('input[name*="[expressions]"]').hide().siblings().show();
+      ipts.find('.input-expression').hide().siblings().show();
       span = $(obj).closest('.columm-info');
       span.find('.floatup-input-layer').remove();
   }
@@ -154,13 +156,29 @@ function onselectColumn(obj){
 function delRow(obj){
   $(obj).parent().parent().remove();
 }
+function openExpressionExample(obj){
+  var targetObject=$(obj).siblings('input');
+  if(targetObject.length<1) return;
+  $('#expression-example-modal').data('targetObject',targetObject[0]).niftyModal('show');
+}
 $(function(){
   $('select.select-index-type option[value="FULLTEXT"]:selected').each(function(){
     onselectType($(this).parent('select')[0]);
   });
+  $('#expression-example-modal').find('code.clickable').on('click',function(){
+    var code=$(this).html();
+    var obj=$('#expression-example-modal').data('targetObject');
+    var old=$(obj).val();
+    if(old){
+      var m=old.match(/cast\((.+) as /i);
+      if(m) code='cast('+m[1]+code.substring(code.indexOf(' '));
+    }
+    $(obj).val(code);
+  })
   $('select.select-index-column option[value="$"]:selected').each(function(){
     onselectColumn($(this).parent('select')[0]);
   });
 })
 </script>
+{{call $.Func.Modal "__TMPL__/db/mysql/index_expression_example.yaml"}}
 {{/Block}}

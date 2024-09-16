@@ -1,0 +1,53 @@
+Id : "expression-example-modal"
+Custom : true
+HeadTitle : "索引常用表达式"
+Title : ""
+Content : """
+<table class="table table-bordered">
+  <thead>
+					<tr>
+						<th colspan="2">JSON字段常用(以字段名field为例)</th>
+          </tr>
+  </thead>
+  <tbody>
+					<tr>
+						<td><b>给数组标量元素添加索引</b><br />例如：[1,2,3]</td>
+						<td>
+							<ul>
+							<li><code class="clickable">cast(`field` as unsigned array)</code></li>
+							<li><code class="clickable">cast(`field`->'$[*]' as unsigned array)</code></li>
+							</ul>
+						</td>
+					</tr>
+					<tr>
+						<td><b>给数组对象元素中的字段添加索引</b><br />例如：[{"name":"john"},{"name":"tom"}]</td>
+						<td><code class="clickable">cast(`field`->'$.name' as NCHAR(10) array)<code></td>
+					</tr>
+  </tbody>
+  <tfoot>
+					<tr>
+						<td colspan="2" style="font-size:11px !important">
+							cast函数在此处的使用格式：cast(<u>field</u> as <u>datatype</u> array)<br />
+							datatype 常用的值有: 
+							<ol>
+								<li><code>DATE</code> 将字段值转换为 DATE。 格式: "YYYY-MM-DD"</li>
+								<li><code>DATETIME</code> 将字段值转换为 DATETIME。 格式: "YYYY-MM-DD HH:MM:SS"</li>
+								<li><code>DECIMAL</code> 将字段值转换为 DECIMAL。 使用可选的 M 和 D 参数指定最大位数 (M) 和小数点后的位数 (D)。</li>
+								<li><code>TIME</code> 将字段值转换为 TIME。 格式: "HH:MM:SS"</li>
+								<li><code>CHAR</code> 将字段值转换为 CHAR（固定长度字符串）</li>
+								<li><code>NCHAR</code> 将字段值转换为 NCHAR（类似于 CHAR，但生成带有地区字符集的字符串）</li>
+								<li><code>SIGNED</code> 将字段值转换为 SIGNED（带符号的 64 位整数）</li>
+								<li><code>UNSIGNED</code> 将字段值转换为 UNSIGNED（无符号 64 位整数）</li>
+								<li><code>BINARY</code> 将字段值转换为 BINARY（二进制字符串）</li>
+							</ol>
+							支持支持的其它值可以参考文档: <a href="https://dev.mysql.com/doc/refman/8.0/en/cast-functions.html" target="_blank">官方文档</a> <a href="https://mysql.net.cn/doc/refman/8.0/en/cast-functions.html" target="_blank">第三方文档(翻译)</a>
+						</td>
+          </tr>
+  </tfoot>
+</table>
+"""
+HelpText : ""
+Animate : ""
+Type : ""
+ContentType : ""
+ExtButtons : []
