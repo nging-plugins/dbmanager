@@ -533,6 +533,7 @@ func (m *mySQL) tableIndexes(table string) (map[string]*Indexes, []string, error
 				Lengths:     []string{},
 				Descs:       []string{},
 				Expressions: []string{},
+				Extra:       map[string]interface{}{},
 			}
 			sorts = append(sorts, v.Key_name.String)
 		}

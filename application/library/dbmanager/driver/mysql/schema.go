@@ -470,6 +470,7 @@ type Indexes struct {
 	Descs       []string
 	Expressions []string
 	With        string
+	Extra       map[string]interface{}
 }
 
 type Field struct {
