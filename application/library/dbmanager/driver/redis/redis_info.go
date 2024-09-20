@@ -51,7 +51,7 @@ func (r *Redis) baseInfo() error {
 				q.Del(k)
 				continue
 			}
-			if k != `accountId` && k != `size` {
+			if k != `accountId` && k != `size` && k != `db` {
 				q.Del(k)
 			}
 		}
