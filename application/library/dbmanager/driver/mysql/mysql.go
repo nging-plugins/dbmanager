@@ -39,6 +39,7 @@ import (
 	"github.com/webx-top/pagination"
 
 	"github.com/coscms/webcore/library/common"
+	"github.com/coscms/webcore/library/nsql"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
@@ -103,7 +104,7 @@ func connect(dbAuth *driver.DbAuth, dbName ...string) (*factory.Factory, error) 
 		Database: dbAuth.Db,
 		Options:  map[string]string{},
 	}
-	common.ParseMysqlConnectionURL(&settings)
+	nsql.ParseMysqlConnectionURL(&settings)
 	if len(dbAuth.Charset) > 0 {
 		settings.Options["charset"] = dbAuth.Charset
 	}
@@ -1868,7 +1869,7 @@ func (m *mySQL) RunCommand() error {
 			}
 
 			if !regexp.MustCompile(`(?i)^(` + space + `|\()*(SELECT|SHOW|EXPLAIN)\b`).MatchString(query) {
-				execute := common.SQLLineParser(func(sqlStr string) error {
+				execute := nsql.SQLLineParser(func(sqlStr string) error {
 					r := &Result{
 						SQL: sqlStr,
 					}
@@ -1895,7 +1896,7 @@ func (m *mySQL) RunCommand() error {
 				}
 				continue
 			}
-			execute := common.SQLLineParser(func(sqlStr string) error {
+			execute := nsql.SQLLineParser(func(sqlStr string) error {
 				r := &Result{
 					SQL: sqlStr,
 				}

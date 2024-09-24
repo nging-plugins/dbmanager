@@ -5,7 +5,7 @@ import (
 	"github.com/webx-top/echo"
 
 	"github.com/coscms/webcore/library/cron"
-	"github.com/coscms/webcore/library/route"
+	"github.com/coscms/webcore/library/module"
 	routeRegistry "github.com/coscms/webcore/registry/route"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
 	dlconfig "github.com/nging-plugins/dlmanager/application/library/config"
@@ -18,8 +18,8 @@ var downloadDir = func() string {
 	return dlconfig.Get().SavePath
 }
 
-func RegisterRoute(r *route.Collection) {
-	r.Backend.RegisterToGroup(`/db`, registerRoute)
+func RegisterRoute(r module.Router) {
+	r.Backend().RegisterToGroup(`/db`, registerRoute)
 }
 
 func registerRoute(g echo.RouteRegister) {
