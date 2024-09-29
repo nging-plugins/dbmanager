@@ -617,6 +617,10 @@ func diffIndexes(c echo.Context, formData map[string][]string, indexes map[strin
 					continue
 				}
 				set = `((` + exp + `))`
+				col = ``
+				if key < descSize {
+					desc = item.Descs[key]
+				}
 			} else {
 				set = quoteCol(col)
 				if key < lenSize {
@@ -648,10 +652,14 @@ func diffIndexes(c echo.Context, formData map[string][]string, indexes map[strin
 		}
 		if existing, ok := indexes[item.Name]; ok {
 			/*
+				fmt.Println(`/======================`, item.Name, `======================\`)
 				fmt.Println(item.Type, `==`, existing.Type)
 				fmt.Printf(`columns：%#v`+" == %#v\n", columns, existing.Columns)
 				fmt.Printf(`lengths：%#v`+" == %#v\n", lengths, existing.Lengths)
 				fmt.Printf(`descs：%#v`+" == %#v\n", descs, existing.Descs)
+				fmt.Printf(`with：%#v`+" == %#v\n", item.With, existing.With)
+				fmt.Printf(`expressions：%#v`+" == %#v\n", expressions, existing.Expressions)
+				fmt.Println(`\======================`, item.Name, `======================/`)
 			// */
 			if len(item.With) > 0 && len(existing.With) > 0 && !strings.Contains(item.With, "`") {
 				existing.With = strings.ReplaceAll(existing.With, "`", "")
