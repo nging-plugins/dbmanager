@@ -391,9 +391,14 @@ func (m *mySQL) update(table string, set map[string]string, queryWhere string, l
 	return r.err
 }
 
-func (m *mySQL) set(table, queryWhere string, key string, value string, limit int) error {
+func (m *mySQL) set(table, queryWhere string, key string, value string, limit int, isNull ...bool) error {
 	r := &Result{}
-	query := quoteCol(table) + " SET " + quoteCol(key) + "=" + quoteVal(value)
+	query := quoteCol(table) + " SET " + quoteCol(key) + "="
+	if len(isNull) > 0 && isNull[0] {
+		query += `NULL`
+	} else {
+		query += quoteVal(value)
+	}
 	r.SQL = `UPDATE`
 	if limit > 0 {
 		r.SQL += withLimit1(query, queryWhere)

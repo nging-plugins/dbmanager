@@ -1249,12 +1249,18 @@ func (m *mySQL) ListData() error {
 				if len(values) > 0 {
 					value = strings.Join(values, ",")
 				}
-				err = m.set(table, condition, key, value, 1)
+				null := m.Formx(`null`).Bool()
+				err = m.set(table, condition, key, value, 1, null)
 				data := m.Data()
 				if err != nil {
 					data.SetError(err)
 				} else {
 					data.SetInfo(`修改成功`)
+					if null {
+						data.SetData(echo.H{`newValue`: nil})
+					} else {
+						data.SetData(echo.H{`newValue`: value})
+					}
 				}
 				return m.JSON(data)
 			}

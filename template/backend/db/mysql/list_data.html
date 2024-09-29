@@ -10,10 +10,8 @@
 {{/Block}}
 {{Block "head"}}
 {{Super}}
-<link rel="stylesheet" href="{{AssetsURL}}/js/bootstrap.editable/css/bootstrap-editable.min.css">
-<style>
-.editable-click, a.editable-click, a.editable-click:hover{border:0 !important}
-</style>
+<link rel="stylesheet" href="{{AssetsURL}}/js/bootstrap.editable/css/bootstrap-editable.min.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/dbmanager/css/list_data.css?t={{BuildTime}}">
 {{/Block}}
 {{Block "main"}}
 <script>
@@ -128,8 +126,8 @@ function onselectColumns(obj){
                       {{end}}
                   </select>
                   <label class="input-group-addon no-padding no-border"><select class="form-control" style="min-width:70px" name="desc[]">
-					  <option value="0"{{if eq $desc "0"}} selected{{end}}>{{"升序"|$.T}}</option>
-                      <option value="1"{{if eq $desc "1"}} selected{{end}}>{{"降序"|$.T}}</option>
+					  <option value="0"{{if eq $desc `0`}} selected{{end}}>{{"升序"|$.T}}</option>
+                      <option value="1"{{if eq $desc `1`}} selected{{end}}>{{"降序"|$.T}}</option>
                   </select></label>
               </div>
                   {{end}}
@@ -186,7 +184,7 @@ function onselectColumns(obj){
                             </th>
                             {{- range $colIndex, $colName := $.Stored.columns -}}
                             {{- $field := index $.Stored.fields $colName -}}
-                            <th sort="-{{$colName}}" data-index="{{$colIndex}}" data-options='{{if $field}}{{$field.Options|JSONEncode}}{{end}}' data-type='{{if $field}}{{$field.Type}}{{end}}' data-length='{{if $field}}{{$field.LengthN}}{{else}}0{{end}}'><strong title="{{if $field}}{{`类型`|$.T}}: {{$field.Full_type}}
+                            <th sort="-{{$colName}}" data-index="{{$colIndex}}" data-options='{{if $field}}{{$field.Options|JSONEncode}}{{end}}' data-type='{{if $field}}{{$field.Type}}{{end}}'{{if and $field $field.Null}} data-nullable="1"{{end}} data-length='{{if $field}}{{$field.LengthN}}{{else}}0{{end}}'><strong title="{{if $field}}{{`类型`|$.T}}: {{$field.Full_type}}
 {{`注释`|$.T}}: {{$field.Comment}}{{end}}">{{$colName}}</strong></th>
                             {{- end -}}
 						</tr>
@@ -202,9 +200,10 @@ function onselectColumns(obj){
                             </td>
                             {{- range $colIndex, $colName := $.Stored.columns -}}
                             {{- $field := index $.Stored.fields $colName -}}
-                            <td class="editable" data-index="{{$colIndex}}" data-rowno="{{$k}}">
-                                {{- $value := (index $v $colName).String -}}
-                                <div class="wrap"{{if $field}}{{if or (eq $field.Type `set`) (eq $field.Type `enum`)}} data-value="{{$value}}"{{end}}{{end}}>
+                            {{- $nullStr := (index $v $colName) -}}
+                            {{- $value := $nullStr.String -}}
+                            <td class="editable" data-index="{{$colIndex}}" data-rowno="{{$k}}" data-valid="{{$nullStr.Valid}}">
+                                <div class="wrap"{{if $field}}{{if eq $field.Type `set` `enum`}} data-value="{{$value}}"{{end}}{{end}}>
                                 {{- if $field -}}
                                 {{- $field.Format $value -}}
                                 {{- else -}}
@@ -347,12 +346,13 @@ $(function(){
     perttyCheckbox();
     App.attachCheckedAll('#checkedAll','input[type=checkbox][name=\'check[]\']','#selected-items-count');
     $('#form-list-data > table td.editable').each(function(){
+        var that=$(this);
         var index=$(this).data('index');
         var rowno=$(this).data('rowno');
         var thead=$('#form-list-data > table > thead');
         var th=thead.find('th[data-index="'+index+'"]');
         var field=th.children('strong').text();
-        var options=th.data('options');
+        var options=th.data('options'),nullable=th.data('nullable');
         var inputType='text';
         var type=th.data('type');
         var source=[];
@@ -381,14 +381,29 @@ $(function(){
                 if(length>100) inputType='textarea';
                 break;
         }
-        $(this).children('div').editable({
+        var wrap=$(this).children('div.wrap');
+        wrap.editable({
            url: '{{$.URI}}&save=set',
            type: inputType,
            source: source,
            pk: $('#check-'+rowno).val(),
            name: field,
            title: 'Enter '+field,
-           ajaxOptions:{
+           emptytext: function(){ // step 5
+            if(nullable){
+                if(that.data('valid')===false) return 'Null';
+            }
+            return 'Empty';
+           },
+           savenochange: nullable,
+           params: function(params) { // step 2
+            if(nullable){
+                var $null=wrap.next('.editable-container').find('form.editableform').find('input:checkbox[name=null]');
+                if($null.length>0 && $null.prop('checked')) params.null=true;
+            }
+            return params;
+           },
+           ajaxOptions:{ // step 3
                dataType: 'json',
                success: function(r){
                     if(r.Code!=1) return App.message({text:r.Info,class_name:'danger'});
@@ -398,6 +413,33 @@ $(function(){
                     return App.message({text:xhr.responseText,class_name:'danger'});
                }
            }
+        });
+        wrap.on('save', function(e, params){ // step 4
+            if(nullable&&params.newValue===''&&params.response&&params.response.Code==1){
+                that.data('valid',params.response.Data.newValue!==null);
+            }
+        });
+        wrap.on('shown', function(e, editable) { // step 1
+            if(nullable) {
+                var nullId='editableCheckedNull'+index+'-'+rowno;
+                if($('#'+nullId).length>0)return;
+                var $form=wrap.next('.editable-container').find('form.editableform');
+                var $checkboxContainer=$('<div class="checkbox checkbox-primary no-padding-left sm-padding-right"><input type="checkbox" name="null" value="1" id="'+nullId+'"'+(that.data('valid')===false?' checked="true"':'')+'><label for="'+nullId+'">Null</label></div>');
+                $form.find('.editable-input').prepend($checkboxContainer);
+                var $checkbox=$checkboxContainer.find('input');
+                $checkbox.on('click',function(){
+                    if(this.checked){
+                        $checkboxContainer.next().val('');
+                        $checkboxContainer.siblings().hide();
+                    }else{
+                        $checkboxContainer.siblings().show();
+                    }
+                });
+                if($checkbox.prop('checked')) {
+                    $checkboxContainer.next().val('');
+                    $checkboxContainer.siblings().hide();
+                }
+            }
         });
     });
     $('#move-table-modal .modal-body').html($('#tpl-move-table-form').html());
