@@ -665,11 +665,11 @@ func diffIndexes(c echo.Context, formData map[string][]string, indexes map[strin
 				existing.With = strings.ReplaceAll(existing.With, "`", "")
 			}
 			if item.Type == existing.Type &&
-				fmt.Sprintf(`%#v`, columns) == fmt.Sprintf(`%#v`, existing.Columns) &&
-				fmt.Sprintf(`%#v`, lengths) == fmt.Sprintf(`%#v`, existing.Lengths) &&
-				fmt.Sprintf(`%#v`, descs) == fmt.Sprintf(`%#v`, existing.Descs) &&
+				isEqual(columns, existing.Columns) &&
+				isEqual(lengths, existing.Lengths) &&
+				isEqual(descs, existing.Descs) &&
 				item.With == existing.With &&
-				fmt.Sprintf(`%#v`, expressions) == fmt.Sprintf(`%#v`, existing.Expressions) {
+				isEqual(expressions, existing.Expressions) {
 				delete(indexes, item.Name)
 				continue
 			}
@@ -687,4 +687,8 @@ func diffIndexes(c echo.Context, formData map[string][]string, indexes map[strin
 		})
 	}
 	return alter, err
+}
+
+func isEqual(a interface{}, b interface{}) bool {
+	return fmt.Sprintf(`%#v`, a) == fmt.Sprintf(`%#v`, b)
 }
