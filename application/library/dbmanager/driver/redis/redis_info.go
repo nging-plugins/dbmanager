@@ -20,6 +20,7 @@ package redis
 
 import (
 	"errors"
+	"net/url"
 
 	"github.com/coscms/webcore/library/common"
 	"github.com/gomodule/redigo/redis"
@@ -45,20 +46,22 @@ func (r *Redis) baseInfo() error {
 		_, _, _, pagination := common.PagingWithPagination(r.Context)
 		offset := r.Form(`offset`, `0`)
 		q := r.Request().URL().Query()
-		operation := r.Query(`operation`)
+		newQ := url.Values{}
 		for k := range q {
-			if k == `operation` && q.Get(k) != `listTable` {
-				q.Del(k)
-				continue
-			}
-			if k != `accountId` && k != `size` && k != `db` {
-				q.Del(k)
+			switch k {
+			case `operation`:
+				if q.Get(k) == `listTable` {
+					newQ[k] = q[k]
+				}
+			case `accountId`, `size`, `db`:
+				newQ[k] = q[k]
 			}
 		}
+		operation := r.Query(`operation`)
 		if operation == `listTable` && q.Get(`operation`) != operation {
-			q.Set(`operation`, operation)
+			newQ.Set(`operation`, operation)
 		}
-		pagination.SetURL(`/db?`+q.Encode()+`&offset={next}&prev={prev}&size={size}`).SetPosition(``, nextOffset, offset)
+		pagination.SetURL(`/db?`+newQ.Encode()+`&offset={next}&prev={prev}&size={size}`).SetPosition(``, nextOffset, offset)
 		r.Set(`tablePagination`, pagination)
 	}
 
