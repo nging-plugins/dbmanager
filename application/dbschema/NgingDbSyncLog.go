@@ -215,10 +215,14 @@ func (a *NgingDbSyncLog) Struct_() string {
 }
 
 func (a *NgingDbSyncLog) Name_() string {
-	if a.base.Namer() != nil {
-		return WithPrefix(a.base.Namer()(a))
+	b := a
+	if b == nil {
+		b = &NgingDbSyncLog{}
 	}
-	return WithPrefix(factory.TableNamerGet(a.Short_())(a))
+	if b.base.Namer() != nil {
+		return WithPrefix(b.base.Namer()(b))
+	}
+	return WithPrefix(factory.TableNamerGet(b.Short_())(b))
 }
 
 func (a *NgingDbSyncLog) CPAFrom(source factory.Model) factory.Model {
@@ -436,7 +440,7 @@ func (a *NgingDbSyncLog) UpdateFields(mw func(db.Result) db.Result, kvset map[st
 	}
 	m := *a
 	m.FromRow(kvset)
-	var editColumns []string
+	editColumns := make([]string, 0, len(kvset))
 	for column := range kvset {
 		editColumns = append(editColumns, column)
 	}
@@ -456,7 +460,7 @@ func (a *NgingDbSyncLog) UpdatexFields(mw func(db.Result) db.Result, kvset map[s
 	}
 	m := *a
 	m.FromRow(kvset)
-	var editColumns []string
+	editColumns := make([]string, 0, len(kvset))
 	for column := range kvset {
 		editColumns = append(editColumns, column)
 	}
@@ -603,6 +607,9 @@ func (a *NgingDbSyncLog) AsMap(onlyFields ...string) param.Store {
 
 func (a *NgingDbSyncLog) FromRow(row map[string]interface{}) {
 	for key, value := range row {
+		if _, ok := value.(db.RawValue); ok {
+			continue
+		}
 		switch key {
 		case "id":
 			a.Id = param.AsUint64(value)
@@ -621,6 +628,65 @@ func (a *NgingDbSyncLog) FromRow(row map[string]interface{}) {
 		case "failed":
 			a.Failed = param.AsUint(value)
 		}
+	}
+}
+
+func (a *NgingDbSyncLog) GetField(field string) interface{} {
+	switch field {
+	case "Id":
+		return a.Id
+	case "SyncId":
+		return a.SyncId
+	case "Created":
+		return a.Created
+	case "Result":
+		return a.Result
+	case "ChangeTables":
+		return a.ChangeTables
+	case "ChangeTableNum":
+		return a.ChangeTableNum
+	case "Elapsed":
+		return a.Elapsed
+	case "Failed":
+		return a.Failed
+	default:
+		return nil
+	}
+}
+
+func (a *NgingDbSyncLog) GetAllFieldNames() []string {
+	return []string{
+		"Id",
+		"SyncId",
+		"Created",
+		"Result",
+		"ChangeTables",
+		"ChangeTableNum",
+		"Elapsed",
+		"Failed",
+	}
+}
+
+func (a *NgingDbSyncLog) HasField(field string) bool {
+	switch field {
+	case "Id":
+		return true
+	case "SyncId":
+		return true
+	case "Created":
+		return true
+	case "Result":
+		return true
+	case "ChangeTables":
+		return true
+	case "ChangeTableNum":
+		return true
+	case "Elapsed":
+		return true
+	case "Failed":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -701,17 +767,19 @@ func (a *NgingDbSyncLog) AsRow(onlyFields ...string) param.Store {
 }
 
 func (a *NgingDbSyncLog) ListPage(cond *db.Compounds, sorts ...interface{}) error {
-	_, err := pagination.NewLister(a, nil, func(r db.Result) db.Result {
-		return r.OrderBy(sorts...)
-	}, cond.And()).Paging(a.Context())
-	return err
+	return pagination.ListPage(a, cond, sorts...)
 }
 
 func (a *NgingDbSyncLog) ListPageAs(recv interface{}, cond *db.Compounds, sorts ...interface{}) error {
-	_, err := pagination.NewLister(a, recv, func(r db.Result) db.Result {
-		return r.OrderBy(sorts...)
-	}, cond.And()).Paging(a.Context())
-	return err
+	return pagination.ListPageAs(a, recv, cond, sorts...)
+}
+
+func (a *NgingDbSyncLog) ListPageByOffset(cond *db.Compounds, sorts ...interface{}) error {
+	return pagination.ListPageByOffset(a, cond, sorts...)
+}
+
+func (a *NgingDbSyncLog) ListPageByOffsetAs(recv interface{}, cond *db.Compounds, sorts ...interface{}) error {
+	return pagination.ListPageByOffsetAs(a, recv, cond, sorts...)
 }
 
 func (a *NgingDbSyncLog) BatchValidate(kvset map[string]interface{}) error {

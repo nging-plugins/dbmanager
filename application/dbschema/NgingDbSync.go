@@ -220,10 +220,14 @@ func (a *NgingDbSync) Struct_() string {
 }
 
 func (a *NgingDbSync) Name_() string {
-	if a.base.Namer() != nil {
-		return WithPrefix(a.base.Namer()(a))
+	b := a
+	if b == nil {
+		b = &NgingDbSync{}
 	}
-	return WithPrefix(factory.TableNamerGet(a.Short_())(a))
+	if b.base.Namer() != nil {
+		return WithPrefix(b.base.Namer()(b))
+	}
+	return WithPrefix(factory.TableNamerGet(b.Short_())(b))
 }
 
 func (a *NgingDbSync) CPAFrom(source factory.Model) factory.Model {
@@ -441,7 +445,7 @@ func (a *NgingDbSync) UpdateFields(mw func(db.Result) db.Result, kvset map[strin
 	}
 	m := *a
 	m.FromRow(kvset)
-	var editColumns []string
+	editColumns := make([]string, 0, len(kvset))
 	for column := range kvset {
 		editColumns = append(editColumns, column)
 	}
@@ -461,7 +465,7 @@ func (a *NgingDbSync) UpdatexFields(mw func(db.Result) db.Result, kvset map[stri
 	}
 	m := *a
 	m.FromRow(kvset)
-	var editColumns []string
+	editColumns := make([]string, 0, len(kvset))
 	for column := range kvset {
 		editColumns = append(editColumns, column)
 	}
@@ -629,6 +633,9 @@ func (a *NgingDbSync) AsMap(onlyFields ...string) param.Store {
 
 func (a *NgingDbSync) FromRow(row map[string]interface{}) {
 	for key, value := range row {
+		if _, ok := value.(db.RawValue); ok {
+			continue
+		}
 		switch key {
 		case "id":
 			a.Id = param.AsUint(value)
@@ -657,6 +664,90 @@ func (a *NgingDbSync) FromRow(row map[string]interface{}) {
 		case "updated":
 			a.Updated = param.AsInt(value)
 		}
+	}
+}
+
+func (a *NgingDbSync) GetField(field string) interface{} {
+	switch field {
+	case "Id":
+		return a.Id
+	case "Name":
+		return a.Name
+	case "SourceAccountId":
+		return a.SourceAccountId
+	case "DsnSource":
+		return a.DsnSource
+	case "DestinationAccountId":
+		return a.DestinationAccountId
+	case "DsnDestination":
+		return a.DsnDestination
+	case "Tables":
+		return a.Tables
+	case "SkipTables":
+		return a.SkipTables
+	case "AlterIgnore":
+		return a.AlterIgnore
+	case "Drop":
+		return a.Drop
+	case "MailTo":
+		return a.MailTo
+	case "Created":
+		return a.Created
+	case "Updated":
+		return a.Updated
+	default:
+		return nil
+	}
+}
+
+func (a *NgingDbSync) GetAllFieldNames() []string {
+	return []string{
+		"Id",
+		"Name",
+		"SourceAccountId",
+		"DsnSource",
+		"DestinationAccountId",
+		"DsnDestination",
+		"Tables",
+		"SkipTables",
+		"AlterIgnore",
+		"Drop",
+		"MailTo",
+		"Created",
+		"Updated",
+	}
+}
+
+func (a *NgingDbSync) HasField(field string) bool {
+	switch field {
+	case "Id":
+		return true
+	case "Name":
+		return true
+	case "SourceAccountId":
+		return true
+	case "DsnSource":
+		return true
+	case "DestinationAccountId":
+		return true
+	case "DsnDestination":
+		return true
+	case "Tables":
+		return true
+	case "SkipTables":
+		return true
+	case "AlterIgnore":
+		return true
+	case "Drop":
+		return true
+	case "MailTo":
+		return true
+	case "Created":
+		return true
+	case "Updated":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -762,17 +853,19 @@ func (a *NgingDbSync) AsRow(onlyFields ...string) param.Store {
 }
 
 func (a *NgingDbSync) ListPage(cond *db.Compounds, sorts ...interface{}) error {
-	_, err := pagination.NewLister(a, nil, func(r db.Result) db.Result {
-		return r.OrderBy(sorts...)
-	}, cond.And()).Paging(a.Context())
-	return err
+	return pagination.ListPage(a, cond, sorts...)
 }
 
 func (a *NgingDbSync) ListPageAs(recv interface{}, cond *db.Compounds, sorts ...interface{}) error {
-	_, err := pagination.NewLister(a, recv, func(r db.Result) db.Result {
-		return r.OrderBy(sorts...)
-	}, cond.And()).Paging(a.Context())
-	return err
+	return pagination.ListPageAs(a, recv, cond, sorts...)
+}
+
+func (a *NgingDbSync) ListPageByOffset(cond *db.Compounds, sorts ...interface{}) error {
+	return pagination.ListPageByOffset(a, cond, sorts...)
+}
+
+func (a *NgingDbSync) ListPageByOffsetAs(recv interface{}, cond *db.Compounds, sorts ...interface{}) error {
+	return pagination.ListPageByOffsetAs(a, recv, cond, sorts...)
 }
 
 func (a *NgingDbSync) BatchValidate(kvset map[string]interface{}) error {
