@@ -29,15 +29,15 @@
 						</tr>
 					</thead>
 					<tbody class="no-border-x" id="tbody-content">
-                        {{$dbName := $.Stored.dbName}}
-                        {{range $k,$v := $.Stored.tableList}}
+                        {{- $dbName := $.Stored.dbName -}}
+                        {{- range $k,$v := $.Stored.tableList -}}
 						<tr>
                             <td>
                                 <div class="checkbox checkbox-primary no-margin-y"><input id="checkbox-{{$k}}" class="check-table" type="checkbox" name="key[]" value="{{$v}}"><label for="checkbox-{{$k}}"></label></div>
                             </td>
-							<td><a href="{{call $.Func.dbMgrURL "viewTable" $dbName $v}}">{{$v}}</a></td>
+							<td><a href="{{call $.Func.dbMgrURL `viewTable` $dbName $v}}">{{$v}}</a></td>
 						</tr>
-                        {{end}}
+                        {{- end -}}
 					</tbody>
 				</table>
 				</div>

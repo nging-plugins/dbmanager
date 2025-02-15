@@ -2,12 +2,12 @@
 {{Block "title"}}{{"修改数据"|$.T}}: {{$.Stored.table}} - {{Super}}{{/Block}}
 {{Block "breadcrumb"}}
 {{Super}}
-<li><a href="{{call $.Func.dbMgrURL "listTable" $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
-{{if $.Stored.table}}
-<li><a href="{{call $.Func.dbMgrURL "viewTable" $.Stored.dbName $.Stored.table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$.Stored.table}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
+{{- if $.Stored.table -}}
+<li><a href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $.Stored.table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$.Stored.table}}</a></li>
 <li class="active">{{"修改数据"|$.T}}</li>
-{{else}}
-{{end}}
+{{- else -}}
+{{- end -}}
 <li class="active">{{"添加数据"|$.T}}</li>
 {{/Block}}
 {{Block "main"}}
@@ -22,37 +22,37 @@
           <div class="col-sm-9">
           {{$dataType := $.Form "type"}}
           <select class="form-control" name="type" id="value-type" rel="{{if $dataType}}{{$dataType}}{{else}}string{{end}}">
-                <option value="string"{{if or (eq $dataType "string") (eq $dataType "")}} selected{{end}}>String</option>
-                <option value="hash"{{if eq $dataType "hash"}} selected{{end}}>Hash</option>
-                <option value="list"{{if eq $dataType "list"}} selected{{end}}>List</option>
-                <option value="set"{{if eq $dataType "set"}} selected{{end}}>Set</option>
-                <option value="zset"{{if eq $dataType "zset"}} selected{{end}}>ZSet</option>
+                <option value="string"{{if eq $dataType `string` ``}} selected{{end}}>String</option>
+                <option value="hash"{{if eq $dataType `hash`}} selected{{end}}>Hash</option>
+                <option value="list"{{if eq $dataType `list`}} selected{{end}}>List</option>
+                <option value="set"{{if eq $dataType `set`}} selected{{end}}>Set</option>
+                <option value="zset"{{if eq $dataType `zset`}} selected{{end}}>ZSet</option>
           </select>
           </div>
       </div>
       <div class="form-group">
           <label class="col-sm-2 control-label">{{"Key"|$.T}}</label>
           <div class="col-sm-9">
-          <input class="form-control" type="text" name="key" value="{{$.Form "key"}}" id="value-key">
+          <input class="form-control" type="text" name="key" value="{{$.Form `key`}}" id="value-key">
           </div>
       </div>
       <div class="form-group" id="ipt-hkey-container">
           <label class="col-sm-2 control-label">{{"Hash Key"|$.T}}</label>
           <div class="col-sm-9">
-          <input class="form-control" type="text" name="hkey" value="{{$.Form "hkey"}}" id="value-hkey">
+          <input class="form-control" type="text" name="hkey" value="{{$.Form `hkey`}}" id="value-hkey">
           </div>
       </div>
       <div class="form-group" id="ipt-index-container">
           <label class="col-sm-2 control-label">{{"Index"|$.T}}</label>
           <div class="col-sm-9">
-          <input class="form-control" type="text" name="index" value="{{$.Form "index"}}" id="value-index">
+          <input class="form-control" type="text" name="index" value="{{$.Form `index`}}" id="value-index">
           <div class="help-block">{{"empty to append, -1 to prepend"|$.T}}</div>
           </div>
       </div>
       <div class="form-group" id="ipt-score-container">
           <label class="col-sm-2 control-label">{{"Score"|$.T}}</label>
           <div class="col-sm-9">
-          <input class="form-control" type="text" name="score" value="{{$.Form "score"}}" id="value-score">
+          <input class="form-control" type="text" name="score" value="{{$.Form `score`}}" id="value-score">
           </div>
       </div>
       <div class="form-group">
@@ -63,9 +63,9 @@
       </div>
                 <div class="form-group form-submit-group">
                   <div class="col-sm-9 col-sm-offset-2">
-                    <input type="hidden" id="ipt-old-value" name="oldvalue" value="{{$.Form "value"}}">
+                    <input type="hidden" id="ipt-old-value" name="oldvalue" value="{{$.Form `value`}}">
                     <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
-                    <a class="btn btn-default btn-lg" href="{{if $.Stored.table}}{{call $.Func.dbMgrURL "viewTable" $.Stored.dbName $.Stored.table}}{{else}}{{call $.Func.dbMgrURL "listTable" $.Stored.dbName}}{{end}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+                    <a class="btn btn-default btn-lg" href="{{if $.Stored.table}}{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $.Stored.table}}{{else}}{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}{{end}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
                   </div>
               </div>
                 </form>
@@ -77,7 +77,6 @@
 
 {{Block "footer"}}
 {{Super}}
-
 <script>
 $(function(){
   $('#value-type').off().on('change',function(e) {

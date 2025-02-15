@@ -16,7 +16,7 @@
 <link rel="stylesheet" type="text/css" href="{{AssetsURL}}/js/bootstrap.slider/css/slider.css" />
 {{/Block}}
 {{Block "bodyNav"}}
-{{if $.Stored.Get "signedIn"}}
+{{- if $.Stored.Get "signedIn" -}}
   <div class="page-aside app codeditor tree">
       <a class="label label-primary collapsed-button"><i class="fa fa-angle-double-right"></i></a>
       <button class="navbar-toggle no-margin wd-100p" data-target="#body-left-navigate" data-toggle="collapse" type="button">
@@ -35,26 +35,26 @@
               {{- end -}}
             </h2>
             <p class="description">
-            <span class="label label-default" title="{{$.Stored.Get "driver"}} {{$.Stored.Get "dbVersion"}}">
+            <span class="label label-default" title="{{$.Stored.Get `driver`}} {{$.Stored.Get `dbVersion`}}">
                {{$.Stored.Get "driver"}} {{$.Stored.Get "dbVersion"}}
             </span>
             </p>
-            {{$dbList := $.Stored.Get "dbList"}}
-            {{$dbName := $.Stored.Get "dbName"}}
-            {{if $dbList}}
+            {{- $dbList := $.Stored.Get "dbList" -}}
+            {{- $dbName := $.Stored.Get "dbName" -}}
+            {{- if $dbList -}}
             <div class="input-group">
               <span class="input-group-addon">{{"数据库"|$.T}}</span>
               <select name="db" class="form-control" id="dbmanager-db-list">
                 <option value="">{{if $dbName}}{{"<其它库>"|}}{{else}}{{"<未选择>"|}}{{end}}</option><!-- 对于有很多库的情况下如果总是全部列出来会很慢，所以改为只列出选中的数据库，没选中任何库的时候才全部列出 -->
-                {{range $k,$v:=$dbList}}
+                {{- range $k,$v:=$dbList -}}
                 <option value="{{$v}}"{{if eq $dbName $v}} selected{{end}}>{{$v}}</option>
-                {{end}}
+                {{- end -}}
               </select>
             </div>
-            {{end}}
+            {{- end -}}
           </div>
         <div class="app-nav sm-line-height no-margin-top">
-          {{if $dbName}}
+          {{- if $dbName -}}
           <div class="compose no-padding no-border">
             <div class="btn-group">
             <a href="{{call $.Func.dbMgrURL "runCommand" $dbName}}" class="btn btn-flat btn-xs btn-info">{{"SQL命令"|$.T}}</a>
@@ -66,34 +66,34 @@
           </div>
           <p class="title">{{"数据表"|$.T}}</p>
           <ul class="nav nav-pills nav-stacked" id="dbmanager-table-list">
-              {{$tableList := $.Stored.Get "tableList"}}
-              {{if $tableList}}
-              {{$currentTable := $.Stored.table}}
-              {{range $k,$v:=$tableList}}
+              {{- $tableList := $.Stored.Get "tableList" -}}
+              {{- if $tableList -}}
+              {{- $currentTable := $.Stored.table -}}
+              {{- range $k,$v:=$tableList -}}
               <li{{if eq $currentTable $v}} class="active"{{end}}>
-                <a href="{{call $.Func.dbMgrURL "listData" $dbName $v}}" title="{{"查询"|$.T}}" class="fa fa-search {{$.Stored.operation}}" data-pjax="#pcont" data-keepjs="true" data-onclick="dbNavClick"></a>
-                <a href="{{call $.Func.dbMgrURL "viewTable" $dbName $v}}" title="{{$v}}" data-pjax="#pcont" data-keepjs="true" data-onclick="dbNavClick">{{$v}}</a>
+                <a href="{{call $.Func.dbMgrURL `listData` $dbName $v}}" title="{{`查询`|$.T}}" class="fa fa-search {{$.Stored.operation}}" data-pjax="#pcont" data-keepjs="true" data-onclick="dbNavClick"></a>
+                <a href="{{call $.Func.dbMgrURL `viewTable` $dbName $v}}" title="{{$v}}" data-pjax="#pcont" data-keepjs="true" data-onclick="dbNavClick">{{$v}}</a>
               </li>
-              {{end}}
-              {{end}}
+              {{- end -}}
+              {{- end -}}
           </ul>
 
           <div class="compose">
             <div class="btn-group">
-            <a href="{{call $.Func.dbMgrURL "runCommand" $dbName}}" class="btn btn-flat btn-xs btn-info">{{"SQL命令"|$.T}}</a>
-            <a href="{{call $.Func.dbMgrURL "createTable" $dbName}}" class="btn btn-flat btn-xs btn-primary" data-pjax="#pcont" data-keepjs="true">{{"创建表"|$.T}}</a>
-            <a href="{{call $.Func.dbMgrURL "modifyDb" $dbName}}" class="btn btn-flat btn-xs btn-success" data-pjax="#pcont" data-keepjs="true">{{"修改库"|$.T}}</a>
-            <a href="{{call $.Func.dbMgrURL "import" $dbName}}" class="btn btn-flat btn-xs btn-warning" data-pjax="#pcont" data-keepjs="true">{{"导入"|$.T}}</a>
-            <a href="{{call $.Func.dbMgrURL "export" $dbName}}" class="btn btn-flat btn-xs btn-danger" data-pjax="#pcont" data-keepjs="true">{{"导出"|$.T}}</a>
+            <a href="{{call $.Func.dbMgrURL `runCommand` $dbName}}" class="btn btn-flat btn-xs btn-info">{{"SQL命令"|$.T}}</a>
+            <a href="{{call $.Func.dbMgrURL `createTable` $dbName}}" class="btn btn-flat btn-xs btn-primary" data-pjax="#pcont" data-keepjs="true">{{"创建表"|$.T}}</a>
+            <a href="{{call $.Func.dbMgrURL `modifyDb` $dbName}}" class="btn btn-flat btn-xs btn-success" data-pjax="#pcont" data-keepjs="true">{{"修改库"|$.T}}</a>
+            <a href="{{call $.Func.dbMgrURL `import` $dbName}}" class="btn btn-flat btn-xs btn-warning" data-pjax="#pcont" data-keepjs="true">{{"导入"|$.T}}</a>
+            <a href="{{call $.Func.dbMgrURL `export` $dbName}}" class="btn btn-flat btn-xs btn-danger" data-pjax="#pcont" data-keepjs="true">{{"导出"|$.T}}</a>
             </div>
           </div>
-          {{end}}
+          {{- end -}}
         </div><!-- .app-nav -->
         </div>
         
       </div>
 	</div>		
-{{end}}
+{{- end -}}
 {{/Block}}
 
 {{Block "main"}}
