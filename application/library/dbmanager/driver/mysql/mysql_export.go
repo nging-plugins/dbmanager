@@ -28,8 +28,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/admpub/archiver"
+	"github.com/admpub/arc"
 	loga "github.com/admpub/log"
+	"github.com/mholt/archives"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/code"
@@ -258,7 +259,13 @@ func (m *mySQL) Export() error {
 					Path:       zipFile,
 					Compressed: true,
 				}
-				err = archiver.Archive(sqlFiles, zipFile)
+				var files []archives.FileInfo
+				files, err = arc.MakeFilesMap(c, sqlFiles, dbSaveDir)
+				if err != nil {
+					loga.Error(err)
+					return err
+				}
+				err = arc.ArchiveFiles(context.Background(), files, zipFile, nil, arc.ArchivalMap[`zip`])
 				if err != nil {
 					loga.Error(err)
 					return err
