@@ -28,6 +28,7 @@ func (m *mySQL) importDB(c context.Context, noticer *notice.NoticeAndProgress,
 	if err != nil {
 		return
 	}
+	defer ifi.Close()
 	var dbfactory *factory.Factory
 	dbfactory, err = connect(cfg)
 	if err != nil {

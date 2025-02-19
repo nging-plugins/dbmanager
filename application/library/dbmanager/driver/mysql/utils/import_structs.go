@@ -1,14 +1,12 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/admpub/arc"
 	"github.com/admpub/collate"
 	"github.com/admpub/log"
 	"github.com/webx-top/com"
@@ -65,7 +63,7 @@ func ParseImportFile(cacheDir string, files []string) (*ImportFile, error) {
 			if err != nil {
 				return nil, err
 			}
-			err = arc.Unarchive(context.Background(), sqlFile, dir)
+			err = com.Unzip(sqlFile, dir)
 			if err != nil {
 				log.Error(err)
 				continue

@@ -28,9 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/admpub/arc"
 	loga "github.com/admpub/log"
-	"github.com/mholt/archives"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/code"
@@ -147,6 +145,7 @@ func (m *mySQL) Export() error {
 			structWriter, dataWriter interface{}
 			sqlFiles                 []string
 			dbSaveDir                string
+			sqlSaveDir               string
 			async                    bool
 			bgExec                   = background.New(context.TODO(), echo.H{
 				`database`: m.dbName,
@@ -178,9 +177,10 @@ func (m *mySQL) Export() error {
 		default:
 			async = true
 			dbSaveDir = filepath.Join(saveDir, m.dbName)
-			com.MkdirAll(dbSaveDir, os.ModePerm)
+			sqlSaveDir = filepath.Join(dbSaveDir, nowTime)
+			com.MkdirAll(sqlSaveDir, os.ModePerm)
 			if com.InSlice(`struct`, types) {
-				structFile := filepath.Join(dbSaveDir, `struct-`+nowTime+`.sql`)
+				structFile := filepath.Join(sqlSaveDir, `struct-`+nowTime+`.sql`)
 				sqlFiles = append(sqlFiles, structFile)
 				structWriter = structFile
 				fi := &utils.FileInfo{
@@ -190,7 +190,7 @@ func (m *mySQL) Export() error {
 				*fileInfos = append(*fileInfos, fi)
 			}
 			if com.InSlice(`data`, types) {
-				dataFile := filepath.Join(dbSaveDir, `data-`+nowTime+`.sql`)
+				dataFile := filepath.Join(sqlSaveDir, `data-`+nowTime+`.sql`)
 				sqlFiles = append(sqlFiles, dataFile)
 				dataWriter = dataFile
 				fi := &utils.FileInfo{
@@ -259,24 +259,12 @@ func (m *mySQL) Export() error {
 					Path:       zipFile,
 					Compressed: true,
 				}
-				var files []archives.FileInfo
-				files, err = arc.MakeFilesMap(c, sqlFiles, dbSaveDir)
+				fi.Size, err = com.Zip(sqlSaveDir, zipFile)
 				if err != nil {
 					loga.Error(err)
 					return err
 				}
-				err = arc.ArchiveFiles(context.Background(), files, zipFile, nil, arc.ArchivalMap[`zip`])
-				if err != nil {
-					loga.Error(err)
-					return err
-				}
-				for _, sqlFile := range sqlFiles {
-					os.Remove(sqlFile)
-				}
-				fi.Size, err = com.FileSize(zipFile)
-				if err != nil {
-					fi.Error = err.Error()
-				}
+				os.RemoveAll(sqlSaveDir)
 				fi.End = time.Now()
 				fi.Elapsed = fi.End.Sub(fi.Start)
 				fileInfos.Add(fi)
