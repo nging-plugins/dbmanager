@@ -62,8 +62,8 @@ var (
 	reOnlyNumber            = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?$`)
 	reOnlyFloatOrEmpty      = regexp.MustCompile(`^[0-9]*\.[0-9]*$`)
 	reChineseAndPunctuation = regexp.MustCompile(`[\x80-\xFF]`)
-	reSQLCondOrder          = regexp.MustCompile("^((COUNT\\(DISTINCT |[A-Z0-9_]+\\()(`(?:[^`]|``)+`|\"(?:[^\"]|\"\")+\")\\)|COUNT\\(\\*\\))$")
-	reSQLFunction           = regexp.MustCompile("^(COUNT\\((\\*|(DISTINCT )?`(?:[^`]|``)+`)\\)|(AVG|GROUP_CONCAT|MAX|MIN|SUM|CHAR_LENGTH|DATE|FROM_UNIXTIME|LOWER|ROUND|SEC_TO_TIME|TIME_TO_SEC|UPPER)\\(`(?:[^`]|``)+`\\))$")
+	//reSQLCondOrder          = regexp.MustCompile("^((COUNT\\(DISTINCT |[A-Z0-9_]+\\()(`(?:[^`]|``)+`|\"(?:[^\"]|\"\")+\")\\)|COUNT\\(\\*\\))$")
+	reSQLFunction = regexp.MustCompile("^(COUNT\\((\\*|(DISTINCT )?`(?:[^`]|``)+`)\\)|(AVG|GROUP_CONCAT|MAX|MIN|SUM|CHAR_LENGTH|DATE|FROM_UNIXTIME|LOWER|ROUND|SEC_TO_TIME|TIME_TO_SEC|UPPER)\\(`(?:[^`]|``)+`\\))$")
 
 	//Charsets MySQL 支持的字符集
 	Charsets = utils.Charsets
@@ -162,7 +162,7 @@ var (
 	types = map[string]uint64{} ///< @var array ($type,$maximum_unsigned_length, ...)
 
 	operators     = []string{"=", "<", ">", "<=", ">=", "!=", "LIKE", "LIKE %%", "REGEXP", "IN", "IS NULL", "NOT LIKE", "NOT REGEXP", "NOT IN", "IS NOT NULL", "SQL"} ///< @var array operators used in select
-	functions     = []string{"char_length", "date", "from_unixtime", "lower", "round", "sec_to_time", "time_to_sec", "upper", "json_pretty"}                          ///< @var array functions used in select
+	functions     = []string{"char_length", "date", "from_unixtime", "lower", "round", "floor", "ceil", "sec_to_time", "time_to_sec", "upper", "json_pretty"}         ///< @var array functions used in select
 	grouping      = []string{"avg", "count", "count distinct", "group_concat", "max", "min", "sum"}                                                                   ///< @var array grouping functions used in select
 	editFunctions = []map[string][]string{
 		///< @var array of array("$type|$type2" => "$function/$function2") functions used in editing, [0] - edit and insert, [1] - edit only
