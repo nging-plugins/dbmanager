@@ -55,6 +55,8 @@ func (f *Field) Init(t *Table, index string) {
 	if f.AutoIncrement.Valid {
 		f.AutoIncrement.String = t.Ai_start_val
 	}
+	f.GenerationType = ``
+	f.GenerationType = ``
 	switch f.OptionType {
 	case `default`:
 		f.Default = f.OptionValue
