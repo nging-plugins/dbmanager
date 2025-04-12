@@ -29,19 +29,23 @@ func (t *Table) AfterValidate(_ echo.Context) error {
 }
 
 type Field struct {
-	Field         string
-	Orig          string // 字段旧名称
-	Type          string
-	Length        string
-	Unsigned      string
-	Collation     string
-	On_delete     string
-	On_update     string
-	Null          bool
-	Comment       string
-	Default       string
-	Has_default   bool
-	AutoIncrement sql.NullString `form_options:"-"`
+	Field          string
+	Orig           string // 字段旧名称
+	Type           string
+	Length         string
+	Unsigned       string
+	Collation      string
+	On_delete      string
+	On_update      string
+	Null           bool
+	Comment        string
+	Default        string
+	Has_default    bool
+	AutoIncrement  sql.NullString `form_options:"-"`
+	GenerationExpr string
+	GenerationType string
+	OptionType     string
+	OptionValue    string
 }
 
 func (f *Field) Init(t *Table, index string) {
@@ -50,5 +54,16 @@ func (f *Field) Init(t *Table, index string) {
 	}
 	if f.AutoIncrement.Valid {
 		f.AutoIncrement.String = t.Ai_start_val
+	}
+	switch f.OptionType {
+	case `default`:
+		f.Default = f.OptionValue
+		f.Has_default = true
+	case `vitual`:
+		f.GenerationExpr = f.OptionValue
+		f.GenerationType = `VIRTUAL`
+	case `stored`:
+		f.GenerationExpr = f.OptionValue
+		f.GenerationType = `STORED`
 	}
 }

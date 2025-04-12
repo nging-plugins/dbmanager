@@ -26,6 +26,7 @@ import (
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
+	"github.com/webx-top/echo/param"
 )
 
 type KV struct {
@@ -433,15 +434,85 @@ type SupportedEngine struct {
 }
 
 type FieldInfo struct {
-	Field      sql.NullString
-	Type       sql.NullString
-	Collation  sql.NullString
-	Null       sql.NullString
-	Key        sql.NullString
-	Default    sql.NullString
-	Extra      sql.NullString
-	Privileges sql.NullString
-	Comment    sql.NullString
+	Field          sql.NullString
+	Type           sql.NullString
+	Collation      sql.NullString
+	Null           sql.NullString
+	Key            sql.NullString
+	Default        sql.NullString
+	Extra          sql.NullString
+	Privileges     sql.NullString
+	Comment        sql.NullString
+	GenerationExpr sql.NullString
+}
+
+func (v *FieldInfo) AsField() *Field {
+	match := reField.FindStringSubmatch(v.Type.String)
+	var onUpdate string
+	omatch := reFieldOnUpdate.FindStringSubmatch(v.Extra.String)
+	if len(omatch) > 1 {
+		onUpdate = omatch[1]
+	}
+	privileges := map[string]int{}
+	for k, v := range reFieldPrivilegeDelim.Split(v.Privileges.String, -1) {
+		privileges[v] = k
+	}
+	field := &Field{
+		Field:         v.Field.String,
+		Full_type:     v.Type.String,
+		Type:          match[1],
+		Length:        match[2],
+		Precision:     0,
+		Unsigned:      strings.TrimLeft(match[3]+match[4], ` `),
+		Default:       v.Default,
+		Null:          v.Null.String == `YES`,
+		AutoIncrement: sql.NullString{},
+		On_update:     onUpdate,
+		Collation:     v.Collation.String,
+		Privileges:    privileges,
+		Comment:       v.Comment.String,
+		Primary:       v.Key.String == "PRI",
+	}
+	switch field.Type {
+	case `decimal`, `float`, `double`:
+		sizeInfo := strings.SplitN(field.Length, `,`, 2)
+		switch len(sizeInfo) {
+		case 2:
+			field.Precision = param.AsInt(sizeInfo[1])
+			fallthrough
+		case 1:
+			field.LengthN = param.AsInt(sizeInfo[0])
+		}
+
+	case `enum`, `set`:
+		field.Options = strings.Split(strings.Trim(field.Length, `'`), `','`)
+		if field.Default.Valid {
+			if len(field.Default.String) == 0 && !com.InSlice(``, field.Options) {
+				field.Options = append(field.Options, ``)
+			}
+		}
+
+	default:
+		if len(field.Length) > 0 && com.StrIsNumeric(field.Length) {
+			field.LengthN = param.AsInt(field.Length)
+		}
+	}
+	field.GenerationExpr = v.GenerationExpr.String
+	switch v.Extra.String {
+	// GENERATED ALWAYS AS (...) VIRTUAL
+	// 列值不存储，虚拟列不占用存储空间
+	case `VIRTUAL GENERATED`:
+		field.GenerationType = `VIRTUAL`
+
+	// GENERATED ALWAYS AS (...) STORED
+	// 在添加或更新行时计算并存储列值。存储列需要存储空间
+	case `STORED GENERATED`:
+		field.GenerationType = `STORED`
+
+	case `auto_increment`: // 自增
+		field.AutoIncrement.Valid = true
+	}
+	return field
 }
 
 type IndexInfo struct {
@@ -474,23 +545,25 @@ type Indexes struct {
 }
 
 type Field struct {
-	Field         string
-	Full_type     string
-	Type          string
-	Options       []string
-	Length        string
-	LengthN       int
-	Precision     int
-	Unsigned      string
-	Default       sql.NullString
-	Null          bool
-	AutoIncrement sql.NullString
-	On_update     string
-	On_delete     string
-	Collation     string
-	Privileges    map[string]int
-	Comment       string
-	Primary       bool
+	Field          string
+	Full_type      string
+	Type           string
+	Options        []string
+	Length         string
+	LengthN        int
+	Precision      int
+	Unsigned       string
+	Default        sql.NullString
+	Null           bool
+	AutoIncrement  sql.NullString
+	On_update      string
+	On_delete      string
+	Collation      string
+	Privileges     map[string]int
+	Comment        string
+	Primary        bool
+	GenerationType string
+	GenerationExpr string
 
 	Original string
 }
@@ -510,6 +583,8 @@ func (f *Field) CopyFromRequest(d *formdata.Field) {
 		Valid:  d.Has_default,
 	}
 	f.AutoIncrement = d.AutoIncrement
+	f.GenerationType = d.GenerationType
+	f.GenerationExpr = d.GenerationExpr
 }
 
 func (f *Field) MaxSize() int {
@@ -574,6 +649,15 @@ func (f *Field) InputType() string {
 			return `textarea`
 		}
 		return `text`
+	}
+}
+
+func (f *Field) MakeGenerationExpr() string {
+	switch f.GenerationType {
+	case `VIRTUAL`, `STORED`:
+		return `GENERATED ALWAYS AS (` + f.GenerationExpr + `) ` + f.GenerationType
+	default:
+		return ``
 	}
 }
 

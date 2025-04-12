@@ -42,7 +42,11 @@ function textInputFloat(a,title,alwayShow,offsetY){
         if(event.keyCode!=13)return;
         sb.call(this,event);
     });
-    $(a).after(te);
+    if($(a).parent('.input-group').length>0){
+        $(a).parent('.input-group').before(te);
+    }else{
+        $(a).after(te);
+    }
     te.find('input').focus();
     if(te.offset().left+te.width()>$(window).width()){
         te.css('right',0);

@@ -725,7 +725,7 @@ func (m *mySQL) ModifyTable() error {
 					if driverName == `sqlite` || len(oldTable) == 0 {
 						foreign[quoteCol(field.Field)] = ` ` + foreignK
 					} else {
-						foreign[quoteCol(field.Field)] = `ADD` + foreignK
+						foreign[quoteCol(field.Field)] = ` ADD ` + foreignK
 					}
 				}
 				if typeField == nil {
@@ -1874,7 +1874,7 @@ func (m *mySQL) RunCommand() error {
 				continue
 			}
 
-			if !regexp.MustCompile(`(?i)^(` + space + `|\()*(SELECT|SHOW|EXPLAIN)\b`).MatchString(query) {
+			if !regexp.MustCompile(`(?i)^(` + space + `|\()*(SELECT|SHOW|EXPLAIN|DESC|DESCRIBE)\b`).MatchString(query) {
 				execute := nsql.SQLLineParser(func(sqlStr string) error {
 					r := &Result{
 						SQL: sqlStr,

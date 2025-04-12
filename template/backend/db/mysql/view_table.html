@@ -56,6 +56,7 @@
                 <td><b>{{$v.Field}}</b></td>
                 <td title="{{$v.Type}}">
                   {{$v.Full_type}}
+                  {{$v.MakeGenerationExpr}}
                   {{if $v.Null}}<span>NULL</span>{{end}}
                   {{if $v.AutoIncrement.Valid}}<em>{{"自动增量"|$.T}}</em>{{end}}
                   {{if $v.Default.Valid}}[<b>{{$v.Default.String}}</b>]{{end}}

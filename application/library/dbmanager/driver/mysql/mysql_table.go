@@ -426,7 +426,66 @@ func (m *mySQL) tablePartitions(table string) (*Partition, error) {
 }
 
 func (m *mySQL) tableFields(table string, dbfactory ...*factory.Factory) (map[string]*Field, []string, error) {
+	//return m.tableFieldsAdvance(table, dbfactory...)
+	return m.tableFieldsSimple(table, dbfactory...)
+}
+
+func (m *mySQL) tableFieldsSimple(table string, dbfactory ...*factory.Factory) (map[string]*Field, []string, error) {
 	sqlStr := `SHOW FULL COLUMNS FROM ` + quoteCol(table)
+	rows, err := m.newParam(dbfactory...).SetCollection(sqlStr).Query()
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	ret := map[string]*Field{}
+	sorts := []string{}
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
+	n := len(cols)
+	var hasGenerated bool
+	for rows.Next() {
+		v := &FieldInfo{}
+		err := safeScan(rows, n, &v.Field, &v.Type, &v.Collation, &v.Null, &v.Key, &v.Default, &v.Extra, &v.Privileges, &v.Comment)
+		if err != nil {
+			return nil, nil, fmt.Errorf(`%v: %v`, sqlStr, err)
+		}
+		sorts = append(sorts, v.Field.String)
+		field := v.AsField()
+		if field.GenerationType == `VIRTUAL` || field.GenerationType == `STORED` {
+			hasGenerated = true
+		}
+		ret[v.Field.String] = field
+	}
+	if hasGenerated {
+		ddl, err := m.tableDDL(table)
+		if err != nil {
+			return ret, sorts, err
+		}
+		matches := reGeneratedColumn.FindAllStringSubmatch(ddl, -1)
+		// [
+		//   [
+		//     "`food_type` varchar(25) GENERATED ALWAYS AS (json_value(`attr`,'$.details.foodType')) VIRTUAL",
+		//     "food_type",
+		//     "json_value(`attr`,'$.details.foodType')"
+		//   ]
+		// ]
+		if len(matches) > 0 {
+			for _, matched := range matches {
+				keyName := matched[1]
+				expr := matched[2]
+				if _, ok := ret[keyName]; ok {
+					ret[keyName].GenerationExpr = expr
+				}
+			}
+		}
+	}
+	return ret, sorts, nil
+}
+
+func (m *mySQL) tableFieldsAdvance(table string, dbfactory ...*factory.Factory) (map[string]*Field, []string, error) {
+	sqlStr := `SELECT COLUMN_NAME,COLUMN_TYPE,COLLATION_NAME,IS_NULLABLE,COLUMN_KEY,COLUMN_DEFAULT,EXTRA,PRIVILEGES,COLUMN_COMMENT,GENERATION_EXPRESSION FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ` + quoteVal(m.dbName) + ` AND TABLE_NAME = ` + quoteVal(table) + ` ORDER BY ORDINAL_POSITION`
 	rows, err := m.newParam(dbfactory...).SetCollection(sqlStr).Query()
 	if err != nil {
 		return nil, nil, err
@@ -441,62 +500,12 @@ func (m *mySQL) tableFields(table string, dbfactory ...*factory.Factory) (map[st
 	n := len(cols)
 	for rows.Next() {
 		v := &FieldInfo{}
-		err := safeScan(rows, n, &v.Field, &v.Type, &v.Collation, &v.Null, &v.Key, &v.Default, &v.Extra, &v.Privileges, &v.Comment)
+		err := safeScan(rows, n, &v.Field, &v.Type, &v.Collation, &v.Null, &v.Key, &v.Default, &v.Extra, &v.Privileges, &v.Comment, &v.GenerationExpr)
 		if err != nil {
 			return nil, nil, fmt.Errorf(`%v: %v`, sqlStr, err)
 		}
-		match := reField.FindStringSubmatch(v.Type.String)
-		var onUpdate string
-		omatch := reFieldOnUpdate.FindStringSubmatch(v.Extra.String)
-		if len(omatch) > 1 {
-			onUpdate = omatch[1]
-		}
-		privileges := map[string]int{}
-		for k, v := range reFieldPrivilegeDelim.Split(v.Privileges.String, -1) {
-			privileges[v] = k
-		}
 		sorts = append(sorts, v.Field.String)
-		field := &Field{
-			Field:         v.Field.String,
-			Full_type:     v.Type.String,
-			Type:          match[1],
-			Length:        match[2],
-			Precision:     0,
-			Unsigned:      strings.TrimLeft(match[3]+match[4], ` `),
-			Default:       v.Default,
-			Null:          v.Null.String == `YES`,
-			AutoIncrement: sql.NullString{Valid: v.Extra.String == `auto_increment`},
-			On_update:     onUpdate,
-			Collation:     v.Collation.String,
-			Privileges:    privileges,
-			Comment:       v.Comment.String,
-			Primary:       v.Key.String == "PRI",
-		}
-		switch field.Type {
-		case `decimal`, `float`, `double`:
-			sizeInfo := strings.SplitN(field.Length, `,`, 2)
-			switch len(sizeInfo) {
-			case 2:
-				field.Precision = param.AsInt(sizeInfo[1])
-				fallthrough
-			case 1:
-				field.LengthN = param.AsInt(sizeInfo[0])
-			}
-
-		case `enum`, `set`:
-			field.Options = strings.Split(strings.Trim(field.Length, `'`), `','`)
-			if field.Default.Valid {
-				if len(field.Default.String) == 0 && !com.InSlice(``, field.Options) {
-					field.Options = append(field.Options, ``)
-				}
-			}
-
-		default:
-			if len(field.Length) > 0 && com.StrIsNumeric(field.Length) {
-				field.LengthN = param.AsInt(field.Length)
-			}
-		}
-
+		field := v.AsField()
 		ret[v.Field.String] = field
 	}
 	return ret, sorts, nil
@@ -760,6 +769,11 @@ func (m *mySQL) processType(field *Field, collate string) (string, error) {
 			r += ` ` + collate + ` ` + quoteVal(field.Collation)
 		}
 	}
+
+	if genexpr := field.MakeGenerationExpr(); len(genexpr) > 0 {
+		r += ` ` + genexpr
+	}
+
 	return r, nil
 }
 

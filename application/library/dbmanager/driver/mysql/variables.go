@@ -27,14 +27,15 @@ import (
 
 var (
 	//数据来自数据库
-	reCollate       = regexp.MustCompile(` COLLATE ([^ ]+)`)
-	reCharacter     = regexp.MustCompile(` CHARACTER SET ([^ ]+)`)
-	reInnoDBComment = regexp.MustCompile(`(?:(.+); )?InnoDB free: .*`)
-	reGrantOn       = regexp.MustCompile(`GRANT (.*) ON (.*) TO `)
-	reGrantBrackets = regexp.MustCompile(` *([^(,]*[^ ,(])( *\([^)]+\))?`)
-	reGrantOption   = regexp.MustCompile(` WITH GRANT OPTION`)
-	reGrantIdent    = regexp.MustCompile(` IDENTIFIED BY PASSWORD '([^']+)`)
-	reFulltextKey   = regexp.MustCompile("FULLTEXT KEY `([^`]+)`[ ]*\\([^)]+\\) /\\*[^ ]* WITH ([^*]+) \\*/")
+	reCollate         = regexp.MustCompile(` COLLATE ([^ ]+)`)
+	reCharacter       = regexp.MustCompile(` CHARACTER SET ([^ ]+)`)
+	reInnoDBComment   = regexp.MustCompile(`(?:(.+); )?InnoDB free: .*`)
+	reGrantOn         = regexp.MustCompile(`GRANT (.*) ON (.*) TO `)
+	reGrantBrackets   = regexp.MustCompile(` *([^(,]*[^ ,(])( *\([^)]+\))?`)
+	reGrantOption     = regexp.MustCompile(` WITH GRANT OPTION`)
+	reGrantIdent      = regexp.MustCompile(` IDENTIFIED BY PASSWORD '([^']+)`)
+	reFulltextKey     = regexp.MustCompile("FULLTEXT KEY `([^`]+)`[ ]*\\([^)]+\\) /\\*[^ ]* WITH ([^*]+) \\*/")
+	reGeneratedColumn = regexp.MustCompile("`([^`]+)`[^`]+GENERATED ALWAYS AS \\((.*)\\) (?:VIRTUAL|STORED)")
 
 	reView                = regexp.MustCompile(`^.+?\s+AS\s+`)
 	reField               = regexp.MustCompile(`^([^( ]+)(?:\((.+)\))?( unsigned)?( zerofill)?$`)

@@ -62,16 +62,16 @@
               </div>
               <div class="form-group">
                 <div class="table-responsive">
-				<table class="table table-bordered hover blue">
+				<table class="table table-bordered table-condensed hover blue">
 					<thead class="no-border">
 						<tr>
 							<th style="width: 150px"><strong>{{"字段名"|$.T}}</strong></th>
-                            <th><strong>{{"类型"|$.T}}</strong></th>
-                            <th style="min-width: 70px"><strong>{{"长度"|$.T}}</strong></th>
+                            <th style="width: 150px"><strong>{{"类型"|$.T}}</strong></th>
+                            <th style="width: 70px"><strong>{{"长度"|$.T}}</strong></th>
                             <th style="max-width: 170px"><strong>{{"选项"|$.T}}</strong></th>
                             <th style="width: 40px"><strong>{{"NULL"|$.T}}</strong></th>
                             <th style="width: 45px"><input type="radio" name="auto_increment" value=""><strong title="{{`自增`|$.T}}">AI</strong></th>
-                            <th style="width: 120px"><strong>{{"默认值"|$.T}}</strong></th>
+                            <th style="width: 180px"><strong>{{"默认值"|$.T}}</strong>/<strong>{{"生成值"|$.T}}</strong></th>
                             <th><strong>{{"注释"|$.T}}</strong></th>
                             <th style="width: 70px"><a href="javascript:;" onclick="addRow()" class="label label-success" title="{{`下一行插入`|$.T}}"><i class="fa fa-plus"></i></a></th>
 						</tr>
@@ -83,6 +83,8 @@
                                 <input type="hidden" name="fieldIndexes[]" value="{{$index}}">
                                 <input type="text" name="fields[{{$index}}][field]" value="{{$field.Field}}" class="form-control" onfocus="textInputFloat(this)">
                                 <input type="hidden" name="fields[{{$index}}][orig]" value="{{$field.Field}}">
+                                <input type="hidden" name="fields[{{$index}}][generationType]" value="{{$field.GenerationType}}">
+                                <input type="hidden" name="fields[{{$index}}][generationExpr]" value="{{$field.GenerationExpr}}">
                             </td>
                             <td><select name="fields[{{$index}}][type]" class="form-control" onchange="onselectType(this)">
                                 {{- range $k, $group := $.Stored.typeGroups -}}
@@ -127,10 +129,17 @@
                             <td class="text-center"><label class="x-block"><input type="radio" name="auto_increment" value="{{$index}}"{{if $field.AutoIncrement.Valid}} checked="checked"{{end}}></label></td>
                             <td>
                                 <div class="input-group">
-                                    <label class="input-group-addon">
-                                        <input type="checkbox" name="fields[{{$index}}][has_default]" value="1"{{if $field.Default.Valid}} checked="checked"{{end}}>
+                                    <label class="input-group-btn normal" style="width:75px">
+                                        <select name="fields[{{$index}}][optionType]" class="form-control">
+                                            <option value="">({{`无`|$.T}})</option>
+                                            <option value="default"{{if $field.Default.Valid}} selected="selected"{{end}}>{{`默认值`|$.T}}</option>
+                                            <option value="vitual"{{if eq $field.GenerationType `VIRTUAL`}} selected="selected"{{end}}>{{`虚拟列`|$.T}}</option>
+                                            <option value="stored"{{if eq $field.GenerationType `STORED`}} selected="selected"{{end}}>{{`存储列`|$.T}}</option>
+                                        </select>
+                                        <!-- <input type="checkbox" name="fields[{{$index}}][has_default]" value="1"{{if $field.Default.Valid}} checked="checked"{{end}}> -->
                                     </label>
-                                    <input type="text" name="fields[{{$index}}][default]" value="{{$field.Default.String}}" class="form-control" onkeyup="$(this).trigger('change')" onchange="$(this).prev('label').children('input').prop('checked',true)">
+                                    <!-- <input type="text" name="fields[{{$index}}][default]" value="{{$field.Default.String}}" class="form-control" onkeyup="$(this).trigger('change')" onchange="$(this).prev('label').children('input').prop('checked',true)"> -->
+                                    <input type="text" name="fields[{{$index}}][optionValue]" value="{{$field.Default.String|Default $field.GenerationExpr}}" class="form-control" onfocus="textInputFloat(this,$(this).prev('label').find('select>option:selected').text())">
                                 </div>
                             </td>
                             <td><input type="text" name="fields[{{$index}}][comment]" value="{{$field.Comment}}" class="form-control" onfocus="textInputFloat(this,'{{`注释`|$.T}}')"></td>
