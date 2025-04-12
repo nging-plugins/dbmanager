@@ -6,9 +6,6 @@
 <li class="active">{{if eq ($.Form "operation") "modifyTable"}}{{"修改表"|$.T}}: {{$.Stored.table}}{{else}}{{"创建表"|$.T}}{{end}}</li>
 {{/Block}}
 {{Block "main"}}
-<style>
-.table > tbody > tr > td.actions{line-height:2.1em;padding:0;text-align:center}
-</style>
 <div class="row">
     <div class="col-md-12">
         {{Include "db/mysql/results"}}
@@ -143,7 +140,7 @@
                                 </div>
                             </td>
                             <td><input type="text" name="fields[{{$index}}][comment]" value="{{$field.Comment}}" class="form-control" onfocus="textInputFloat(this,'{{`注释`|$.T}}')"></td>
-                            <td class="actions">
+                            <td class="label-group">
                                 <a href="javascript:;" onclick="addRow(this)" class="label label-success" title="{{`下一行插入`|$.T}}"><i class="fa fa-plus"></i></a>
                                 <a href="javascript:;" onclick="moveUpRow(this)" class="label label-primary" title="{{`上移`|$.T}}"><i class="fa fa-arrow-up"></i></a>
                                 <a href="javascript:;" onclick="delRow(this)" class="label label-danger" title="{{`移除`|$.T}}"><i class="fa fa-times"></i></a>
