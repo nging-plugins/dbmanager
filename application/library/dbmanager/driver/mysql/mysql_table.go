@@ -788,19 +788,22 @@ func (m *mySQL) autoIncrement(oldTable string, autoIncrementCol string) (string,
 		_ = sorts
 		orig := m.Form(`fields[` + autoIncrementCol + `][orig]`)
 		for _, index := range indexes {
-			exists := false
-			for _, col := range index.Columns {
-				if col == orig {
-					exists = true
+			if len(orig) > 0 {
+				var exists bool
+				for _, col := range index.Columns {
+					if col == orig {
+						exists = true
+						break
+					}
+				}
+				if exists {
+					autoIncrementIndex = ""
 					break
 				}
 			}
-			if exists {
-				autoIncrementIndex = ""
-				break
-			}
 			if index.Type == "PRIMARY" {
 				autoIncrementIndex = " UNIQUE"
+				break
 			}
 		}
 	}
