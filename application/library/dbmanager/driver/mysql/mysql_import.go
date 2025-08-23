@@ -31,9 +31,11 @@ import (
 	"github.com/admpub/errors"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/code"
+	"github.com/webx-top/echo/defaults"
 
 	"github.com/coscms/webcore/library/backend"
 	"github.com/coscms/webcore/library/background"
+	"github.com/coscms/webcore/library/config"
 	"github.com/coscms/webcore/library/notice"
 	"github.com/coscms/webcore/library/respond"
 
@@ -164,15 +166,18 @@ func (m *mySQL) Import() error {
 			return
 		}
 		if async {
-			go func(cfg driver.DbAuth) {
+			ctx := defaults.NewMockContext()
+			ctx.SetTransaction(m.Transaction())
+			ctx.SetTranslator(config.FromFile().GetTranslator(m.Context))
+			go func(ctx echo.Context, cfg driver.DbAuth) {
 				done := make(chan error)
 				go func(cfg driver.DbAuth) {
 					err := importor(bgExec.Context(), noticer, &cfg, TempDir(utils.OpImport), sqlFiles)
 					if err != nil {
-						noticer.Failure(m.T(`导入失败`) + `: ` + err.Error())
-						noticer.Complete().Failure(m.T(`导入结束 :(`))
+						noticer.Failure(ctx.T(`导入失败`) + `: ` + err.Error())
+						noticer.Complete().Failure(ctx.T(`导入结束 :(`))
 					} else {
-						noticer.Complete().Success(m.T(`导入结束 :)`))
+						noticer.Complete().Success(ctx.T(`导入结束 :)`))
 					}
 					imports.Cancel(cacheKey)
 					done <- err
@@ -189,7 +194,7 @@ func (m *mySQL) Import() error {
 						return
 					}
 				}
-			}(cfg)
+			}(ctx, cfg)
 			noticer.Success(m.T(`正在后台导入，请稍候...`))
 		} else {
 			done := make(chan struct{})
