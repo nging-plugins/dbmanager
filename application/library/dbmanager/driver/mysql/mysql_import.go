@@ -91,10 +91,14 @@ func (m *mySQL) Import() error {
 					if info.IsDir() {
 						return filepath.SkipDir
 					}
-					extension := filepath.Ext(info.Name())
-					switch strings.ToLower(extension) {
+					extension := strings.ToLower(filepath.Ext(info.Name()))
+					switch extension {
 					case `.sql`:
 					case `.zip`:
+					case `.gz`:
+						if !strings.HasSuffix(info.Name(), `.tar.gz`) {
+							return nil
+						}
 					default:
 						return nil
 					}
@@ -106,27 +110,41 @@ func (m *mySQL) Import() error {
 					return fmt.Errorf(`%w: %s`, err, dbfile)
 				}
 				if len(sqlFiles) == 0 {
-					return m.NewError(code.DataNotFound, `没有找到扩展名为“.sql”和“.zip”的文件`).SetZone(`dbfile`)
+					return m.NewError(code.DataNotFound, `没有找到扩展名为“.sql”/“.zip”/“.tar.gz”的文件`).SetZone(`dbfile`)
 				}
 			} else {
-				extension := filepath.Ext(dbfile)
-				switch strings.ToLower(extension) {
+				extension := strings.ToLower(filepath.Ext(dbfile))
+				switch extension {
 				case `.sql`:
 				case `.zip`:
+				case `.gz`:
+					if strings.HasSuffix(dbfile, `.tar.gz`) {
+						goto END
+					}
+					fallthrough
 				default:
-					return m.NewError(code.DataFormatIncorrect, `只支持扩展名为“.sql”和“.zip”的文件`).SetZone(`dbfile`)
+					return m.NewError(code.DataFormatIncorrect, `只支持扩展名为“.sql”/“.zip”/“.tar.gz”的文件`).SetZone(`dbfile`)
 				}
+
+			END:
 				sqlFiles = append(sqlFiles, dbfile)
 			}
 		} else {
 			err = m.SaveUploadedFiles(`file`, func(fdr *multipart.FileHeader) (string, error) {
-				extension := filepath.Ext(fdr.Filename)
-				switch strings.ToLower(extension) {
+				extension := strings.ToLower(filepath.Ext(fdr.Filename))
+				switch extension {
 				case `.sql`:
 				case `.zip`:
+				case `.gz`:
+					if strings.HasSuffix(fdr.Filename, `.tar.gz`) {
+						goto END
+					}
+					fallthrough
 				default:
-					return ``, errors.New(`只能上传扩展名为“.sql”和“.zip”的文件`)
+					return ``, errors.New(`只能上传扩展名为“.sql”/“.zip”/“.tar.gz”的文件`)
 				}
+
+			END:
 				sqlFile := filepath.Join(saveDir, fdr.Filename)
 				sqlFiles = append(sqlFiles, sqlFile)
 				return sqlFile, nil

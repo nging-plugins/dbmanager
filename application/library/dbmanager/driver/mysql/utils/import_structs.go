@@ -50,20 +50,30 @@ func ParseImportFile(cacheDir string, files []string) (*ImportFile, error) {
 	)
 	nowTime := com.String(time.Now().Unix())
 	for index, sqlFile := range files {
-		switch strings.ToLower(filepath.Ext(sqlFile)) {
+		extension := strings.ToLower(filepath.Ext(sqlFile))
+		switch extension {
 		case `.sql`:
 			if strings.Contains(filepath.Base(sqlFile), `struct`) {
 				sqlStructFiles = append(sqlStructFiles, sqlFile)
 			} else {
 				sqlDataFiles = append(sqlDataFiles, sqlFile)
 			}
+		case `.gz`:
+			if !strings.HasSuffix(sqlFile, `.tar.gz`) {
+				continue
+			}
+			fallthrough
 		case `.zip`:
 			dir := filepath.Join(cacheDir, fmt.Sprintf("upload-"+nowTime+"-%d", index))
 			err := com.MkdirAll(dir, os.ModePerm)
 			if err != nil {
 				return nil, err
 			}
-			err = com.Unzip(sqlFile, dir)
+			if extension == `.gz` {
+				_, err = com.UnTarGz(sqlFile, dir)
+			} else {
+				err = com.Unzip(sqlFile, dir)
+			}
 			if err != nil {
 				log.Error(err)
 				continue
