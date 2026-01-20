@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 9.0.1, for macos12.7 (x86_64)
+-- MySQL dump 10.13  Distrib 8.4.6, for Linux (x86_64)
 --
 -- Host: 127.0.0.1    Database: nging
 -- ------------------------------------------------------
--- Server version	9.0.1
+-- Server version	8.4.6
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -47,7 +47,7 @@ DROP TABLE IF EXISTS `nging_db_sync`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `nging_db_sync` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `name` varchar(120) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '方案名',
+  `name` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '方案名',
   `source_account_id` int unsigned NOT NULL DEFAULT '0' COMMENT '源数据库账号ID',
   `dsn_source` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '同步源',
   `destination_account_id` int unsigned NOT NULL DEFAULT '0' COMMENT '目标数据库账号ID',
@@ -92,4 +92,4 @@ CREATE TABLE `nging_db_sync_log` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-10 14:29:50
+-- Dump completed on 2026-01-20  9:22:00
