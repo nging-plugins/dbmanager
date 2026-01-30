@@ -85,7 +85,7 @@ func (a *Value) Paging(vkeys ...string) *pagination.Pagination {
 	if page < 1 {
 		page = 1
 	}
-	if size < 1 || size > dbPagination.PageMaxSize {
+	if size < 1 || size > dbPagination.PagingMaxSize {
 		size = 50
 	}
 	delKeys := []string{}

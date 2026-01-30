@@ -22,8 +22,8 @@ require (
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.11.1
 	github.com/webx-top/com v1.4.1
-	github.com/webx-top/db v1.29.1
-	github.com/webx-top/echo v1.22.25
+	github.com/webx-top/db v1.30.0
+	github.com/webx-top/echo v1.22.26
 	github.com/webx-top/pagination v0.3.2
 )
 
@@ -114,7 +114,7 @@ require (
 	github.com/h2non/go-is-svg v0.0.0-20160927212452-35e8c4b0612c // indirect
 	github.com/hashicorp/go-version v1.8.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
+	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/maruel/rs v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -151,7 +151,7 @@ require (
 	github.com/webx-top/validator v0.3.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/image v0.30.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
