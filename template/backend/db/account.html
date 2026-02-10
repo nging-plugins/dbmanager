@@ -16,18 +16,18 @@
 				<h3>{{"数据库账号列表"|$.T}}</h3>
 			</div>
 			<div class="content">
-				<div class="table-responsive">
+				<div class="table-responsive" data-pattern="priority-columns">
 				<table class="table no-border hover">
 					<thead class="no-border">
 						<tr>
 							<th style="width:60px"><strong>ID</strong></th>
 							<th><strong>{{"标题"|$.T}}</strong></th>
-							<th style="width:80px"><strong>{{"类型"|$.T}}</strong></th>
-							<th><strong>{{"地址"|$.T}}</strong></th>
-							<th><strong>{{"账号"|$.T}}</strong></th>
-							<th><strong>{{"库名"|$.T}}</strong></th>
-							<th style="width:130px"><strong>{{"创建时间"|$.T}}</strong></th>
-							<th style="width:130px"><strong>{{"更新时间"|$.T}}</strong></th>
+							<th data-priority="1" style="width:80px"><strong>{{"类型"|$.T}}</strong></th>
+							<th data-priority="2"><strong>{{"地址"|$.T}}</strong></th>
+							<th data-priority="3"><strong>{{"账号"|$.T}}</strong></th>
+							<th data-priority="4"><strong>{{"库名"|$.T}}</strong></th>
+							<th data-priority="5" style="width:130px"><strong>{{"创建时间"|$.T}}</strong></th>
+							<th data-priority="6" style="width:130px"><strong>{{"更新时间"|$.T}}</strong></th>
 							<th style="width:120px"><strong>{{"操作"|$.T}}</strong></th>
 						</tr>
 					</thead>
@@ -50,11 +50,11 @@
 						</tr>
                         {{end}}
 					</tbody>
-				</table>		
+				</table>
 				</div>
 				{{$.Stored.pagination.Render}}
 			</div>
-		</div>				
+		</div>
 	</div>
 </div>
 {{/Block}}
