@@ -644,6 +644,8 @@ func (f *Field) InputType() string {
 		return f.Type
 	case `year`:
 		return f.Type
+	case `json`,`text`:
+		return `textarea`
 	default:
 		if f.MaxSize() > 255 {
 			return `textarea`
