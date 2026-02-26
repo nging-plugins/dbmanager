@@ -20,7 +20,16 @@ Content : """
 						</td>
 					</tr>
 					<tr>
-						<td><b>给数组对象元素中的字段添加索引</b><br />例如：[{"name":"john"},{"name":"tom"}]</td>
+						<td><b>给对象数组元素中的字段添加索引</b><br />例如：[{"name":"john"},{"name":"tom"}]</td>
+						<td>
+							<ul>
+							<li><code class="clickable" title="点击插入输入框">cast(`field`->'$[*].name' as char(10) array)</code> 用于 WHERE 'tom' MEMBER OF(`field`->'$[*].name') 查询</li>
+							<li><code class="clickable" title="点击插入输入框">cast(json_extract(`field`,_utf8mb4'$[*].name') as char(10) array)</code> 同上</li>
+							</ul>
+						</td>
+					</tr>
+					<tr>
+						<td><b>给对象中的字段添加索引</b><br />例如：{"name":"john"}</td>
 						<td>
 							<ul>
 							<li><code class="clickable" title="点击插入输入框">cast(`field`->'$.name' as char(10) array)</code> 用于 WHERE 'tom' MEMBER OF(`field`->'$.name') 查询</li>
