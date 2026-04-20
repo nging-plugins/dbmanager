@@ -1,6 +1,6 @@
 module github.com/nging-plugins/dbmanager
 
-go 1.25.1
+go 1.26.1
 
 exclude github.com/gomodule/redigo v2.0.0+incompatible
 
@@ -15,15 +15,15 @@ require (
 	github.com/admpub/godownloader v2.2.2+incompatible
 	github.com/admpub/log v1.5.2
 	github.com/admpub/mysql-schema-sync v0.2.6
-	github.com/coscms/webcore v0.13.2
+	github.com/coscms/webcore v0.13.3-0.20260420080503-5a82bbe298f0
 	github.com/fatih/color v1.19.0
 	github.com/gomodule/redigo v1.9.3
 	github.com/nging-plugins/dlmanager v1.9.0
 	github.com/russross/blackfriday v1.6.0
 	github.com/stretchr/testify v1.11.1
 	github.com/webx-top/com v1.5.1
-	github.com/webx-top/db v1.30.11
-	github.com/webx-top/echo v1.24.2
+	github.com/webx-top/db v1.30.12
+	github.com/webx-top/echo v1.24.4
 	github.com/webx-top/pagination v0.3.3
 )
 
@@ -57,15 +57,14 @@ require (
 	github.com/admpub/gohls v1.3.4 // indirect
 	github.com/admpub/gohls-server v0.3.10 // indirect
 	github.com/admpub/humanize v0.0.0-20190501023926-5f826e92c8ca // indirect
-	github.com/admpub/i18n v0.5.5 // indirect
+	github.com/admpub/i18n v0.6.1 // indirect
 	github.com/admpub/identicon v1.0.2 // indirect
 	github.com/admpub/imageproxy v0.10.1 // indirect
 	github.com/admpub/imaging v1.6.3 // indirect
-	github.com/admpub/ip2region/v2 v2.0.1 // indirect
+	github.com/admpub/ip2region/v3 v3.0.5 // indirect
 	github.com/admpub/json5 v0.0.1 // indirect
 	github.com/admpub/license_gen v0.1.2 // indirect
 	github.com/admpub/machineid v1.0.2 // indirect
-	github.com/admpub/mahonia v0.0.0-20151019004008-c528b747d92d // indirect
 	github.com/admpub/mail v0.0.0-20170408110349-d63147b0317b // indirect
 	github.com/admpub/map2struct v0.1.3 // indirect
 	github.com/admpub/null v8.0.5+incompatible // indirect
@@ -134,6 +133,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
@@ -152,13 +152,13 @@ require (
 	github.com/webx-top/validation v0.0.3 // indirect
 	github.com/webx-top/validator v0.3.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	golang.org/x/crypto v0.49.0 // indirect
-	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
-	golang.org/x/image v0.38.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/crypto v0.50.0 // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
+	golang.org/x/image v0.39.0 // indirect
+	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
