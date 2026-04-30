@@ -869,7 +869,7 @@ func (p *Postgres) Export() error {
 			} else {
 				p.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			}
-			if shared.SupportedExport(`postgres`) {
+			if SupportedCmdExport() {
 				w := p.Response()
 				if hasStruct {
 					structWriter = w
@@ -877,7 +877,7 @@ func (p *Postgres) Export() error {
 				if hasData {
 					dataWriter = w
 				}
-				err = shared.NativeExportPG(context.Background(), cfg, tables, structWriter, dataWriter)
+				err = NativeExportPG(context.Background(), cfg, tables, structWriter, dataWriter)
 			} else {
 				if hasStruct {
 					structWriter = p.Response()
@@ -904,14 +904,14 @@ func (p *Postgres) Export() error {
 				return p.returnTo(p.GenURL(`export`))
 			}
 			defer f.Close()
-			if shared.SupportedExport(`postgres`) {
+			if SupportedCmdExport() {
 				if hasStruct {
 					structWriter = f
 				}
 				if hasData {
 					dataWriter = f
 				}
-				err = shared.NativeExportPG(context.Background(), cfg, tables, structWriter, dataWriter)
+				err = NativeExportPG(context.Background(), cfg, tables, structWriter, dataWriter)
 			} else {
 				err = shared.ExportMultipleTablesToWriter(f, p.db, tables, `"`, hasStruct, hasData, p.getVersion())
 			}

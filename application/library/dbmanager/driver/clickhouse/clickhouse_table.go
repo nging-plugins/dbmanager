@@ -783,7 +783,7 @@ func (c *ClickHouse) Export() error {
 				hasStruct = true
 				hasData = true
 			}
-			if shared.SupportedExport(`clickhouse`) {
+			if SupportedCmdExport() {
 				var structWriter, dataWriter io.Writer
 				if hasStruct {
 					structWriter = c.Response()
@@ -791,7 +791,7 @@ func (c *ClickHouse) Export() error {
 				if hasData {
 					dataWriter = c.Response()
 				}
-				return shared.NativeExportCH(c.Request().Context(), cfg, tables, structWriter, dataWriter)
+				return NativeExportCH(c.Request().Context(), cfg, tables, structWriter, dataWriter)
 			}
 			return shared.ExportMultipleTablesToWriter(c.Response(), c.db, tables, "`", hasStruct, hasData, c.getVersion())
 		default: // send
@@ -819,7 +819,7 @@ func (c *ClickHouse) Export() error {
 				hasStruct = true
 				hasData = true
 			}
-			if shared.SupportedExport(`clickhouse`) {
+			if SupportedCmdExport() {
 				var structWriter, dataWriter io.Writer
 				if hasStruct {
 					structWriter = f
@@ -827,7 +827,7 @@ func (c *ClickHouse) Export() error {
 				if hasData {
 					dataWriter = f
 				}
-				err = shared.NativeExportCH(c.Request().Context(), cfg, tables, structWriter, dataWriter)
+				err = NativeExportCH(c.Request().Context(), cfg, tables, structWriter, dataWriter)
 			} else {
 				err = shared.ExportMultipleTablesToWriter(f, c.db, tables, "`", hasStruct, hasData, c.getVersion())
 			}
