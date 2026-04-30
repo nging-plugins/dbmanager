@@ -813,6 +813,10 @@ func (p *Postgres) Indexes() error {
 }
 
 func (p *Postgres) Export() error {
+	process := p.Queryx(`process`).Bool()
+	if process {
+		return p.bgExecManage(shared.OpExport)
+	}
 	var err error
 	if p.IsPost() {
 		if len(p.dbName) == 0 {
@@ -929,6 +933,10 @@ func (p *Postgres) Export() error {
 }
 
 func (p *Postgres) Import() error {
+	process := p.Queryx(`process`).Bool()
+	if process {
+		return p.bgExecManage(shared.OpImport)
+	}
 	if p.IsPost() {
 		if len(p.dbName) == 0 {
 			p.fail(p.T(`请选择数据库`))

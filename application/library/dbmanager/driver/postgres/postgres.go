@@ -30,6 +30,7 @@ import (
 	"github.com/webx-top/echo"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 )
 
 func init() {
@@ -178,6 +179,19 @@ func (p *Postgres) fail(msg string) {
 
 func (p *Postgres) returnTo(urls ...string) error {
 	return p.Goto(urls...)
+}
+
+func (m *Postgres) bgExecManage(op string) error {
+	var err error
+	if m.IsPost() {
+		shared.BackgroundExecManage(m.Context, *m.DbAuth, op, true)
+		data := m.Data()
+		data.SetInfo(m.T(`操作成功`))
+		m.ok(m.T(`操作成功`))
+		return m.returnTo(m.GenURL(op) + `&process=1`)
+	}
+	err = shared.BackgroundExecManage(m.Context, *m.DbAuth, op, false)
+	return m.Render(`db/mysql/process_store`, m.checkErr(err))
 }
 
 // QuoteCol quotes a column/identifier name for PostgreSQL

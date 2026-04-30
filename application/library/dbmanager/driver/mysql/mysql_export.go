@@ -48,10 +48,6 @@ func (m *mySQL) exporting() error {
 	return m.bgExecManage(shared.OpExport)
 }
 
-func (m *mySQL) ImportAndOutputOpName(op string) string {
-	return `dbmanager.` + m.DbAuth.Driver + `.` + op
-}
-
 func (m *mySQL) bgExecManage(op string) error {
 	var err error
 	if m.IsPost() {

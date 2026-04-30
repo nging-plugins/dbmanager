@@ -730,6 +730,10 @@ func (c *ClickHouse) Indexes() error {
 
 // Export handles data export
 func (c *ClickHouse) Export() error {
+	process := c.Queryx(`process`).Bool()
+	if process {
+		return c.bgExecManage(shared.OpExport)
+	}
 	var err error
 	if c.IsPost() {
 		if len(c.dbName) == 0 {
@@ -845,6 +849,10 @@ func (c *ClickHouse) Export() error {
 }
 
 func (c *ClickHouse) Import() error {
+	process := c.Queryx(`process`).Bool()
+	if process {
+		return c.bgExecManage(shared.OpImport)
+	}
 	if c.IsPost() {
 		if len(c.dbName) == 0 {
 			c.fail(c.T(`请选择数据库`))
