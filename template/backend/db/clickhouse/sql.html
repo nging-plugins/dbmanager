@@ -1,0 +1,111 @@
+{{Strip}}{{Extend "db/index"}}
+{{Block "title"}}{{"SQL命令"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+{{if $.Stored.dbName}}<li><a href="{{call $.Func.dbMgrURL "listTable" $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>{{end}}
+<li class="active">{{"SQL命令"|$.T}}</li>
+{{/Block}}
+{{Block "head"}}
+<!-- codemirror -->
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/fold/foldgutter.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/hint/show-hint.css?t={{BuildTime}}">
+<link rel="stylesheet" href="{{AssetsURL}}/js/editor/markdown/lib/codemirror/theme/ambiance.css?t={{BuildTime}}">
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/codemirror.min.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/modes.min.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addons.min.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/hint/show-hint.js?t={{BuildTime}}"></script>
+<script src="{{AssetsURL}}/js/editor/markdown/lib/codemirror/addon/hint/sql-hint.js?t={{BuildTime}}"></script>
+<style>
+.CodeMirror {min-height:350px}
+</style>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12" id="block-container">
+        {{Include "db/mysql/dbinfo_btn"}}
+        {{if $.Stored.selects}}
+        {{range $keyd,$data := $.Stored.selects}}
+        <div class="block-flat no-padding">
+          <div class="header">
+            <h3>{{"数据"|$.T}}</h3>
+          </div>
+          <div class="content">
+             <div class="table-responsive">
+				<table class="table no-border hover blue">
+					<thead class="no-border">
+						<tr>{{range $k, $colName := $data.Data.Columns}}
+							<th><strong>{{$colName}}</strong></th>
+                            {{end}}
+						</tr>
+					</thead>
+					<tbody class="no-border-x">
+                        {{range $k,$v := $data.Data.Values}}
+						<tr>
+                            {{range $k, $colName := $data.Data.Columns}}
+                            <td class="wrap-only">{{(index $v $colName).String}}</td>
+                            {{end}}
+						</tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+        {{end}}
+        {{end}}
+        <div class="block-flat no-padding">
+          <div class="content no-padding">
+              <form class="form-horizontal group-border-dashed" method="POST" action="" id="form-sql-query" notify>
+              <div class="form-group">
+				<div class="col-sm-12">
+                    <textarea name="query" id="query" class="form-control">{{$.Form "query"}}</textarea>
+                </div>
+              </div>
+              <div class="form-group form-submit-group" disabled-fixed="true">
+				<div class="col-sm-12">
+				    <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> {{"执行"|$.T}}</button>
+                    <div class="checkbox checkbox-primary checkbox-inline"> 
+                      <input type="checkbox" id="error_stops" name="error_stops"><label for="error_stops"> {{"出错时停止"|$.T}}</label> 
+                    </div>
+                    <div class="checkbox checkbox-primary checkbox-inline"> 
+                      <input type="checkbox" id="only_errors" name="only_errors"><label for="only_errors"> {{"只显示错误"|$.T}}</label> 
+                    </div>
+				</div>
+			    </div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+<script>
+var editor, tables = {
+    {{- $tableList := $.Stored.Get "tableList" -}}
+    {{- if $tableList -}}
+    {{- range $k,$v := $tableList -}}
+    "{{$v}}": {{call $.Func.getFieldsByTable $v}},
+    {{- end -}}
+    {{- end -}}
+};
+CodeMirror.modeURL = "{{AssetsURL}}/js/editor/markdown/lib/codemirror/mode/%N/%N.js";
+function initCodeMirrorEditor() {
+    editor = CodeMirror.fromTextArea($("#query")[0], {
+        lineNumbers: true,
+        extraKeys: {"Tab": "autocomplete"},
+        hintOptions: {
+            tables: tables,completeSingle: false
+        }, theme:'ambiance'
+    });
+    editor.setOption('lineWrapping', true);
+    editor.setOption("mode", "text/x-sql");
+    editor.on('keypress', function(){if(typeof(editor.showHint)=='function')editor.showHint();});
+}
+$(function(){
+    initCodeMirrorEditor();
+});
+</script>
+{{/Block}}
+{{/Strip}}

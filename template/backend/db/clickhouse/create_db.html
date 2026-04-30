@@ -1,0 +1,33 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"创建数据库"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li class="active">{{"创建数据库"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"创建数据库"|$.T}}</h3>
+          </div>
+          <div class="content">
+              <form class="form-horizontal group-border-dashed" method="POST" action="">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"数据库名称"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input class="form-control" type="text" name="name" value="{{$.Form `name`}}" required="required">
+                </div>
+              </div>
+              <div class="form-group form-submit-group">
+				<div class="col-sm-9 col-sm-offset-2">
+				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"创建"|$.T}}</button>
+				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `listDb`}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+				</div>
+			</div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

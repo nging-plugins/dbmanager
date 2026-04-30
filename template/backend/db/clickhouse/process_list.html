@@ -1,0 +1,64 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"进程列表"|$.T}} - {{Super}}{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/dbinfo_btn"}}
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"进程列表"|$.T}}</h3>
+          </div>
+          <div class="content">
+			<form action="" method="POST">
+              <div class="table-responsive">
+				<table class="table no-border hover blue">
+					<thead class="no-border auto-fixed">
+						<tr>
+							<th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th>
+							<th style="width:80px"><strong>{{"查询ID"|$.T}}</strong></th>
+							<th><strong>{{"用户"|$.T}}</strong></th>
+							<th><strong>{{"查询"|$.T}}</strong></th>
+							<th style="width:80px"><strong>{{"耗时(秒)"|$.T}}</strong></th>
+							<th style="width:80px"><strong>{{"已读行数"|$.T}}</strong></th>
+							<th style="width:100px"><strong>{{"已读字节"|$.T}}</strong></th>
+						</tr>
+					</thead>
+					<tbody class="no-border-x" id="process-items">
+                        {{range $k,$v := $.Stored.processes}}
+						<tr>
+							<td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="pid[]" value="{{$v.QueryID}}"><label for="check-{{$k}}"></label></div></td>
+							<td>{{$v.QueryID}}</td>
+							<td>{{$v.User}}</td>
+							<td><div class="wrap">{{$v.Query}}</div></td>
+							<td>{{$v.Elapsed}}</td>
+							<td>{{$v.ReadRows}}</td>
+							<td>{{$v.ReadBytes}}</td>
+						</tr>
+						{{else}}
+						<tr><td colspan="7" class="text-center">{{`暂无进程`|$.T}}</td></tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+			{{- if gt (len $.Stored.processes) 0 -}}
+			<div class="footer">
+			<button type="submit" class="btn btn-danger no-margin-left">
+				<i class="fa fa-minus-circle"></i>
+				{{"终止"|$.T}}
+			</button>
+			{{- end -}}
+			</div><!-- /.footer -->
+			</form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+<script>
+$(function(){
+    App.attachCheckedAll('#checkedAll','input[type=checkbox][name=\'pid[]\']');
+});
+</script>
+{{/Block}}

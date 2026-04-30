@@ -1,0 +1,43 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"PostgreSQL - 表列表"|$.T}}{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/dbinfo_btn"}}
+        <div class="block-flat no-padding">
+          <div class="header"><h3>{{"表列表"|$.T}}: {{$.Stored.dbName}}</h3></div>
+          <div class="content">
+              <div class="table-responsive" data-pattern="priority-columns">
+                <table class="table no-border hover blue">
+                    <thead class="no-border">
+                        <tr>
+                            <th><strong>{{"表名"|$.T}}</strong></th>
+                            <th><strong>{{"行数"|$.T}}</strong></th>
+                            <th><strong>{{"大小"|$.T}}</strong></th>
+                            <th style="width:100px"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="no-border-x">
+                        {{- $statuses := $.Stored.tableStatuses -}}
+                        {{- range $k,$v := $.Stored.tableList -}}
+                        <tr>
+                            <td><a href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $v}}">{{$v}}</a></td>
+                            <td>{{if $statuses}}{{if index $statuses $v}}{{(index $statuses $v).Rows}}{{end}}{{end}}</td>
+                            <td>{{if $statuses}}{{if index $statuses $v}}{{(index $statuses $v).SizePretty}}{{end}}{{end}}</td>
+                            <td class="label-group">
+                                <a data-toggle="tooltip" title="{{`数据`|$.T}}" href="{{call $.Func.dbMgrURL `listData` $.Stored.dbName $v}}" class="label label-info"><i class="fa fa-table"></i></a>
+                                <a data-toggle="tooltip" title="{{`SQL`|$.T}}" href="{{call $.Func.dbMgrURL `runCommand` $.Stored.dbName $v}}" class="label label-success"><i class="fa fa-terminal"></i></a>
+                                <a data-toggle="tooltip" title="{{`修改`|$.T}}" href="{{call $.Func.dbMgrURL `modifyTable` $.Stored.dbName $v}}" class="label label-primary"><i class="fa fa-pencil"></i></a>
+                            </td>
+                        </tr>
+                        {{- else}}
+                        <tr><td colspan="10" class="text-center">{{`暂无表`|$.T}}</td></tr>
+                        {{- end}}
+                    </tbody>
+                </table>
+              </div>
+          </div>
+        </div>
+    </div>
+</div>
+{{/Block}}

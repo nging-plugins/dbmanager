@@ -1,0 +1,51 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"数据"|$.T}}: {{$.Stored.table}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+{{- $dbName := $.Stored.dbName -}}
+{{- $table := $.Stored.table -}}
+<li><a href="{{call $.Func.dbMgrURL `listTable` $dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$dbName}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `viewTable` $dbName $table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$table}}</a></li>
+<li class="active">{{"数据"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header">
+            <h3>{{"数据"|$.T}}: {{$.Stored.table}}</h3>
+          </div>
+          <div class="content">
+             <div class="table-responsive">
+				<table class="table no-border hover blue">
+					<thead class="no-border">
+						<tr>
+                        {{range $k,$v := $.Stored.columns}}
+							<th><strong>{{$v}}</strong></th>
+                        {{end}}
+						</tr>
+					</thead>
+					<tbody class="no-border-x">
+                        {{range $k,$row := $.Stored.values}}
+						<tr>
+                            {{range $k,$col := $.Stored.columns}}
+                            <td class="wrap-only">{{index $row $col}}</td>
+                            {{end}}
+						</tr>
+                        {{else}}
+						<tr><td colspan="{{len $.Stored.columns}}" class="text-center">{{`暂无数据`|$.T}}</td></tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+
+            {{- if gt $.Stored.total 0 -}}
+            <div class="footer">
+                {{$.Stored.pagination.Render}}
+            </div>
+            {{- end -}}
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

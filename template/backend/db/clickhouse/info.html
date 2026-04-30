@@ -1,0 +1,49 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"服务器信息"|$.T}} - {{Super}}{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/dbinfo_btn"}}
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"服务器信息"|$.T}}</h3>
+          </div>
+          <div class="content">
+              <div class="table-responsive">
+				<table class="table no-border hover blue">
+					<thead class="no-border auto-fixed">
+						<tr>
+                            <th style="width:30%;"><strong>{{"属性"|$.T}}</strong></th>
+							<th><strong>{{"值"|$.T}}</strong></th>
+						</tr>
+					</thead>
+					<tbody class="no-border-x">
+                        {{$infos := $.Stored.infos}}
+                        {{if $infos}}
+						<tr>
+							<td><strong>{{"版本"|$.T}}</strong></td>
+							<td><div class="wrap">{{$infos.version}}</div></td>
+						</tr>
+						<tr>
+							<td><strong>{{"运行时间"|$.T}}</strong></td>
+							<td><div class="wrap">{{$infos.uptime}}</div></td>
+						</tr>
+						<tr>
+							<td><strong>{{"数据库数量"|$.T}}</strong></td>
+							<td><div class="wrap">{{$infos.total_databases}}</div></td>
+						</tr>
+						<tr>
+							<td><strong>{{"表数量"|$.T}}</strong></td>
+							<td><div class="wrap">{{$infos.total_tables}}</div></td>
+						</tr>
+                        {{else}}
+						<tr><td colspan="2" class="text-center">{{`暂无信息`|$.T}}</td></tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

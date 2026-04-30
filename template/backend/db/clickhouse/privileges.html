@@ -1,0 +1,36 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"用户权限"|$.T}} - {{Super}}{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/dbinfo_btn"}}
+        <div class="block-flat no-padding">
+          <div class="header">
+            <h3>{{"用户列表"|$.T}}</h3>
+          </div>
+          <div class="content">
+              <div class="table-responsive">
+				<table class="table no-border hover blue">
+					<thead class="no-border auto-fixed">
+						<tr>
+							<th style="width:40%;"><strong>{{"用户名"|$.T}}</strong></th>
+							<th><strong>{{"存储类型"|$.T}}</strong></th>
+						</tr>
+					</thead>
+					<tbody class="no-border-y" id="privilege-items">
+                        {{range $k,$v := $.Stored.users}}
+						<tr>
+							<td>{{$v.Name}}</td>
+							<td>{{$v.Storage}}</td>
+						</tr>
+                        {{else}}
+						<tr><td colspan="2" class="text-center">{{`暂无用户`|$.T}}</td></tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

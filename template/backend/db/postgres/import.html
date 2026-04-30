@@ -1,0 +1,41 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"导入"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+{{if $.Stored.dbName}}<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>{{end}}
+<li class="active">{{"导入"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+  <div class="col-md-12">
+    {{Include "db/mysql/results"}}
+    <div class="block-flat no-padding">
+      <div class="header">
+        <h3>{{"导入SQL"|$.T}}</h3>
+      </div>
+      <div class="content">
+        <form class="form-horizontal group-border-dashed" method="POST" action="">
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{"SQL内容"|$.T}}</label>
+            <div class="col-sm-9">
+              <textarea name="sqlContent" class="form-control" rows="15" placeholder="{{`粘贴SQL语句...`|$.T}}">{{$.Form `sqlContent`}}</textarea>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{"或上传文件"|$.T}}</label>
+            <div class="col-sm-9">
+              <input type="file" name="sqlFile" class="form-control">
+              <div class="help-block">{{"支持 .sql 文件"|$.T}}</div>
+            </div>
+          </div>
+          <div class="form-group form-submit-group">
+            <div class="col-sm-9 col-sm-offset-2">
+              <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-upload"></i> {{"导入"|$.T}}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{/Block}}

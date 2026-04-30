@@ -1,0 +1,115 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"数据库"|$.T}}: {{$.Stored.dbName}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li class="active">{{"数据库"|$.T}}: {{$.Stored.dbName}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/dbinfo_btn"}}
+        <div class="block-flat no-padding">
+          <div class="header">
+			<a href="{{call $.Func.dbMgrURL `createTable` $.Stored.dbName}}" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
+				<i class="fa fa-plus"></i>
+				{{"创建表"|$.T}}
+			</a>
+            <h3>{{"数据表"|$.T}}</h3>
+          </div>
+          <div class="content">
+             <div class="table-responsive" data-pattern="priority-columns">
+				<table class="table no-border hover blue">
+					<thead class="no-border">
+						<tr>
+							<th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th>
+							<th><strong>{{"表"|$.T}}</strong></th>
+							<th data-priority="2"><strong>{{"引擎"|$.T}}</strong></th>
+							<th data-priority="3"><strong>{{"行数"|$.T}}</strong></th>
+							<th data-priority="4"><strong>{{"大小"|$.T}}</strong></th>
+							<th data-priority="1"><strong>{{"注释"|$.T}}</strong></th>
+						</tr>
+					</thead>
+					<tbody class="no-border-x" id="tbody-content">
+                        {{$dbName := $.Stored.dbName}}
+                        {{$tableStatuses := $.Stored.tableStatuses}}
+                        {{range $k,$v := $.Stored.tableList}}
+						{{$info := index $tableStatuses $v}}
+						<tr>
+                            <td>
+                                <div class="checkbox checkbox-primary no-margin-y"><input id="checkbox-{{$k}}" class="check-table" type="checkbox" name="table[]" value="{{$v}}"><label for="checkbox-{{$k}}"></label></div>
+                            </td>
+							<td><a href="{{call $.Func.dbMgrURL `viewTable` $dbName $v}}" data-pjax="#pcont" data-keepjs="true">{{$v}}</a></td>
+							<td>{{if $info}}{{$info.Engine}}{{end}}</td>
+							<td>{{if $info}}{{$info.Rows}}{{end}}</td>
+							<td>{{if $info}}{{$info.Size}}{{end}}</td>
+							<td>{{if $info}}{{$info.Comment}}{{end}}</td>
+						</tr>
+                        {{else}}
+						<tr><td colspan="10" class="text-center">{{`暂无数据表`|$.T}}</td></tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+                {{- if gt (len $.Stored.tableList) 0 -}}
+                <div class="footer">
+                <fieldset>
+                     <legend class="sm-padding-bottom sm-margin-bottom">{{"已选中"|$.T}} (<span id="selected-items-count">0</span>)</legend>
+                     <button type="button" class="btn btn-danger" id="truncate-selected">{{"清空"|$.T}}</button>
+                     <button type="button" class="btn btn-danger" id="drop-selected">{{"删除"|$.T}}</button>
+                </fieldset>
+                </div><!-- /.footer -->
+                {{- end -}}
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+<script>
+function refreshList(){
+    $.get(window.location.href,{'_pjax':'#tbody-content'},function(r){
+        var e=$(r);
+        $('#tbody-content').html(e.find('#tbody-content').html());
+        perttyCheckbox();
+    },'html');
+}
+function getSelectedItems(){
+    var tables=[];
+    var ckd=$('#tbody-content input.check-table:checked');
+    ckd.each(function(){ tables.push($(this).val()); });
+    return tables;
+}
+function perttyCheckbox(){
+    $('#selected-items-count').text($('#tbody-content input.check-table:checked').length);
+    $('#tbody-content input.check-table').on('click',function(){
+        var v=$(this).prop('checked')?1:-1;
+        var c=$('#selected-items-count');
+        var n=parseInt(c.text());
+        c.text(n+v);
+    });
+}
+$(function(){
+    perttyCheckbox();
+    App.attachCheckedAll('#checkedAll','input[type=checkbox].check-table','#selected-items-count');
+    $('#drop-selected').click(function(){
+        var tables=getSelectedItems();
+        if(tables.length<1) return App.message({title:'{{"出错了"|$.T}}',text:'{{"请选择您要删除的表"|$.T}}',class_name:'danger'},false);
+        if(!confirm('{{"确定要删除下面这些表吗？"|$.T}}\n'+tables.join('\n'))) return;
+        $.post(window.location.href,{operate:'drop',table:tables},function(r){
+            if(r.Code==1) refreshList();
+            else App.message({title:'{{"出错了"|$.T}}',text:r.Info,class_name:'danger'},false);
+        },'json');
+    });
+    $('#truncate-selected').click(function(){
+        var tables=getSelectedItems();
+        if(tables.length<1) return App.message({title:'{{"出错了"|$.T}}',text:'{{"请选择您要清空的表"|$.T}}',class_name:'danger'},false);
+        if(!confirm('{{"确定要清空下面这些表吗？"|$.T}}\n'+tables.join('\n'))) return;
+        $.post(window.location.href,{operate:'truncate',table:tables},function(r){
+            if(r.Code==1) refreshList();
+            else App.message({title:'{{"出错了"|$.T}}',text:r.Info,class_name:'danger'},false);
+        },'json');
+    });
+});
+</script>
+{{/Block}}

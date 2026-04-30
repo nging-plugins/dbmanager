@@ -1,0 +1,946 @@
+/*
+   Nging is a toolbox for webmasters
+   Copyright (C) 2018-present  Wenhui Shen <swh@admpub.com>
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+package postgres
+
+import (
+	"database/sql"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/coscms/webcore/library/backend"
+	"github.com/webx-top/echo"
+	"github.com/webx-top/pagination"
+)
+
+// getTables returns a list of tables in the current database
+func (p *Postgres) getTables() ([]string, error) {
+	sqlStr := `
+		SELECT table_name 
+		FROM information_schema.tables 
+		WHERE table_schema = 'public' 
+		AND table_type = 'BASE TABLE'
+		ORDER BY table_name`
+	rows, err := p.db.Query(sqlStr)
+	if err != nil {
+		return nil, fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	defer rows.Close()
+
+	var ret []string
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		ret = append(ret, v)
+	}
+	return ret, rows.Err()
+}
+
+// TableStatus holds table status information for PostgreSQL
+type TableStatus struct {
+	Name       string
+	Schema     string
+	Owner      string
+	Rows       int64
+	Size       string
+	SizePretty string
+	Comment    string
+}
+
+// getTableStatus returns detailed table status information
+func (p *Postgres) getTableStatus(tableName string) (map[string]*TableStatus, error) {
+	sqlStr := `
+		SELECT 
+			c.relname AS name,
+			n.nspname AS schema,
+			pg_get_userbyid(c.relowner) AS owner,
+			c.reltuples::bigint AS rows,
+			pg_size_pretty(pg_total_relation_size(c.oid)) AS size_pretty,
+			pg_total_relation_size(c.oid) AS size,
+			obj_description(c.oid) AS comment
+		FROM pg_class c
+		LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE c.relkind = 'r'
+		AND n.nspname = 'public'`
+
+	if len(tableName) > 0 {
+		sqlStr += ` AND c.relname = '` + strings.ReplaceAll(tableName, `'`, `''`) + `'`
+	}
+	sqlStr += ` ORDER BY c.relname`
+
+	rows, err := p.db.Query(sqlStr)
+	if err != nil {
+		return nil, fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	defer rows.Close()
+
+	ret := map[string]*TableStatus{}
+	for rows.Next() {
+		var (
+			name       string
+			schema     string
+			owner      string
+			rowCnt     sql.NullInt64
+			sizePretty sql.NullString
+			size       sql.NullString
+			comment    sql.NullString
+		)
+		if err := rows.Scan(&name, &schema, &owner, &rowCnt, &sizePretty, &size, &comment); err != nil {
+			return nil, err
+		}
+		v := &TableStatus{
+			Name:       name,
+			Schema:     schema,
+			Owner:      owner,
+			Rows:       rowCnt.Int64,
+			Size:       size.String,
+			SizePretty: sizePretty.String,
+			Comment:    comment.String,
+		}
+		ret[v.Name] = v
+	}
+	return ret, rows.Err()
+}
+
+// FieldInfo holds column information
+type FieldInfo struct {
+	ColumnName    string
+	DataType      string
+	IsNullable    string
+	ColumnDefault string
+	CharacterMax  int64
+	Comment       string
+}
+
+// getTableFields returns column information for a table
+func (p *Postgres) getTableFields(tableName string) ([]*FieldInfo, error) {
+	sqlStr := `
+		SELECT 
+			column_name,
+			data_type,
+			is_nullable,
+			column_default,
+			character_maximum_length,
+			pg_catalog.col_description(
+				(SELECT c.oid FROM pg_catalog.pg_class c WHERE c.relname = $1),
+				ordinal_position
+			) AS comment
+		FROM information_schema.columns
+		WHERE table_schema = 'public' AND table_name = $1
+		ORDER BY ordinal_position`
+
+	rows, err := p.db.Query(sqlStr, tableName)
+	if err != nil {
+		return nil, fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	defer rows.Close()
+
+	var ret []*FieldInfo
+	for rows.Next() {
+		var (
+			columnName    string
+			dataType      string
+			isNullable    string
+			columnDefault sql.NullString
+			charMax       sql.NullInt64
+			comment       sql.NullString
+		)
+		if err := rows.Scan(&columnName, &dataType, &isNullable, &columnDefault, &charMax, &comment); err != nil {
+			return nil, err
+		}
+		v := &FieldInfo{
+			ColumnName:    columnName,
+			DataType:      dataType,
+			IsNullable:    isNullable,
+			ColumnDefault: columnDefault.String,
+			CharacterMax:  charMax.Int64,
+			Comment:       comment.String,
+		}
+		ret = append(ret, v)
+	}
+	return ret, rows.Err()
+}
+
+// getTableDDL returns the CREATE TABLE DDL statement
+func (p *Postgres) getTableDDL(tableName string) (string, error) {
+	// Use pg_dump-like approach: we query the table definition
+	sqlStr := `
+		SELECT 
+			'CREATE TABLE ' || quote_ident(table_name) || ' (' ||
+			string_agg(column_def, ', ' ORDER BY ordinal_position) || ');' AS ddl
+		FROM (
+			SELECT 
+				c.table_name,
+				c.ordinal_position,
+				quote_ident(c.column_name) || ' ' || 
+				CASE 
+					WHEN c.character_maximum_length IS NOT NULL 
+					THEN c.data_type || '(' || c.character_maximum_length || ')'
+					ELSE c.data_type
+				END ||
+				CASE WHEN c.is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END ||
+				COALESCE(' DEFAULT ' || c.column_default, '') AS column_def
+			FROM information_schema.columns c
+			WHERE c.table_schema = 'public' AND c.table_name = $1
+		) sub
+		GROUP BY table_name`
+
+	var ddl sql.NullString
+	row := p.db.QueryRow(sqlStr, tableName)
+	if err := row.Scan(&ddl); err != nil {
+		return "", fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	if ddl.Valid {
+		return ddl.String, nil
+	}
+	return "", nil
+}
+
+// ListDb handles the list databases operation
+func (p *Postgres) ListDb() error {
+	dbList, err := p.getDatabases()
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(backend.URLFor(`/db`))
+	}
+	p.Set(`dbList`, dbList)
+	return p.Render(`db/postgres/list_db`, p.checkErr(err))
+}
+
+// CreateDb handles the create database operation
+func (p *Postgres) CreateDb() error {
+	if p.IsPost() {
+		data := p.Data()
+		dbName := p.Form(`db`)
+		owner := p.Form(`owner`)
+		encoding := p.Form(`encoding`)
+		template := p.Form(`template`)
+
+		if len(dbName) == 0 {
+			data.SetInfo(p.T(`数据库名不能为空`), 0)
+			return p.JSON(data)
+		}
+
+		err := p.createDatabase(dbName, owner, encoding, template)
+		if err != nil {
+			data.SetError(err)
+		} else {
+			data.SetInfo(p.T(`数据库创建成功`), 1)
+		}
+		return p.JSON(data)
+	}
+	return p.Render(`db/postgres/create_db`, p.checkErr(nil))
+}
+
+// ModifyDb handles the modify/delete database operation
+func (p *Postgres) ModifyDb() error {
+	if p.IsPost() {
+		data := p.Data()
+		operate := p.Form(`operate`)
+
+		switch operate {
+		case `drop`:
+			dbName := p.Form(`db`)
+			if len(dbName) == 0 {
+				data.SetInfo(p.T(`数据库名不能为空`), 0)
+				return p.JSON(data)
+			}
+			err := p.dropDatabase(dbName)
+			if err != nil {
+				data.SetError(err)
+			} else {
+				data.SetInfo(p.T(`数据库删除成功`), 1)
+			}
+		case `rename`:
+			oldName := p.Form(`oldName`)
+			newName := p.Form(`newName`)
+			if len(oldName) == 0 || len(newName) == 0 {
+				data.SetInfo(p.T(`数据库名不能为空`), 0)
+				return p.JSON(data)
+			}
+			err := p.alterDatabase(oldName, newName)
+			if err != nil {
+				data.SetError(err)
+			} else {
+				data.SetInfo(p.T(`数据库重命名成功`), 1)
+			}
+		default:
+			data.SetInfo(p.T(`不支持的操作`), 0)
+		}
+		return p.JSON(data)
+	}
+	return p.Render(`db/postgres/modify_db`, p.checkErr(nil))
+}
+
+// ListTable handles the list tables operation
+func (p *Postgres) ListTable() error {
+	tables, err := p.getTables()
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listDb`))
+	}
+	p.Set(`tableList`, tables)
+
+	// Also get table statuses
+	statuses, _ := p.getTableStatus(``)
+	p.Set(`tableStatuses`, statuses)
+
+	return p.Render(`db/postgres/list_table`, p.checkErr(err))
+}
+
+// ViewTable handles the view table structure operation
+func (p *Postgres) ViewTable() error {
+	tableName := p.Form(`table`)
+	if len(tableName) == 0 {
+		p.fail(p.T(`请选择表`))
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+
+	fields, err := p.getTableFields(tableName)
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+	p.Set(`fields`, fields)
+
+	ddl, err := p.getTableDDL(tableName)
+	if err == nil {
+		p.Set(`ddl`, ddl)
+	}
+
+	return p.Render(`db/postgres/view_table`, p.checkErr(err))
+}
+
+// RunCommand handles running SQL commands
+func (p *Postgres) RunCommand() error {
+	if p.IsPost() {
+		data := p.Data()
+		sqlStr := strings.TrimSpace(p.Form(`sql`))
+		if len(sqlStr) == 0 {
+			data.SetInfo(p.T(`请输入SQL语句`), 0)
+			return p.JSON(data)
+		}
+
+		upperSQL := strings.ToUpper(sqlStr)
+
+		// Determine if it's a query or exec command
+		isQuery := strings.HasPrefix(upperSQL, `SELECT`) ||
+			strings.HasPrefix(upperSQL, `SHOW`) ||
+			strings.HasPrefix(upperSQL, `EXPLAIN`) ||
+			strings.HasPrefix(upperSQL, `WITH`)
+
+		if isQuery {
+			rows, err := p.db.Query(sqlStr)
+			if err != nil {
+				data.SetError(err)
+				return p.JSON(data)
+			}
+			defer rows.Close()
+
+			columns, err := rows.Columns()
+			if err != nil {
+				data.SetError(err)
+				return p.JSON(data)
+			}
+
+			var results []map[string]interface{}
+			for rows.Next() {
+				values := make([]interface{}, len(columns))
+				valuePtrs := make([]interface{}, len(columns))
+				for i := range columns {
+					valuePtrs[i] = &values[i]
+				}
+
+				if err := rows.Scan(valuePtrs...); err != nil {
+					data.SetError(err)
+					return p.JSON(data)
+				}
+
+				row := make(map[string]interface{})
+				for i, col := range columns {
+					val := values[i]
+					// Convert byte arrays to strings
+					if b, ok := val.([]byte); ok {
+						row[col] = string(b)
+					} else {
+						row[col] = val
+					}
+				}
+				results = append(results, row)
+			}
+
+			p.Set(`columns`, columns)
+			p.Set(`results`, results)
+			p.Set(`rowsAffected`, int64(len(results)))
+		} else {
+			result, err := p.db.Exec(sqlStr)
+			if err != nil {
+				data.SetError(err)
+				return p.JSON(data)
+			}
+			rowsAffected, _ := result.RowsAffected()
+			p.Set(`rowsAffected`, rowsAffected)
+		}
+
+		p.Set(`sql`, sqlStr)
+		data.SetInfo(p.T(`执行成功`), 1)
+		return p.JSON(data)
+	}
+
+	return p.Render(`db/postgres/sql`, p.checkErr(nil))
+}
+
+// ListData handles displaying table data (paginated)
+func (p *Postgres) ListData() error {
+	tableName := p.Form(`table`)
+	if len(tableName) == 0 {
+		p.fail(p.T(`请选择表`))
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+
+	limit := p.Formx(`limit`).Int()
+	page := p.Formx(`page`).Int()
+	totalRows := p.Formx(`rows`).Int()
+
+	if limit < 1 {
+		limit = 50
+		p.Request().Form().Set(`limit`, strconv.Itoa(limit))
+	}
+	if page < 1 {
+		page = 1
+	}
+
+	// Get fields for column display
+	fields, err := p.getTableFields(tableName)
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+	p.Set(`fields`, fields)
+
+	// Get total row count if not provided
+	if totalRows < 1 {
+		countSQL := fmt.Sprintf(`SELECT COUNT(*) FROM %s`, QuoteCol(tableName))
+		var count sql.NullInt64
+		p.db.QueryRow(countSQL).Scan(&count)
+		totalRows = int(count.Int64)
+	}
+
+	offset := (page - 1) * limit
+
+	// Query data
+	sqlStr := fmt.Sprintf(`SELECT * FROM %s ORDER BY 1 LIMIT %d OFFSET %d`, QuoteCol(tableName), limit, offset)
+	rows, err := p.db.Query(sqlStr)
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+
+	var results []map[string]interface{}
+	for rows.Next() {
+		values := make([]interface{}, len(columns))
+		valuePtrs := make([]interface{}, len(columns))
+		for i := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			continue
+		}
+
+		row := make(map[string]interface{})
+		for i, col := range columns {
+			val := values[i]
+			if b, ok := val.([]byte); ok {
+				row[col] = string(b)
+			} else {
+				row[col] = val
+			}
+		}
+		results = append(results, row)
+	}
+
+	p.Set(`columns`, columns)
+	p.Set(`values`, results)
+	p.Set(`total`, totalRows)
+	p.Set(`table`, tableName)
+
+	// Pagination - same pattern as MySQL
+	q := p.Request().URL().Query()
+	q.Del(`page`)
+	q.Del(`rows`)
+	q.Del(`_pjax`)
+	p.Set(`pagination`, pagination.New(p.Context).SetURL(backend.URLFor(`/db`)+`?`+q.Encode()+`&page={page}&rows={rows}`).SetPage(page).SetRows(totalRows))
+
+	return p.Render(`db/postgres/list_data`, p.checkErr(err))
+}
+
+// CreateTable handles the create table operation
+func (p *Postgres) CreateTable() error {
+	if p.IsPost() {
+		data := p.Data()
+		tableName := p.Form(`table`)
+		if len(tableName) == 0 {
+			data.SetInfo(p.T(`表名不能为空`), 0)
+			return p.JSON(data)
+		}
+
+		columnNames := p.FormValues(`column_name[]`)
+		columnTypes := p.FormValues(`column_type[]`)
+		columnNulls := p.FormValues(`column_null[]`)
+		columnDefaults := p.FormValues(`column_default[]`)
+
+		if len(columnNames) == 0 {
+			data.SetInfo(p.T(`请至少定义一个字段`), 0)
+			return p.JSON(data)
+		}
+
+		var colDefs []string
+		for i, colName := range columnNames {
+			if len(colName) == 0 || i >= len(columnTypes) {
+				continue
+			}
+			def := QuoteCol(colName) + ` ` + columnTypes[i]
+			if i < len(columnNulls) && columnNulls[i] == `NO` {
+				def += ` NOT NULL`
+			}
+			if i < len(columnDefaults) && len(columnDefaults[i]) > 0 {
+				def += ` DEFAULT ` + columnDefaults[i]
+			}
+			colDefs = append(colDefs, def)
+		}
+
+		sqlStr := fmt.Sprintf(`CREATE TABLE %s (%s)`, QuoteCol(tableName), strings.Join(colDefs, `, `))
+		_, err := p.db.Exec(sqlStr)
+		if err != nil {
+			data.SetError(err)
+		} else {
+			data.SetInfo(p.T(`表创建成功`), 1)
+		}
+		return p.JSON(data)
+	}
+
+	// Provide data type suggestions
+	p.Set(`dataTypes`, []string{
+		`integer`, `bigint`, `smallint`, `serial`, `bigserial`,
+		`varchar(255)`, `text`, `char(1)`,
+		`boolean`,
+		`timestamp`, `date`, `time`,
+		`numeric(10,2)`, `real`, `double precision`,
+		`json`, `jsonb`,
+		`uuid`,
+		`bytea`,
+	})
+	return p.Render(`db/postgres/create_table`, p.checkErr(nil))
+}
+
+// ModifyTable handles the modify table operation
+func (p *Postgres) ModifyTable() error {
+	tableName := p.Form(`table`)
+	if len(tableName) == 0 {
+		p.fail(p.T(`请选择表`))
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+
+	if p.IsPost() {
+		data := p.Data()
+		operate := p.Form(`operate`)
+
+		switch operate {
+		case `drop`:
+			sqlStr := fmt.Sprintf(`DROP TABLE %s`, QuoteCol(tableName))
+			if p.Formx(`cascade`).Bool() {
+				sqlStr += ` CASCADE`
+			}
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				data.SetError(err)
+			} else {
+				data.SetInfo(p.T(`表删除成功`), 1)
+			}
+		case `truncate`:
+			sqlStr := fmt.Sprintf(`TRUNCATE TABLE %s`, QuoteCol(tableName))
+			if p.Formx(`cascade`).Bool() {
+				sqlStr += ` CASCADE`
+			}
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				data.SetError(err)
+			} else {
+				data.SetInfo(p.T(`表已清空`), 1)
+			}
+		case `rename`:
+			newName := p.Form(`newName`)
+			if len(newName) == 0 {
+				data.SetInfo(p.T(`新表名不能为空`), 0)
+				return p.JSON(data)
+			}
+			sqlStr := fmt.Sprintf(`ALTER TABLE %s RENAME TO %s`, QuoteCol(tableName), QuoteCol(newName))
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				data.SetError(err)
+			} else {
+				data.SetInfo(p.T(`表重命名成功`), 1)
+			}
+		default:
+			data.SetInfo(p.T(`不支持的操作`), 0)
+		}
+		return p.JSON(data)
+	}
+
+	fields, err := p.getTableFields(tableName)
+	if err == nil {
+		p.Set(`fields`, fields)
+	}
+	return p.Render(`db/postgres/modify_table`, p.checkErr(err))
+}
+
+// Indexes handles showing indexes for a table
+func (p *Postgres) Indexes() error {
+	tableName := p.Form(`table`)
+	if len(tableName) == 0 {
+		p.fail(p.T(`请选择表`))
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+
+	sqlStr := `
+		SELECT 
+			i.relname AS index_name,
+			am.amname AS index_type,
+			pg_get_indexdef(ix.indexrelid) AS index_def,
+			ix.indisunique AS is_unique,
+			ix.indisprimary AS is_primary
+		FROM pg_index ix
+		JOIN pg_class t ON t.oid = ix.indrelid
+		JOIN pg_class i ON i.oid = ix.indexrelid
+		JOIN pg_am am ON am.oid = i.relam
+		WHERE t.relname = $1
+		AND t.relkind = 'r'
+		ORDER BY i.relname`
+
+	rows, err := p.db.Query(sqlStr, tableName)
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listTable`))
+	}
+	defer rows.Close()
+
+	type IndexInfo struct {
+		Name      string
+		Type      string
+		Def       string
+		IsUnique  bool
+		IsPrimary bool
+	}
+
+	var indexes []IndexInfo
+	for rows.Next() {
+		var idx IndexInfo
+		if err := rows.Scan(&idx.Name, &idx.Type, &idx.Def, &idx.IsUnique, &idx.IsPrimary); err != nil {
+			continue
+		}
+		indexes = append(indexes, idx)
+	}
+
+	p.Set(`indexes`, indexes)
+	p.Set(`table`, tableName)
+	return p.Render(`db/postgres/indexes`, p.checkErr(err))
+}
+
+// Export handles data export
+func (p *Postgres) Export() error {
+	tableName := p.Form(`table`)
+	format := p.Form(`format`, `sql`)
+
+	if p.IsPost() {
+		var sqlStr string
+		if len(tableName) > 0 {
+			sqlStr = fmt.Sprintf(`SELECT * FROM %s`, QuoteCol(tableName))
+		} else {
+			p.fail(p.T(`请选择要导出的表`))
+			return p.returnTo(p.GenURL(`listTable`))
+		}
+
+		rows, err := p.db.Query(sqlStr)
+		if err != nil {
+			p.fail(err.Error())
+			return p.returnTo(p.GenURL(`listTable`))
+		}
+		defer rows.Close()
+
+		columns, _ := rows.Columns()
+
+		switch format {
+		case `csv`:
+			p.Response().Header().Set(echo.HeaderContentType, `text/csv; charset=utf-8`)
+			p.Response().Header().Set(`Content-Disposition`, fmt.Sprintf(`attachment; filename="%s.csv"`, tableName))
+
+			// Header
+			p.Response().Write([]byte(strings.Join(columns, `,`) + "\n"))
+
+			for rows.Next() {
+				values := make([]interface{}, len(columns))
+				valuePtrs := make([]interface{}, len(columns))
+				for i := range columns {
+					valuePtrs[i] = &values[i]
+				}
+				if err := rows.Scan(valuePtrs...); err != nil {
+					continue
+				}
+				var row []string
+				for _, v := range values {
+					switch val := v.(type) {
+					case []byte:
+						row = append(row, fmt.Sprintf(`"%s"`, strings.ReplaceAll(string(val), `"`, `""`)))
+					case nil:
+						row = append(row, `NULL`)
+					default:
+						row = append(row, fmt.Sprintf(`"%v"`, val))
+					}
+				}
+				p.Response().Write([]byte(strings.Join(row, `,`) + "\n"))
+			}
+
+		default: // SQL format
+			p.Response().Header().Set(echo.HeaderContentType, `text/plain; charset=utf-8`)
+			p.Response().Header().Set(`Content-Disposition`, fmt.Sprintf(`attachment; filename="%s.sql"`, tableName))
+
+			for rows.Next() {
+				values := make([]interface{}, len(columns))
+				valuePtrs := make([]interface{}, len(columns))
+				for i := range columns {
+					valuePtrs[i] = &values[i]
+				}
+				if err := rows.Scan(valuePtrs...); err != nil {
+					continue
+				}
+
+				var colNames, colValues []string
+				for i, v := range values {
+					colNames = append(colNames, QuoteCol(columns[i]))
+					switch val := v.(type) {
+					case []byte:
+						colValues = append(colValues, QuoteVal(string(val)))
+					case nil:
+						colValues = append(colValues, `NULL`)
+					default:
+						colValues = append(colValues, QuoteVal(fmt.Sprintf(`%v`, val)))
+					}
+				}
+
+				insertSQL := fmt.Sprintf(
+					`INSERT INTO %s (%s) VALUES (%s);`,
+					QuoteCol(tableName),
+					strings.Join(colNames, `, `),
+					strings.Join(colValues, `, `),
+				)
+				p.Response().Write([]byte(insertSQL + "\n"))
+			}
+		}
+		return nil
+	}
+
+	p.Set(`table`, tableName)
+	p.Set(`format`, format)
+	return p.Render(`db/postgres/export`, p.checkErr(nil))
+}
+
+// Import handles data import
+func (p *Postgres) Import() error {
+	if p.IsPost() {
+		data := p.Data()
+		sqlContent := p.Form(`sql_content`)
+		if len(sqlContent) == 0 {
+			// Check for file upload
+			file, _, err := p.Request().FormFile(`file`)
+			if err != nil {
+				data.SetInfo(p.T(`请提供SQL内容或上传文件`), 0)
+				return p.JSON(data)
+			}
+			defer file.Close()
+			buf := make([]byte, 1024*1024) // 1MB buffer
+			n, _ := file.Read(buf)
+			sqlContent = string(buf[:n])
+		}
+
+		// Execute SQL statements
+		statements := strings.Split(sqlContent, `;`)
+		var execErr error
+		execCount := 0
+		for _, stmt := range statements {
+			stmt = strings.TrimSpace(stmt)
+			if len(stmt) == 0 {
+				continue
+			}
+			_, execErr = p.db.Exec(stmt)
+			if execErr != nil {
+				break
+			}
+			execCount++
+		}
+
+		if execErr != nil {
+			data.SetError(execErr)
+		} else {
+			data.SetInfo(p.T(`成功执行 %d 条SQL语句`, execCount), 1)
+		}
+		return p.JSON(data)
+	}
+
+	return p.Render(`db/postgres/import`, p.checkErr(nil))
+}
+
+// Info handles the server info operation
+func (p *Postgres) Info() error {
+	infos := map[string]string{}
+
+	// Version
+	var version string
+	p.db.QueryRow(`SELECT version()`).Scan(&version)
+	infos[`version`] = version
+
+	// Database size
+	var dbSize string
+	p.db.QueryRow(`SELECT pg_size_pretty(pg_database_size(current_database()))`).Scan(&dbSize)
+	infos[`database_size`] = dbSize
+
+	// Current connections
+	var connections int
+	p.db.QueryRow(`SELECT count(*) FROM pg_stat_activity`).Scan(&connections)
+	infos[`connections`] = fmt.Sprintf(`%d`, connections)
+
+	// Uptime
+	var uptime string
+	p.db.QueryRow(`SELECT pg_postmaster_start_time()::text`).Scan(&uptime)
+	infos[`uptime`] = uptime
+
+	p.Set(`infos`, infos)
+	return p.Render(`db/postgres/info`, p.checkErr(nil))
+}
+
+// ProcessList handles showing the process list
+func (p *Postgres) ProcessList() error {
+	sqlStr := `
+		SELECT 
+			pid,
+			datname,
+			usename,
+			application_name,
+			client_addr::text,
+			state,
+			query,
+			query_start::text,
+			state_change::text
+		FROM pg_stat_activity
+		ORDER BY query_start DESC NULLS LAST`
+
+	rows, err := p.db.Query(sqlStr)
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listDb`))
+	}
+	defer rows.Close()
+
+	type ProcessItem struct {
+		Pid         string
+		Database    string
+		User        string
+		AppName     string
+		Client      string
+		State       string
+		Query       string
+		QueryStart  string
+		StateChange string
+	}
+
+	var processes []ProcessItem
+	for rows.Next() {
+		var (
+			pid         string
+			database    sql.NullString
+			user        string
+			appName     sql.NullString
+			client      sql.NullString
+			state       sql.NullString
+			query       sql.NullString
+			queryStart  sql.NullString
+			stateChange sql.NullString
+		)
+		if err := rows.Scan(&pid, &database, &user, &appName, &client, &state, &query, &queryStart, &stateChange); err != nil {
+			continue
+		}
+		processes = append(processes, ProcessItem{
+			Pid:         pid,
+			Database:    database.String,
+			User:        user,
+			AppName:     appName.String,
+			Client:      client.String,
+			State:       state.String,
+			Query:       query.String,
+			QueryStart:  queryStart.String,
+			StateChange: stateChange.String,
+		})
+	}
+
+	p.Set(`processes`, processes)
+	return p.Render(`db/postgres/process_list`, p.checkErr(err))
+}
+
+// Privileges handles the privileges management operation
+func (p *Postgres) Privileges() error {
+	// List roles
+	sqlStr := `SELECT rolname, rolsuper, rolinherit, rolcreaterole, rolcreatedb, rolcanlogin, rolreplication FROM pg_roles ORDER BY rolname`
+	rows, err := p.db.Query(sqlStr)
+	if err != nil {
+		p.fail(err.Error())
+		return p.returnTo(p.GenURL(`listDb`))
+	}
+	defer rows.Close()
+
+	type RoleInfo struct {
+		Name        string
+		Super       bool
+		Inherit     bool
+		CreateRole  bool
+		CreateDB    bool
+		CanLogin    bool
+		Replication bool
+	}
+
+	var roles []RoleInfo
+	for rows.Next() {
+		var r RoleInfo
+		if err := rows.Scan(&r.Name, &r.Super, &r.Inherit, &r.CreateRole, &r.CreateDB, &r.CanLogin, &r.Replication); err != nil {
+			continue
+		}
+		roles = append(roles, r)
+	}
+
+	p.Set(`roles`, roles)
+	return p.Render(`db/postgres/privileges`, p.checkErr(err))
+}

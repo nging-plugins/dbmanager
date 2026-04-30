@@ -1,0 +1,53 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"导出数据"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+{{if $.Stored.dbName}}<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>{{end}}
+<li class="active">{{"导出数据"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"导出数据"|$.T}}</h3>
+          </div>
+          <div class="content">
+              <form class="form-horizontal group-border-dashed" method="POST" action="">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"格式"|$.T}}</label>
+                <div class="col-sm-9">
+                    <select name="format" class="form-control">
+                        <option value="sql">SQL</option>
+                        <option value="csv">CSV</option>
+                        <option value="tsv">TSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"选择表"|$.T}}</label>
+                <div class="col-sm-9">
+                    {{- if $.Stored.tableList -}}
+                    {{- range $k,$v := $.Stored.tableList -}}
+                    <div class="checkbox checkbox-primary">
+                      <input type="checkbox" id="table-{{$k}}" name="tables[]" value="{{$v}}" checked="checked"><label for="table-{{$k}}">{{$v}}</label>
+                    </div>
+                    {{- end -}}
+                    {{- else -}}
+                    <p class="text-muted">{{`没有可导出的表`|$.T}}</p>
+                    {{- end -}}
+                </div>
+              </div>
+              <div class="form-group form-submit-group">
+				<div class="col-sm-9 col-sm-offset-2">
+				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-download"></i> {{"导出"|$.T}}</button>
+				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+				</div>
+			</div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

@@ -1,0 +1,58 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"角色管理"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li class="active">{{"角色管理"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+  <div class="col-md-12">
+    {{Include "db/mysql/dbinfo_btn"}}
+    <div class="block-flat no-padding">
+      <div class="header">
+        <a href="{{call $.Func.dbMgrURL `privileges`}}&act=create" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
+          <i class="fa fa-plus"></i>
+          {{"创建角色"|$.T}}
+        </a>
+        <h3>{{"角色列表"|$.T}}</h3>
+      </div>
+      <div class="content">
+        <div class="table-responsive">
+          <table class="table no-border hover blue">
+            <thead class="no-border auto-fixed">
+              <tr>
+                <th><strong>{{"角色名"|$.T}}</strong></th>
+                <th><strong>{{"属性"|$.T}}</strong></th>
+                <th style="width:100px"><strong>{{"操作"|$.T}}</strong></th>
+              </tr>
+            </thead>
+            <tbody class="no-border-x">
+              {{range $k,$v := $.Stored.roles}}
+              <tr>
+                <td><strong>{{$v.Name}}</strong></td>
+                <td>
+                  {{if $v.Super}}<span class="label label-danger">{{"超级用户"|$.T}}</span> {{end}}
+                  {{if $v.CreateDB}}<span class="label label-info">{{"创建DB"|$.T}}</span> {{end}}
+                  {{if $v.CreateRole}}<span class="label label-success">{{"创建角色"|$.T}}</span> {{end}}
+                  {{if $v.Login}}<span class="label label-primary">{{"可登录"|$.T}}</span> {{end}}
+                </td>
+                <td>
+                  <a href="{{call $.Func.dbMgrURL `privileges`}}&act=edit&role={{$v.Name}}" class="label label-success" data-pjax="#pcont" data-keepjs="true">
+                    <i class="fa fa-pencil"></i>
+                  </a>
+                  <a href="{{call $.Func.dbMgrURL `privileges`}}&act=drop&role={{$v.Name}}" class="label label-danger" onclick="return confirm('{{$.T `确定要删除角色“%v”吗？` $v.Name}}');">
+                    <i class="fa fa-times"></i>
+                  </a>
+                </td>
+              </tr>
+              {{else}}
+              <tr><td colspan="3" class="text-center">{{`暂无角色`|$.T}}</td></tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{/Block}}

@@ -1,0 +1,172 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"创建表"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
+<li class="active">{{"创建表"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"创建表"|$.T}}</h3>
+          </div>
+          <div class="content">
+              <form class="form-horizontal group-border-dashed" method="POST" id="form-create-table" action="">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"表名"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="name" class="form-control" required="required" value="{{$.Form `name`}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"引擎"|$.T}}</label>
+                <div class="col-sm-9">
+                    <select name="engine" class="form-control" id="engine">
+                        {{- if $.Stored.engines -}}
+                        {{$engine := $.Form "engine"}}
+                        {{- range $k,$v := $.Stored.engines -}}
+                        <option value="{{$v}}"{{if eq $v $engine}} selected="selected"{{end}}>{{$v}}</option>
+                        {{- end -}}
+                        {{- else -}}
+                        <option value="MergeTree">MergeTree</option>
+                        <option value="ReplacingMergeTree">ReplacingMergeTree</option>
+                        <option value="SummingMergeTree">SummingMergeTree</option>
+                        <option value="AggregatingMergeTree">AggregatingMergeTree</option>
+                        <option value="CollapsingMergeTree">CollapsingMergeTree</option>
+                        <option value="VersionedCollapsingMergeTree">VersionedCollapsingMergeTree</option>
+                        <option value="Log">Log</option>
+                        <option value="TinyLog">TinyLog</option>
+                        <option value="StripeLog">StripeLog</option>
+                        <option value="Memory">Memory</option>
+                        <option value="Distributed">Distributed</option>
+                        <option value="ReplicatedMergeTree">ReplicatedMergeTree</option>
+                        {{- end -}}
+                    </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"排序键 (ORDER BY)"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="order_by" class="form-control" value="{{$.Form `order_by`}}" placeholder="{{`例如: id, created_at`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"分区键 (PARTITION BY)"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="partition_by" class="form-control" value="{{$.Form `partition_by`}}" placeholder="{{`例如: toYYYYMM(created_at)`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"主键 (PRIMARY KEY)"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="primary_key" class="form-control" value="{{$.Form `primary_key`}}" placeholder="{{`留空则使用排序键`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"注释"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="comment" class="form-control" value="{{$.Form `comment`}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="table-responsive">
+				<table class="table table-bordered table-condensed layout-fixed hover blue">
+					<thead class="no-border">
+						<tr>
+							<th style="width:180px"><strong>{{"字段名"|$.T}}</strong></th>
+                            <th style="width:180px"><strong>{{"类型"|$.T}}</strong></th>
+                            <th style="width:200px"><strong>{{"注释"|$.T}}</strong></th>
+                            <th style="width:66px"><a href="javascript:;" onclick="addRow()" class="label label-success" title="{{`添加一行`|$.T}}"><i class="fa fa-plus"></i></a></th>
+						</tr>
+					</thead>
+					<tbody class="no-border-x" id="tbody-content">
+                        {{- range $index, $field := $.Stored.postFields -}}
+                        <tr>
+							<td>
+                                <input type="text" name="fields[{{$index}}][name]" value="{{$field.Name}}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="fields[{{$index}}][type]" value="{{$field.Type}}" class="form-control" placeholder="{{`例如: String, UInt64, DateTime`|$.T}}">
+                            </td>
+                            <td>
+                                <input type="text" name="fields[{{$index}}][comment]" value="{{$field.Comment}}" class="form-control">
+                            </td>
+                            <td>
+                                <a href="javascript:;" onclick="moveUpRow(this)" class="label label-default" title="{{`上移`|$.T}}"><i class="fa fa-arrow-up"></i></a>
+                                <a href="javascript:;" onclick="moveDownRow(this)" class="label label-default" title="{{`下移`|$.T}}"><i class="fa fa-arrow-down"></i></a>
+                                <a href="javascript:;" onclick="delRow(this)" class="label label-danger" title="{{`删除此行`|$.T}}"><i class="fa fa-times"></i></a>
+                            </td>
+						</tr>
+                        {{- else -}}
+                        <tr>
+							<td><input type="text" name="fields[0][name]" class="form-control"></td>
+                            <td><input type="text" name="fields[0][type]" class="form-control" placeholder="{{`例如: String, UInt64, DateTime`|$.T}}"></td>
+                            <td><input type="text" name="fields[0][comment]" class="form-control"></td>
+                            <td>
+                                <a href="javascript:;" onclick="moveUpRow(this)" class="label label-default" title="{{`上移`|$.T}}"><i class="fa fa-arrow-up"></i></a>
+                                <a href="javascript:;" onclick="moveDownRow(this)" class="label label-default" title="{{`下移`|$.T}}"><i class="fa fa-arrow-down"></i></a>
+                                <a href="javascript:;" onclick="delRow(this)" class="label label-danger" title="{{`删除此行`|$.T}}"><i class="fa fa-times"></i></a>
+                            </td>
+						</tr>
+                        {{- end}}
+					</tbody>
+				</table>
+			    </div>
+              </div>
+              <div class="form-group form-submit-group">
+				<div class="col-sm-9 col-sm-offset-2">
+				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
+				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+				</div>
+			</div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+<script>
+function addRow(){
+    var tbody=$('#tbody-content');
+    var tr=tbody.children('tr:last');
+    if(tr.length<1) return;
+    var clone=tr.clone();
+    clone.find('input').val('');
+    var index=tbody.children('tr').length;
+    clone.find('[name]').each(function(){
+        var name=$(this).attr('name').replace(/fields\[\d+\]/, 'fields['+index+']');
+        $(this).attr('name',name);
+    });
+    tbody.append(clone);
+}
+function delRow(obj){
+    var tr=$(obj).parent().parent();
+    var tbody=tr.parent();
+    if(tbody.children('tr').length<=1) return App.message({title:'{{"提示"|$.T}}',text:'{{"至少要保留一行"|$.T}}',class_name:'warning'});
+    tr.remove();
+    reorder();
+}
+function reorder(){
+    $('#tbody-content tr').each(function(i){
+        $(this).find('[name]').each(function(){
+            var name=$(this).attr('name').replace(/fields\[\d+\]/, 'fields['+i+']');
+            $(this).attr('name',name);
+        });
+    });
+}
+function moveUpRow(obj){
+    var tr=$(obj).parent().parent();
+    var prev=tr.prev();
+    if(prev.length>0){ prev.before(tr); reorder(); }
+}
+function moveDownRow(obj){
+    var tr=$(obj).parent().parent();
+    var next=tr.next();
+    if(next.length>0){ next.after(tr); reorder(); }
+}
+</script>
+{{/Block}}

@@ -1,0 +1,68 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"进程列表"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li class="active">{{"进程列表"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+  <div class="col-md-12">
+    {{Include "db/mysql/dbinfo_btn"}}
+    <div class="block-flat no-padding">
+      <div class="header">
+        <h3>{{"进程列表"|$.T}}</h3>
+      </div>
+      <div class="content">
+        <form action="" method="POST">
+          <div class="table-responsive">
+            <table class="table no-border hover blue">
+              <thead class="no-border auto-fixed">
+                <tr>
+                  <th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th>
+                  <th><strong>PID</strong></th>
+                  <th><strong>{{"数据库"|$.T}}</strong></th>
+                  <th><strong>{{"用户"|$.T}}</strong></th>
+                  <th><strong>{{"状态"|$.T}}</strong></th>
+                  <th><strong>{{"查询"|$.T}}</strong></th>
+                  <th><strong>{{"开始时间"|$.T}}</strong></th>
+                </tr>
+              </thead>
+              <tbody class="no-border-x" id="process-items">
+                {{range $k,$v := $.Stored.processes}}
+                <tr>
+                  <td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="pid[]" value="{{$v.Pid}}"><label for="check-{{$k}}"></label></div></td>
+                  <td>{{$v.Pid}}</td>
+                  <td>{{$v.Database}}</td>
+                  <td>{{$v.User}}</td>
+                  <td>{{$v.State}}</td>
+                  <td><div class="wrap">{{$v.Query}}</div></td>
+                  <td>{{$v.QueryStart}}</td>
+                </tr>
+                {{else}}
+                <tr><td colspan="7" class="text-center">{{`暂无进程`|$.T}}</td></tr>
+                {{end}}
+              </tbody>
+            </table>
+          </div>
+          {{if gt (len $.Stored.processes) 0}}
+          <div class="footer">
+            <button type="submit" class="btn btn-danger no-margin-left" onclick="return confirm('{{`确定要终止选中的进程吗？`|$.T}}');">
+              <i class="fa fa-minus-circle"></i>
+              {{"终止进程"|$.T}}
+            </button>
+          </div>
+          {{end}}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+<script>
+$(function(){
+    App.attachCheckedAll('#checkedAll','input[type=checkbox][name=\'pid[]\']');
+});
+</script>
+{{/Block}}

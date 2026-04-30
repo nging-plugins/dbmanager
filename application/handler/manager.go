@@ -30,8 +30,10 @@ import (
 	"github.com/admpub/log"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"   //mysql
-	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/redis" //redis
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"         //mysql
+	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/clickhouse" //clickhouse
+	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/postgres"   //postgres
+	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/redis"      //redis
 	"github.com/nging-plugins/dbmanager/application/model"
 )
 
@@ -47,8 +49,10 @@ var (
 		return baseURL + `?driver=` + auth.Driver + `&host=` + url.QueryEscape(auth.Host) + `&username=` + url.QueryEscape(auth.Username)
 	}
 	driverColors = map[string]string{
-		`mysql`: `primary`,
-		`redis`: `info`,
+		`mysql`:      `primary`,
+		`postgres`:   `success`,
+		`clickhouse`: `warning`,
+		`redis`:      `info`,
 	}
 )
 

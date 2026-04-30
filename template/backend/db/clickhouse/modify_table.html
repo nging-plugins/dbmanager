@@ -1,0 +1,46 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"修改表"|$.T}}: {{$.Stored.table}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $.Stored.table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$.Stored.table}}</a></li>
+<li class="active">{{"修改表"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+{{$table := $.Stored.table}}
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"修改表"|$.T}}: {{$table}}</h3>
+          </div>
+          <div class="content">
+              <form class="form-horizontal group-border-dashed" method="POST" action="">
+              <input type="hidden" name="table" value="{{$table}}">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"新表名"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="new_name" class="form-control" value="{{$.Form `new_name`}}" placeholder="{{`留空则不重命名`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"注释"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="comment" class="form-control" value="{{$.Form `comment`}}">
+                </div>
+              </div>
+              <div class="form-group form-submit-group">
+				<div class="col-sm-9 col-sm-offset-2">
+				  <button type="submit" name="action" value="modify" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存修改"|$.T}}</button>
+				  <button type="submit" name="action" value="rename" class="btn btn-warning btn-lg" onclick="return confirm('{{"确定要重命名此表吗？"|$.T}}');"><i class="fa fa-pencil"></i> {{"重命名"|$.T}}</button>
+				  <button type="submit" name="action" value="truncate" class="btn btn-danger btn-lg" onclick="return confirm('{{"确定要清空此表的所有数据吗？此操作不可恢复！"|$.T}}');"><i class="fa fa-eraser"></i> {{"清空"|$.T}}</button>
+				  <button type="submit" name="action" value="drop" class="btn btn-danger btn-lg" onclick="return confirm('{{"确定要删除此表吗？此操作不可恢复！"|$.T}}');"><i class="fa fa-times"></i> {{"删除"|$.T}}</button>
+				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $table}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+				</div>
+			</div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

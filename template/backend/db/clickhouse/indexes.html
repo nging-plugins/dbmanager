@@ -1,0 +1,49 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"索引"|$.T}}: {{$.Stored.table}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $.Stored.table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$.Stored.table}}</a></li>
+<li class="active">{{"索引"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+{{$table := $.Stored.table}}
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header no-border">							
+            <h3>{{"索引"|$.T}}: {{$table}}</h3>
+          </div>
+          <div class="content">
+              <form class="form-horizontal group-border-dashed" method="POST" action="">
+              {{$indexes := $.Stored.indexes}}
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"排序键 (ORDER BY)"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="sorting_key" class="form-control" value="{{if $indexes}}{{$indexes.SortingKey}}{{end}}" placeholder="{{`例如: id, created_at`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"主键 (PRIMARY KEY)"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="primary_key" class="form-control" value="{{if $indexes}}{{$indexes.PrimaryKey}}{{end}}" placeholder="{{`留空则使用排序键`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{"采样键 (SAMPLE BY)"|$.T}}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="sample_by" class="form-control" value="{{if $indexes}}{{$indexes.SampleBy}}{{end}}" placeholder="{{`例如: intHash32(user_id)`|$.T}}">
+                </div>
+              </div>
+              <div class="form-group form-submit-group">
+				<div class="col-sm-9 col-sm-offset-2">
+				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
+				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $table}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+				</div>
+			</div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}

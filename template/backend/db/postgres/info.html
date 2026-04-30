@@ -1,0 +1,40 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"服务器信息"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li class="active">{{"服务器信息"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+<div class="row">
+  <div class="col-md-12">
+    {{Include "db/mysql/dbinfo_btn"}}
+    <div class="block-flat no-padding">
+      <div class="header">
+        <h3>{{"PostgreSQL 服务器信息"|$.T}}</h3>
+      </div>
+      <div class="content">
+        <div class="table-responsive">
+          <table class="table no-border hover blue">
+            <thead class="no-border auto-fixed">
+              <tr>
+                <th style="width:30%"><strong>{{"属性"|$.T}}</strong></th>
+                <th><strong>{{"值"|$.T}}</strong></th>
+              </tr>
+            </thead>
+            <tbody class="no-border-x">
+              {{range $k,$v := $.Stored.infos}}
+              <tr>
+                <td><strong>{{$k}}</strong></td>
+                <td>{{$v}}</td>
+              </tr>
+              {{else}}
+              <tr><td colspan="2" class="text-center">{{`暂无信息`|$.T}}</td></tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{/Block}}

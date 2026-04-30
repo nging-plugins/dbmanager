@@ -1,0 +1,127 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"数据库"|$.T}}: {{$.Stored.dbName}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li>
+  <a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">
+  {{"数据库"|$.T}}: {{$.Stored.dbName}}
+  </a>
+</li>
+<li class="active">{{"表"|$.T}}: {{$.Stored.table}}</li>
+{{/Block}}
+{{Block "main"}}
+{{$table := $.Stored.table}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="block-flat no-padding">
+      <div class="header">
+        <div class="btn-group pull-right">
+          <a href="{{call $.Func.dbMgrURL `listData` $.Stored.dbName $table}}" class="btn btn-default" data-pjax="#pcont"
+            data-keepjs="true">
+            <i class="fa fa-list"></i>
+            {{"查看数据"|$.T}}
+          </a>
+          <a href="javascript:;" data-modal-url="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $table}}&amp;ddl=1" class="btn btn-default">
+            <i class="fa fa-code"></i>
+            {{"查看DDL"|$.T}}
+          </a>
+          <a href="{{call $.Func.dbMgrURL `modifyTable` $.Stored.dbName $table}}" class="btn btn-default" data-pjax="#pcont" data-keepjs="true">
+            <i class="fa fa-pencil"></i>
+            {{"修改表"|$.T}}
+          </a>
+        </div>
+        <h3>{{"表结构"|$.T}}: {{$table}}</h3>
+      </div>
+      <div class="content">
+        <div class="table-responsive">
+          <table class="table no-border hover blue">
+            <thead class="no-border auto-fixed">
+              <tr>
+                <th><strong>{{"列"|$.T}}</strong></th>
+                <th><strong>{{"类型"|$.T}}</strong></th>
+                <th><strong>{{"默认值"|$.T}}</strong></th>
+                <th><strong>{{"注释"|$.T}}</strong></th>
+              </tr>
+            </thead>
+            <tbody class="no-border-x" id="tbody-content">
+              {{range $k,$v := $.Stored.fields}}
+              <tr>
+                <td><b>{{$v.ColumnName}}</b></td>
+                <td>{{$v.DataType}}</td>
+                <td>
+                  {{if $v.DefaultExpr}}
+                  [<b>{{$v.DefaultExpr}}</b>]
+                  {{end}}
+                  {{if $v.DefaultType}}
+                  <span class="text-muted">({{$v.DefaultType}})</span>
+                  {{end}}
+                </td>
+                <td>{{$v.Comment}}</td>
+              </tr>
+              {{else}}
+              <tr><td colspan="10" class="text-center">{{`没有字段`|$.T}}</td></tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /.content -->
+    </div><!-- /.block-flat -->
+
+    <div class="block-flat no-padding">
+      <div class="header">
+        <a href="{{call $.Func.dbMgrURL `indexes` $.Stored.dbName $table}}" data-pjax="#pcont" data-keepjs="true" class="btn btn-default pull-right">
+          <i class="fa fa-pencil"></i>
+          {{"修改索引"|$.T}}
+        </a>
+        <h3>{{"索引"|$.T}}</h3>
+      </div>
+      <div class="content">
+        <div class="table-responsive overflow">
+          <table class="table no-border hover blue">
+            <thead class="no-border">
+              <tr>
+                <th><strong>{{"排序键"|$.T}}</strong></th>
+                <th><strong>{{"主键"|$.T}}</strong></th>
+              </tr>
+            </thead>
+            <tbody class="no-border-x">
+              {{if $.Stored.indexes}}
+              <tr>
+                <td>{{$.Stored.indexes.SortingKey}}</td>
+                <td>{{$.Stored.indexes.PrimaryKey}}</td>
+              </tr>
+              {{else}}
+              <tr><td colspan="2" class="text-center">{{`没有索引`|$.T}}</td></tr>
+              {{end}}
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /.content -->
+    </div><!-- /.block-flat -->
+
+  </div>
+</div>
+{{/Block}}
+
+{{Block "footer"}}
+{{Super}}
+<script>
+  $(function () {
+    $('[data-modal-url]').on('click', function () {
+      var url = $(this).data('modal-url');
+      $.get(url, {}, function (r) {
+        if (r.Code != 1) return App.message({ title: '{{"出错了"|$.T}}', text: r.Info, class_name: 'danger' });
+        var modal=$('#show-ddl-modal');
+        if(modal.length<1){
+            $('body').append('<div class="md-modal colored-header custom-width md-effect-9" id="show-ddl-modal"><div class="md-content"><div class="modal-header"><h3>DDL</h3><button type="button" class="close md-close" data-dismiss="modal">&times;</button></div><div class="modal-body"><pre></pre></div></div></div>');
+            modal=$('#show-ddl-modal');
+        }
+        modal.css({height:'100%',width:'100%','max-width':'100%',left:0,top:0,transform:'none'});
+        modal.find('.modal-body').css({height:'calc(100vh - 150px)',width:'100%','max-width':'100%',overflow:'auto',padding:'0 8px'});
+        modal.find('pre').html(App.htmlEncode(r.Data.ddl));
+        modal.niftyModal('show');
+      }, 'json');
+    });
+  })
+</script>
+{{/Block}}

@@ -1,0 +1,78 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"PostgreSQL - 数据库列表"|$.T}}{{/Block}}
+{{Block "main"}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/dbinfo_btn"}}
+        <div class="block-flat no-padding">
+          <div class="header">
+            <h3>{{"选择数据库"|$.T}}</h3>
+          </div>
+          <div class="content">
+              <div class="table-responsive" data-pattern="priority-columns">
+				<table class="table no-border hover blue">
+					<thead class="no-border">
+						<tr>
+							<th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" name="checkedAll" value="1" id="checkedAll"><label for="checkedAll"></label></div></th>
+							<th><strong>{{"数据库"|$.T}}</strong></th>
+							<th style="width:85px"></th>
+						</tr>
+					</thead>
+					<tbody class="no-border-x" id="tbody-content">
+                        {{- range $k,$v := $.Stored.dbList -}}
+						<tr>
+							<td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="check[]" value="{{$v}}"><label for="check-{{$k}}"></label></div></td>
+							<td><a href="{{call $.Func.dbMgrURL `listTable` $v}}">{{$v}}</a></td>
+                            <td class="label-group">
+                                <a data-toggle="tooltip" title="{{`修改`|$.T}}" href="{{call $.Func.dbMgrURL `modifyDb` $v}}" class="label label-primary"><i class="fa fa-pencil"></i></a>
+                            </td>
+						</tr>
+                        {{- else}}
+						<tr><td colspan="10" class="text-center">{{`暂无数据库`|$.T}}</td></tr>
+                        {{- end}}
+					</tbody>
+				</table>
+			    </div>
+                {{- if gt (len $.Stored.dbList) 0 -}}
+                <div class="footer">
+                <fieldset>
+                     <legend class="sm-padding-bottom sm-margin-bottom">{{"已选中"|$.T}} (<span id="selected-items-count">0</span>)</legend>
+                     <button type="button" class="btn btn-danger no-margin-left" id="drop-selected-dbs">
+                        <i class="fa fa-times"></i>
+                        {{"删除"|$.T}}
+                    </button>
+                </fieldset>
+                </div><!-- /.footer -->
+                {{- end -}}
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+<script>
+$(function(){
+    App.attachCheckedAll('#checkedAll','input[type=checkbox][name=\'check[]\']','#selected-items-count');
+    $('#drop-selected-dbs').click(function(){
+        var dbs=[];
+        var ckd=$('#tbody-content input[name="check[]"]:checked');
+        if(ckd.length<1) return App.message({title:'{{"出错了"|$.T}}',text:'{{"请选择您要删除的数据库"|$.T}}',class_name:'danger'},false);
+        ckd.each(function(){ dbs.push($(this).val()); });
+        if(!confirm('{{"确定要删除下面这些数据库吗？"|$.T}}\n'+dbs.join('\n'))) return;
+        $.post(window.location.href,{operate:'drop',db:dbs},function(r){
+            if(r.Code==1) window.location.reload();
+            else App.message({title:'{{"出错了"|$.T}}',text:r.Info,class_name:'danger'},false);
+        },'json');
+    });
+    $('#create-db').on('click',function(){
+        var name=prompt('{{"请输入新数据库名称"|$.T}}');
+        if(!name) return;
+        $.post(window.location.href,{operate:'create',db:name},function(r){
+            if(r.Code==1) window.location.reload();
+            else App.message({title:'{{"出错了"|$.T}}',text:r.Info,class_name:'danger'},false);
+        },'json');
+    });
+});
+</script>
+{{/Block}}

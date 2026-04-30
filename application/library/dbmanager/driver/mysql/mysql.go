@@ -38,6 +38,7 @@ import (
 	"github.com/webx-top/echo/code"
 	"github.com/webx-top/pagination"
 
+	"github.com/coscms/webcore/library/backend"
 	"github.com/coscms/webcore/library/common"
 	"github.com/coscms/webcore/library/nsql"
 
@@ -141,7 +142,7 @@ func (m *mySQL) Login() (err error) {
 	if err != nil {
 		if len(m.DbAuth.Db) == 0 {
 			m.fail(err.Error())
-			return m.returnTo(`/db`)
+			return m.returnTo(backend.URLFor(`/db`))
 		}
 		return errors.Wrap(err, m.T(`连接数据库出错`))
 	}
@@ -1336,7 +1337,7 @@ func (m *mySQL) ListData() error {
 	q.Del(`page`)
 	q.Del(`rows`)
 	q.Del(`_pjax`)
-	m.Set(`pagination`, pagination.New(m.Context).SetURL(`/db?`+q.Encode()+`&page={page}&rows={rows}`).SetPage(page).SetRows(totalRows))
+	m.Set(`pagination`, pagination.New(m.Context).SetURL(backend.URLFor(`/db`)+`?`+q.Encode()+`&page={page}&rows={rows}`).SetPage(page).SetRows(totalRows))
 	return m.Render(`db/mysql/list_data`, m.checkErr(err))
 }
 func (m *mySQL) genCheckedCond(fields map[string]*Field, wheres []string, multiSelection bool, inputNames ...string) (condition string, err error) {

@@ -22,6 +22,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/coscms/webcore/library/backend"
 	"github.com/webx-top/com"
 )
 
@@ -270,7 +271,7 @@ func (m *mySQL) baseInfo() error {
 		dbList, err := m.getDatabases()
 		if err != nil {
 			m.fail(err.Error())
-			return m.returnTo(`/db`)
+			return m.returnTo(backend.URLFor(`/db`))
 		}
 		m.Set(`dbList`, dbList)
 	}

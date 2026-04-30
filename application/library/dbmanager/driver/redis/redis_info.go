@@ -22,6 +22,7 @@ import (
 	"errors"
 	"net/url"
 
+	"github.com/coscms/webcore/library/backend"
 	"github.com/coscms/webcore/library/common"
 	"github.com/gomodule/redigo/redis"
 )
@@ -61,7 +62,7 @@ func (r *Redis) baseInfo() error {
 		if operation == `listTable` && q.Get(`operation`) != operation {
 			newQ.Set(`operation`, operation)
 		}
-		pagination.SetURL(`/db?`+newQ.Encode()+`&offset={next}&prev={prev}&size={size}`).SetPosition(``, nextOffset, offset)
+		pagination.SetURL(backend.URLFor(`/db`)+`?`+newQ.Encode()+`&offset={next}&prev={prev}&size={size}`).SetPosition(``, nextOffset, offset)
 		r.Set(`tablePagination`, pagination)
 	}
 

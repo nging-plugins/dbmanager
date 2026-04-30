@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/coscms/webcore/library/backend"
 	"github.com/coscms/webcore/library/common"
 	dbPagination "github.com/webx-top/db/lib/factory/pagination"
 	"github.com/webx-top/echo"
@@ -127,7 +128,7 @@ func (a *Value) CursorPaging(vkeys ...string) *pagination.Pagination {
 	q.Del(currOffsetKey)
 	q.Del(prevOffsetKey)
 	q.Del(`_pjax`)
-	a.paging.SetURL(`/db?`+q.Encode()+`&`+currOffsetKey+`={next}&`+prevOffsetKey+`={prev}`).SetPosition(``, a.NextOffset, offset)
+	a.paging.SetURL(backend.URLFor(`/db`)+`?`+q.Encode()+`&`+currOffsetKey+`={next}&`+prevOffsetKey+`={prev}`).SetPosition(``, a.NextOffset, offset)
 	return a.paging
 }
 
