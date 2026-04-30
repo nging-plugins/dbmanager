@@ -19,13 +19,20 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/coscms/webcore/library/backend"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
+	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/pagination"
 )
@@ -869,146 +876,152 @@ func (p *Postgres) Indexes() error {
 	return p.Render(`db/postgres/indexes`, p.checkErr(err))
 }
 
-// Export handles data export
 func (p *Postgres) Export() error {
-	tableName := p.Form(`table`)
-	format := p.Form(`format`, `sql`)
-
+	var err error
 	if p.IsPost() {
-		var sqlStr string
-		if len(tableName) > 0 {
-			sqlStr = fmt.Sprintf(`SELECT * FROM %s`, QuoteCol(tableName))
+		if len(p.dbName) == 0 {
+			p.fail(p.T(`请选择数据库`))
+			return p.returnTo(p.GenURL(`listDb`))
+		}
+		var tables []string
+		if p.Formx(`all`).Bool() {
+			tables, _ = p.getTables()
 		} else {
+			tables = p.FormValues(`table`)
+		}
+		if len(tables) == 0 {
 			p.fail(p.T(`请选择要导出的表`))
-			return p.returnTo(p.GenURL(`listTable`))
+			return p.returnTo(p.GenURL(`listTable`, p.dbName))
+		}
+		output := p.Form(`output`, `down`)
+		types := p.FormValues(`type`)
+
+		host, port := shared.SplitHostPort(p.DbAuth.Host)
+		if len(port) == 0 {
+			port = `5432`
+		}
+		cfg := &shared.DBConfig{
+			Driver:   `postgres`,
+			Host:     host,
+			Port:     port,
+			Username: p.DbAuth.Username,
+			Password: p.DbAuth.Password,
+			Database: p.dbName,
 		}
 
-		rows, err := p.db.Query(sqlStr)
-		if err != nil {
-			p.fail(err.Error())
-			return p.returnTo(p.GenURL(`listTable`))
-		}
-		defer rows.Close()
-
-		columns, _ := rows.Columns()
-
-		switch format {
-		case `csv`:
-			p.Response().Header().Set(echo.HeaderContentType, `text/csv; charset=utf-8`)
-			p.Response().Header().Set(`Content-Disposition`, fmt.Sprintf(`attachment; filename="%s.csv"`, tableName))
-
-			// Header
-			p.Response().Write([]byte(strings.Join(columns, `,`) + "\n"))
-
-			for rows.Next() {
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range columns {
-					valuePtrs[i] = &values[i]
-				}
-				if err := rows.Scan(valuePtrs...); err != nil {
-					continue
-				}
-				var row []string
-				for _, v := range values {
-					switch val := v.(type) {
-					case []byte:
-						row = append(row, fmt.Sprintf(`"%s"`, strings.ReplaceAll(string(val), `"`, `""`)))
-					case nil:
-						row = append(row, `NULL`)
-					default:
-						row = append(row, fmt.Sprintf(`"%v"`, val))
-					}
-				}
-				p.Response().Write([]byte(strings.Join(row, `,`) + "\n"))
+		var structWriter, dataWriter io.Writer
+		hasStruct := false
+		hasData := false
+		for _, t := range types {
+			if t == `struct` {
+				hasStruct = true
 			}
-
-		default: // SQL format
-			p.Response().Header().Set(echo.HeaderContentType, `text/plain; charset=utf-8`)
-			p.Response().Header().Set(`Content-Disposition`, fmt.Sprintf(`attachment; filename="%s.sql"`, tableName))
-
-			for rows.Next() {
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range columns {
-					valuePtrs[i] = &values[i]
-				}
-				if err := rows.Scan(valuePtrs...); err != nil {
-					continue
-				}
-
-				var colNames, colValues []string
-				for i, v := range values {
-					colNames = append(colNames, QuoteCol(columns[i]))
-					switch val := v.(type) {
-					case []byte:
-						colValues = append(colValues, QuoteVal(string(val)))
-					case nil:
-						colValues = append(colValues, `NULL`)
-					default:
-						colValues = append(colValues, QuoteVal(fmt.Sprintf(`%v`, val)))
-					}
-				}
-
-				insertSQL := fmt.Sprintf(
-					`INSERT INTO %s (%s) VALUES (%s);`,
-					QuoteCol(tableName),
-					strings.Join(colNames, `, `),
-					strings.Join(colValues, `, `),
-				)
-				p.Response().Write([]byte(insertSQL + "\n"))
+			if t == `data` {
+				hasData = true
 			}
 		}
-		return nil
+		if !hasStruct && !hasData {
+			hasStruct = true
+			hasData = true
+		}
+
+		switch output {
+		case `down`, `open`:
+			if output == `down` {
+				p.Response().Header().Set(echo.HeaderContentType, echo.MIMEOctetStream)
+				p.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", p.dbName+".sql"))
+			} else {
+				p.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
+			}
+			if shared.SupportedExport(`postgres`) {
+				w := p.Response()
+				if hasStruct {
+					structWriter = w
+				}
+				if hasData {
+					dataWriter = w
+				}
+				err = shared.NativeExportPG(context.Background(), cfg, tables, structWriter, dataWriter)
+			} else {
+				if hasStruct {
+					structWriter = p.Response()
+				}
+				if hasData {
+					dataWriter = p.Response()
+				}
+				err = shared.ExportMultipleTablesToWriter(p.Response(), p.db, tables, `"`, hasStruct, hasData, p.getVersion())
+			}
+			if err != nil {
+				p.fail(err.Error())
+				return p.returnTo(p.GenURL(`listTable`, p.dbName))
+			}
+			return nil
+
+		default: // send
+			saveDir := filepath.Join(os.TempDir(), `dbmanager/cache/export`, p.dbName)
+			com.MkdirAll(saveDir, os.ModePerm)
+			nowTime := time.Now().Format("20060102150405")
+			file := filepath.Join(saveDir, nowTime+`.sql`)
+			f, err := os.Create(file)
+			if err != nil {
+				p.fail(err.Error())
+				return p.returnTo(p.GenURL(`export`))
+			}
+			defer f.Close()
+			if shared.SupportedExport(`postgres`) {
+				if hasStruct {
+					structWriter = f
+				}
+				if hasData {
+					dataWriter = f
+				}
+				err = shared.NativeExportPG(context.Background(), cfg, tables, structWriter, dataWriter)
+			} else {
+				err = shared.ExportMultipleTablesToWriter(f, p.db, tables, `"`, hasStruct, hasData, p.getVersion())
+			}
+			if err != nil {
+				p.fail(err.Error())
+			} else {
+				p.ok(p.T(`导出成功，文件: %s`, file))
+			}
+			return p.returnTo(p.GenURL(`export`))
+		}
 	}
-
-	p.Set(`table`, tableName)
-	p.Set(`format`, format)
-	return p.Render(`db/postgres/export`, p.checkErr(nil))
+	p.Set(`tableList`, p.Get(`tableList`))
+	p.Set(`dbName`, p.dbName)
+	return p.Render(`db/postgres/export`, p.checkErr(err))
 }
 
-// Import handles data import
 func (p *Postgres) Import() error {
 	if p.IsPost() {
-		data := p.Data()
+		if len(p.dbName) == 0 {
+			p.fail(p.T(`请选择数据库`))
+			return p.returnTo(p.GenURL(`listDb`))
+		}
 		sqlContent := p.Form(`sql_content`)
-		if len(sqlContent) == 0 {
-			// Check for file upload
-			file, _, err := p.Request().FormFile(`file`)
+		var stats shared.SQLStats
+		if len(sqlContent) > 0 {
+			stats = shared.ExecuteSQL(p.db, sqlContent)
+		} else {
+			file, hdr, err := p.Request().FormFile(`file`)
 			if err != nil {
-				data.SetInfo(p.T(`请提供SQL内容或上传文件`), 0)
-				return p.JSON(data)
+				p.fail(p.T(`请提供SQL内容或上传文件`))
+				return p.returnTo(p.GenURL(`import`, p.dbName))
 			}
 			defer file.Close()
-			buf := make([]byte, 1024*1024) // 1MB buffer
-			n, _ := file.Read(buf)
-			sqlContent = string(buf[:n])
-		}
-
-		// Execute SQL statements
-		statements := strings.Split(sqlContent, `;`)
-		var execErr error
-		execCount := 0
-		for _, stmt := range statements {
-			stmt = strings.TrimSpace(stmt)
-			if len(stmt) == 0 {
-				continue
+			stats, err = shared.ExecuteUploadedSQLFile(p.db, file, hdr)
+			if err != nil {
+				p.fail(err.Error())
+				return p.returnTo(p.GenURL(`import`, p.dbName))
 			}
-			_, execErr = p.db.Exec(stmt)
-			if execErr != nil {
-				break
-			}
-			execCount++
 		}
-
-		if execErr != nil {
-			data.SetError(execErr)
+		if stats.Failed > 0 {
+			p.fail(p.T(`成功 %d 条，失败 %d 条: %s`, stats.Success, stats.Failed, strings.Join(stats.Errors, "; ")))
 		} else {
-			data.SetInfo(p.T(`成功执行 %d 条SQL语句`, execCount), 1)
+			p.ok(p.T(`成功执行 %d 条SQL语句`, stats.Success))
 		}
-		return p.JSON(data)
+		return p.returnTo(p.GenURL(`import`, p.dbName))
 	}
-
 	return p.Render(`db/postgres/import`, p.checkErr(nil))
 }
 

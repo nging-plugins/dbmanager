@@ -21,10 +21,16 @@ package clickhouse
 import (
 	"database/sql"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/coscms/webcore/library/backend"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
+	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/pagination"
 )
@@ -72,7 +78,7 @@ type TableStatus struct {
 // getTableStatus returns detailed table status information
 func (c *ClickHouse) getTableStatus(tableName string) (map[string]*TableStatus, error) {
 	sqlStr := `
-		SELECT 
+		SELECT
 			name,
 			engine,
 			total_rows,
@@ -128,7 +134,7 @@ type FieldInfo struct {
 // getTableFields returns column information for a table
 func (c *ClickHouse) getTableFields(tableName string) ([]*FieldInfo, error) {
 	sqlStr := `
-		SELECT 
+		SELECT
 			name,
 			type,
 			default_kind,
@@ -142,9 +148,9 @@ func (c *ClickHouse) getTableFields(tableName string) ([]*FieldInfo, error) {
 	if err != nil {
 		// Try with ? placeholder for older versions
 		rows, err = c.db.Query(
-			`SELECT name, type, default_kind, default_expression, comment 
-			FROM system.columns 
-			WHERE database = currentDatabase() AND table = ? 
+			`SELECT name, type, default_kind, default_expression, comment
+			FROM system.columns
+			WHERE database = currentDatabase() AND table = ?
 			ORDER BY position`,
 			tableName,
 		)
@@ -788,142 +794,150 @@ func (c *ClickHouse) Indexes() error {
 
 // Export handles data export
 func (c *ClickHouse) Export() error {
-	tableName := c.Form(`table`)
-	format := c.Form(`format`, `sql`)
-
+	var err error
 	if c.IsPost() {
-		var sqlStr string
-		if len(tableName) > 0 {
-			sqlStr = fmt.Sprintf(`SELECT * FROM %s`, QuoteCol(tableName))
+		if len(c.dbName) == 0 {
+			c.fail(c.T(`请选择数据库`))
+			return c.returnTo(c.GenURL(`listDb`))
+		}
+		var tables []string
+		if c.Formx(`all`).Bool() {
+			tables, _ = c.getTables()
 		} else {
+			tables = c.FormValues(`table`)
+		}
+		if len(tables) == 0 {
 			c.fail(c.T(`请选择要导出的表`))
-			return c.returnTo(c.GenURL(`listTable`))
+			return c.returnTo(c.GenURL(`listTable`, c.dbName))
 		}
-
-		rows, err := c.db.Query(sqlStr)
-		if err != nil {
-			c.fail(err.Error())
-			return c.returnTo(c.GenURL(`listTable`))
+		host, port := shared.SplitHostPort(c.DbAuth.Host)
+		if len(port) == 0 {
+			port = `9000`
 		}
-		defer rows.Close()
+		cfg := &shared.DBConfig{
+			Driver:   `clickhouse`,
+			Host:     host,
+			Port:     port,
+			Username: c.DbAuth.Username,
+			Password: c.DbAuth.Password,
+			Database: c.dbName,
+		}
+		output := c.Form(`output`, `down`)
+		types := c.FormValues(`type`)
 
-		columns, _ := rows.Columns()
-
-		switch format {
-		case `csv`:
-			c.Response().Header().Set(echo.HeaderContentType, `text/csv; charset=utf-8`)
-			c.Response().Header().Set(`Content-Disposition`, fmt.Sprintf(`attachment; filename="%s.csv"`, tableName))
-
-			// Header
-			c.Response().Write([]byte(strings.Join(columns, `, `) + "\n"))
-
-			for rows.Next() {
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range columns {
-					valuePtrs[i] = &values[i]
-				}
-				if err := rows.Scan(valuePtrs...); err != nil {
-					continue
-				}
-				var row []string
-				for _, v := range values {
-					switch val := v.(type) {
-					case []byte:
-						row = append(row, fmt.Sprintf(`"%s"`, strings.ReplaceAll(string(val), `"`, `""`)))
-					case nil:
-						row = append(row, `NULL`)
-					default:
-						row = append(row, fmt.Sprintf(`"%v"`, val))
-					}
-				}
-				c.Response().Write([]byte(strings.Join(row, `, `) + "\n"))
+		switch output {
+		case `down`, `open`:
+			if output == `down` {
+				c.Response().Header().Set(echo.HeaderContentType, echo.MIMEOctetStream)
+				c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", c.dbName+".sql"))
+			} else {
+				c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			}
-
-		default: // SQL format
-			c.Response().Header().Set(echo.HeaderContentType, `text/plain; charset=utf-8`)
-			c.Response().Header().Set(`Content-Disposition`, fmt.Sprintf(`attachment; filename="%s.sql"`, tableName))
-
-			for rows.Next() {
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range columns {
-					valuePtrs[i] = &values[i]
+			hasStruct := false
+			hasData := false
+			for _, t := range types {
+				if t == `struct` {
+					hasStruct = true
 				}
-				if err := rows.Scan(valuePtrs...); err != nil {
-					continue
+				if t == `data` {
+					hasData = true
 				}
-
-				var colNames, colValues []string
-				for i, v := range values {
-					colNames = append(colNames, QuoteCol(columns[i]))
-					switch val := v.(type) {
-					case []byte:
-						colValues = append(colValues, QuoteVal(string(val)))
-					case nil:
-						colValues = append(colValues, `NULL`)
-					default:
-						colValues = append(colValues, QuoteVal(fmt.Sprintf(`%v`, val)))
-					}
-				}
-
-				insertSQL := fmt.Sprintf(
-					`INSERT INTO %s (%s) VALUES (%s);`,
-					QuoteCol(tableName),
-					strings.Join(colNames, `, `),
-					strings.Join(colValues, `, `),
-				)
-				c.Response().Write([]byte(insertSQL + "\n"))
 			}
+			if !hasStruct && !hasData {
+				hasStruct = true
+				hasData = true
+			}
+			if shared.SupportedExport(`clickhouse`) {
+				var structWriter, dataWriter io.Writer
+				if hasStruct {
+					structWriter = c.Response()
+				}
+				if hasData {
+					dataWriter = c.Response()
+				}
+				return shared.NativeExportCH(c.Request().Context(), cfg, tables, structWriter, dataWriter)
+			}
+			return shared.ExportMultipleTablesToWriter(c.Response(), c.db, tables, "`", hasStruct, hasData, c.getVersion())
+		default: // send
+			saveDir := filepath.Join(os.TempDir(), `dbmanager/cache/export`, c.dbName)
+			com.MkdirAll(saveDir, os.ModePerm)
+			nowTime := time.Now().Format("20060102150405")
+			file := filepath.Join(saveDir, nowTime+`.sql`)
+			f, err := os.Create(file)
+			if err != nil {
+				c.fail(err.Error())
+				return c.returnTo(c.GenURL(`export`))
+			}
+			defer f.Close()
+			hasStruct := false
+			hasData := false
+			for _, t := range types {
+				if t == `struct` {
+					hasStruct = true
+				}
+				if t == `data` {
+					hasData = true
+				}
+			}
+			if !hasStruct && !hasData {
+				hasStruct = true
+				hasData = true
+			}
+			if shared.SupportedExport(`clickhouse`) {
+				var structWriter, dataWriter io.Writer
+				if hasStruct {
+					structWriter = f
+				}
+				if hasData {
+					dataWriter = f
+				}
+				err = shared.NativeExportCH(c.Request().Context(), cfg, tables, structWriter, dataWriter)
+			} else {
+				err = shared.ExportMultipleTablesToWriter(f, c.db, tables, "`", hasStruct, hasData, c.getVersion())
+			}
+			if err != nil {
+				c.fail(err.Error())
+			} else {
+				c.ok(c.T(`导出成功，文件: %s`, file))
+			}
+			return c.returnTo(c.GenURL(`export`))
 		}
-		return nil
 	}
-
-	c.Set(`table`, tableName)
-	c.Set(`format`, format)
-	return c.Render(`db/clickhouse/export`, c.checkErr(nil))
+	c.Set(`tableList`, c.Get(`tableList`))
+	c.Set(`dbName`, c.dbName)
+	return c.Render(`db/clickhouse/export`, c.checkErr(err))
 }
 
-// Import handles data import
 func (c *ClickHouse) Import() error {
 	if c.IsPost() {
-		data := c.Data()
+		if len(c.dbName) == 0 {
+			c.fail(c.T(`请选择数据库`))
+			return c.returnTo(c.GenURL(`listDb`))
+		}
 		sqlContent := c.Form(`sql_content`)
-		if len(sqlContent) == 0 {
-			file, _, err := c.Request().FormFile(`file`)
+		var stats shared.SQLStats
+		if len(sqlContent) > 0 {
+			stats = shared.ExecuteSQL(c.db, sqlContent)
+		} else {
+			file, hdr, err := c.Request().FormFile(`file`)
 			if err != nil {
-				data.SetInfo(c.T(`请提供SQL内容或上传文件`), 0)
-				return c.JSON(data)
+				c.fail(c.T(`请提供SQL内容或上传文件`))
+				return c.returnTo(c.GenURL(`import`, c.dbName))
 			}
 			defer file.Close()
-			buf := make([]byte, 1024*1024)
-			n, _ := file.Read(buf)
-			sqlContent = string(buf[:n])
-		}
-
-		statements := strings.Split(sqlContent, `;`)
-		var execErr error
-		execCount := 0
-		for _, stmt := range statements {
-			stmt = strings.TrimSpace(stmt)
-			if len(stmt) == 0 {
-				continue
+			stats, err = shared.ExecuteUploadedSQLFile(c.db, file, hdr)
+			if err != nil {
+				c.fail(err.Error())
+				return c.returnTo(c.GenURL(`import`, c.dbName))
 			}
-			_, execErr = c.db.Exec(stmt)
-			if execErr != nil {
-				break
-			}
-			execCount++
 		}
-
-		if execErr != nil {
-			data.SetError(execErr)
+		if stats.Failed > 0 {
+			c.fail(c.T(`成功 %d 条，失败 %d 条: %s`, stats.Success, stats.Failed, strings.Join(stats.Errors, "; ")))
 		} else {
-			data.SetInfo(c.T(`成功执行 %d 条SQL语句`, execCount), 1)
+			c.ok(c.T(`成功执行 %d 条SQL语句`, stats.Success))
 		}
-		return c.JSON(data)
+		return c.returnTo(c.GenURL(`import`, c.dbName))
 	}
-
 	return c.Render(`db/clickhouse/import`, c.checkErr(nil))
 }
 
@@ -954,7 +968,7 @@ func (c *ClickHouse) Info() error {
 // ProcessList handles showing the process list
 func (c *ClickHouse) ProcessList() error {
 	sqlStr := `
-		SELECT 
+		SELECT
 			query_id,
 			user,
 			query,
