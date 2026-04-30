@@ -30,10 +30,8 @@ import (
 	"github.com/admpub/log"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"         //mysql
-	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/clickhouse" //clickhouse
-	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/postgres"   //postgres
-	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/redis"      //redis
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
+	_ "github.com/nging-plugins/dbmanager/application/library/dbmanager/register"
 	"github.com/nging-plugins/dbmanager/application/model"
 )
 
@@ -175,7 +173,7 @@ func Manager(ctx echo.Context) error {
 
 	ctx.Set(`driverList`, driverList)
 	ctx.Set(`dbType`, ctx.T(`数据库`))
-	ctx.Set(`charsetList`, mysql.Charsets)
+	ctx.Set(`charsetList`, utils.Charsets)
 	ctx.Set(`accounts`, getAccounts(ctx))
 	ctx.SetFunc(`dbMgrURLByAccount`, defaultGenBaseURL)
 	ctx.SetFunc(`colorByDriver`, func(driver string) string {
