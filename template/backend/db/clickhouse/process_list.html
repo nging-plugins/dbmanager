@@ -14,7 +14,7 @@
 				<table class="table no-border hover blue">
 					<thead class="no-border auto-fixed">
 						<tr>
-							<th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th>
+							<!-- <th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th> -->
 							<th style="width:80px"><strong>{{"查询ID"|$.T}}</strong></th>
 							<th><strong>{{"用户"|$.T}}</strong></th>
 							<th><strong>{{"查询"|$.T}}</strong></th>
@@ -26,7 +26,7 @@
 					<tbody class="no-border-x" id="process-items">
                         {{range $k,$v := $.Stored.processes}}
 						<tr>
-							<td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="pid[]" value="{{$v.QueryID}}"><label for="check-{{$k}}"></label></div></td>
+							<!-- <td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="pid[]" value="{{$v.QueryID}}"><label for="check-{{$k}}"></label></div></td> -->
 							<td>{{$v.QueryID}}</td>
 							<td>{{$v.User}}</td>
 							<td><div class="wrap">{{$v.Query}}</div></td>
@@ -42,10 +42,10 @@
 			    </div>
 			{{- if gt (len $.Stored.processes) 0 -}}
 			<div class="footer">
-			<button type="submit" class="btn btn-danger no-margin-left">
+			<!-- <button type="submit" class="btn btn-danger no-margin-left">
 				<i class="fa fa-minus-circle"></i>
 				{{"终止"|$.T}}
-			</button>
+			</button> -->
 			{{- end -}}
 			</div><!-- /.footer -->
 			</form>

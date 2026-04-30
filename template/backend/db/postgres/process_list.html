@@ -18,7 +18,7 @@
             <table class="table no-border hover blue">
               <thead class="no-border auto-fixed">
                 <tr>
-                  <th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th>
+                  <!-- <th style="width:30px"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="checkedAll"><label for="checkedAll"></label></div></th> -->
                   <th><strong>PID</strong></th>
                   <th><strong>{{"数据库"|$.T}}</strong></th>
                   <th><strong>{{"用户"|$.T}}</strong></th>
@@ -30,7 +30,7 @@
               <tbody class="no-border-x" id="process-items">
                 {{range $k,$v := $.Stored.processes}}
                 <tr>
-                  <td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="pid[]" value="{{$v.Pid}}"><label for="check-{{$k}}"></label></div></td>
+                  <!-- <td><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="check-{{$k}}" name="pid[]" value="{{$v.Pid}}"><label for="check-{{$k}}"></label></div></td> -->
                   <td>{{$v.Pid}}</td>
                   <td>{{$v.Database}}</td>
                   <td>{{$v.User}}</td>
@@ -46,10 +46,10 @@
           </div>
           {{if gt (len $.Stored.processes) 0}}
           <div class="footer">
-            <button type="submit" class="btn btn-danger no-margin-left" onclick="return confirm('{{`确定要终止选中的进程吗？`|$.T}}');">
+            <!-- <button type="submit" class="btn btn-danger no-margin-left" onclick="return confirm('{{`确定要终止选中的进程吗？`|$.T}}');">
               <i class="fa fa-minus-circle"></i>
               {{"终止进程"|$.T}}
-            </button>
+            </button> -->
           </div>
           {{end}}
         </form>
