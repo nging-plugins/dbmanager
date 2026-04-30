@@ -1110,6 +1110,123 @@ func (p *Postgres) ProcessList() error {
 
 // Privileges handles the privileges management operation
 func (p *Postgres) Privileges() error {
+	act := p.Form(`act`)
+
+	// Handle create/edit/drop
+	switch act {
+	case `create`:
+		if p.IsPost() {
+			roleName := p.Form(`role`)
+			password := p.Form(`password`)
+			isSuper := p.Formx(`super`).Bool()
+			canLogin := p.Formx(`login`).Bool()
+			canCreateDB := p.Formx(`createdb`).Bool()
+			canCreateRole := p.Formx(`createrole`).Bool()
+			if len(roleName) == 0 {
+				p.fail(p.T(`角色名不能为空`))
+				return p.returnTo(p.GenURL(`privileges`))
+			}
+			loginStr := `NOLOGIN`
+			if canLogin {
+				loginStr = `LOGIN`
+			}
+			superStr := `NOSUPERUSER`
+			if isSuper {
+				superStr = `SUPERUSER`
+			}
+			createDBStr := `NOCREATEDB`
+			if canCreateDB {
+				createDBStr = `CREATEDB`
+			}
+			createRoleStr := `NOCREATEROLE`
+			if canCreateRole {
+				createRoleStr = `CREATEROLE`
+			}
+			passwordStr := ``
+			if len(password) > 0 {
+				passwordStr = ` PASSWORD ` + QuoteVal(password)
+			}
+			sqlStr := fmt.Sprintf(`CREATE ROLE %s WITH %s %s %s %s%s`, QuoteCol(roleName), loginStr, superStr, createDBStr, createRoleStr, passwordStr)
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				p.fail(err.Error())
+			} else {
+				p.ok(p.T(`角色 %s 创建成功`, roleName))
+			}
+			return p.returnTo(p.GenURL(`privileges`))
+		}
+		return p.Render(`db/postgres/privilege_edit`, p.checkErr(nil))
+
+	case `edit`:
+		roleName := p.Form(`role`)
+		if len(roleName) == 0 {
+			p.fail(p.T(`角色名不能为空`))
+			return p.returnTo(p.GenURL(`privileges`))
+		}
+		if p.IsPost() {
+			password := p.Form(`password`)
+			isSuper := p.Formx(`super`).Bool()
+			canLogin := p.Formx(`login`).Bool()
+			canCreateDB := p.Formx(`createdb`).Bool()
+			canCreateRole := p.Formx(`createrole`).Bool()
+
+			loginStr := `NOLOGIN`
+			if canLogin {
+				loginStr = `LOGIN`
+			}
+			superStr := `NOSUPERUSER`
+			if isSuper {
+				superStr = `SUPERUSER`
+			}
+			createDBStr := `NOCREATEDB`
+			if canCreateDB {
+				createDBStr = `CREATEDB`
+			}
+			createRoleStr := `NOCREATEROLE`
+			if canCreateRole {
+				createRoleStr = `CREATEROLE`
+			}
+
+			sqlStr := fmt.Sprintf(`ALTER ROLE %s WITH %s %s %s %s`, QuoteCol(roleName), loginStr, superStr, createDBStr, createRoleStr)
+			if len(password) > 0 {
+				sqlStr += ` PASSWORD ` + QuoteVal(password)
+			}
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				p.fail(err.Error())
+			} else {
+				p.ok(p.T(`角色 %s 修改成功`, roleName))
+			}
+			return p.returnTo(p.GenURL(`privileges`))
+		}
+		// Load existing role info for the edit form
+		var super, inherit, createRole, createDB, canLogin, replication bool
+		row := p.db.QueryRow(`SELECT rolsuper, rolinherit, rolcreaterole, rolcreatedb, rolcanlogin, rolreplication FROM pg_roles WHERE rolname = $1`, roleName)
+		row.Scan(&super, &inherit, &createRole, &createDB, &canLogin, &replication)
+		p.Set(`role`, map[string]interface{}{
+			`Name`:       roleName,
+			`Super`:      super,
+			`CreateRole`: createRole,
+			`CreateDB`:   createDB,
+			`CanLogin`:   canLogin,
+		})
+		return p.Render(`db/postgres/privilege_edit`, p.checkErr(nil))
+
+	case `drop`:
+		roleName := p.Form(`role`)
+		if len(roleName) == 0 {
+			p.fail(p.T(`角色名不能为空`))
+			return p.returnTo(p.GenURL(`privileges`))
+		}
+		_, err := p.db.Exec(fmt.Sprintf(`DROP ROLE IF EXISTS %s`, QuoteCol(roleName)))
+		if err != nil {
+			p.fail(err.Error())
+		} else {
+			p.ok(p.T(`角色 %s 已删除`, roleName))
+		}
+		return p.returnTo(p.GenURL(`privileges`))
+	}
+
 	// List roles
 	sqlStr := `SELECT rolname, rolsuper, rolinherit, rolcreaterole, rolcreatedb, rolcanlogin, rolreplication FROM pg_roles ORDER BY rolname`
 	rows, err := p.db.Query(sqlStr)

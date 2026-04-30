@@ -1010,6 +1010,68 @@ func (c *ClickHouse) ProcessList() error {
 
 // Privileges handles the privileges management operation
 func (c *ClickHouse) Privileges() error {
+	act := c.Form(`act`)
+
+	switch act {
+	case `create`:
+		if c.IsPost() {
+			userName := c.Form(`user`)
+			password := c.Form(`password`)
+			if len(userName) == 0 {
+				c.fail(c.T(`用户名不能为空`))
+				return c.returnTo(c.GenURL(`privileges`))
+			}
+			sqlStr := fmt.Sprintf(`CREATE USER %s`, QuoteCol(userName))
+			if len(password) > 0 {
+				sqlStr += ` IDENTIFIED BY ` + QuoteVal(password)
+			}
+			_, err := c.db.Exec(sqlStr)
+			if err != nil {
+				c.fail(err.Error())
+			} else {
+				c.ok(c.T(`用户 %s 创建成功`, userName))
+			}
+			return c.returnTo(c.GenURL(`privileges`))
+		}
+		return c.Render(`db/clickhouse/privilege_edit`, c.checkErr(nil))
+
+	case `edit`:
+		userName := c.Form(`user`)
+		if len(userName) == 0 {
+			c.fail(c.T(`用户名不能为空`))
+			return c.returnTo(c.GenURL(`privileges`))
+		}
+		if c.IsPost() {
+			password := c.Form(`password`)
+			if len(password) > 0 {
+				_, err := c.db.Exec(fmt.Sprintf(`ALTER USER %s IDENTIFIED BY %s`, QuoteCol(userName), QuoteVal(password)))
+				if err != nil {
+					c.fail(err.Error())
+				} else {
+					c.ok(c.T(`用户 %s 密码修改成功`, userName))
+				}
+			}
+			return c.returnTo(c.GenURL(`privileges`))
+		}
+		c.Set(`editUser`, map[string]string{`Name`: userName})
+		return c.Render(`db/clickhouse/privilege_edit`, c.checkErr(nil))
+
+	case `drop`:
+		userName := c.Form(`user`)
+		if len(userName) == 0 {
+			c.fail(c.T(`用户名不能为空`))
+			return c.returnTo(c.GenURL(`privileges`))
+		}
+		_, err := c.db.Exec(fmt.Sprintf(`DROP USER IF EXISTS %s`, QuoteCol(userName)))
+		if err != nil {
+			c.fail(err.Error())
+		} else {
+			c.ok(c.T(`用户 %s 已删除`, userName))
+		}
+		return c.returnTo(c.GenURL(`privileges`))
+	}
+
+	// List users
 	sqlStr := `SELECT name, storage FROM system.users ORDER BY name`
 	rows, err := c.db.Query(sqlStr)
 	if err != nil {
@@ -1032,13 +1094,8 @@ func (c *ClickHouse) Privileges() error {
 		if err := rows.Scan(&name, &storage); err != nil {
 			continue
 		}
-		u := UserInfo{
-			Name:    name,
-			Storage: storage.String,
-		}
-		users = append(users, u)
+		users = append(users, UserInfo{Name: name, Storage: storage.String})
 	}
-
 	c.Set(`users`, users)
-	return c.Render(`db/clickhouse/privileges`, c.checkErr(nil))
+	return c.Render(`db/clickhouse/privileges`, c.checkErr(err))
 }

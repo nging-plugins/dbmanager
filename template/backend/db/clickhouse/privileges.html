@@ -6,6 +6,10 @@
         {{Include "db/mysql/dbinfo_btn"}}
         <div class="block-flat no-padding">
           <div class="header">
+            <a href="{{call $.Func.dbMgrURL `privileges`}}&act=create" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
+              <i class="fa fa-plus"></i>
+              {{"创建用户"|$.T}}
+            </a>
             <h3>{{"用户列表"|$.T}}</h3>
           </div>
           <div class="content">
@@ -15,16 +19,21 @@
 						<tr>
 							<th style="width:40%;"><strong>{{"用户名"|$.T}}</strong></th>
 							<th><strong>{{"存储类型"|$.T}}</strong></th>
+							<th style="width:100px"><strong>{{"操作"|$.T}}</strong></th>
 						</tr>
 					</thead>
 					<tbody class="no-border-y" id="privilege-items">
                         {{range $k,$v := $.Stored.users}}
 						<tr>
-							<td>{{$v.Name}}</td>
+							<td><strong>{{$v.Name}}</strong></td>
 							<td>{{$v.Storage}}</td>
+							<td>
+								<a href="{{call $.Func.dbMgrURL `privileges`}}&act=edit&user={{$v.Name}}" class="label label-success" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-pencil"></i></a>
+								<a href="{{call $.Func.dbMgrURL `privileges`}}&act=drop&user={{$v.Name}}" class="label label-danger" onclick="return confirm('{{$.T `确定要删除用户“%v”吗？` $v.Name}}');"><i class="fa fa-times"></i></a>
+							</td>
 						</tr>
                         {{else}}
-						<tr><td colspan="2" class="text-center">{{`暂无用户`|$.T}}</td></tr>
+						<tr><td colspan="3" class="text-center">{{`暂无用户`|$.T}}</td></tr>
                         {{end}}
 					</tbody>
 				</table>

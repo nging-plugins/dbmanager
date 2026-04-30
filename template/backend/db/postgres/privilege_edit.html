@@ -1,0 +1,63 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"编辑角色"|$.T}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+<li><a href="{{call $.Func.dbMgrURL `privileges`}}" data-pjax="#pcont" data-keepjs="true">{{"角色管理"|$.T}}</a></li>
+<li class="active">{{if $.Stored.role}}{{"编辑角色"|$.T}}: {{$.Stored.role.Name}}{{else}}{{"创建角色"|$.T}}{{end}}</li>
+{{/Block}}
+{{Block "main"}}
+{{$role := $.Stored.role}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="block-flat no-padding">
+      <div class="header">
+        <h3>{{if $role}}{{"编辑角色"|$.T}}: {{$role.Name}}{{else}}{{"创建角色"|$.T}}{{end}}</h3>
+      </div>
+      <div class="content">
+        <form class="form-horizontal group-border-dashed" method="POST" action="">
+          {{if $role}}<input type="hidden" name="act" value="edit">{{else}}<input type="hidden" name="act" value="create">{{end}}
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{"角色名"|$.T}}</label>
+            <div class="col-sm-9">
+              <input type="text" name="role" class="form-control" value="{{if $role}}{{$role.Name}}{{end}}" {{if $role}}readonly{{end}} required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{"密码"|$.T}}</label>
+            <div class="col-sm-9">
+              <input type="password" name="password" class="form-control" placeholder="{{`留空则不修改`|$.T}}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{"权限"|$.T}}</label>
+            <div class="col-sm-9">
+              <div class="checkbox checkbox-primary">
+                <input type="checkbox" id="chk-login" name="login" value="1"{{if $role}}{{if $role.CanLogin}} checked{{end}}{{else}} checked{{end}}>
+                <label for="chk-login">LOGIN ({{"可登录"|$.T}})</label>
+              </div>
+              <div class="checkbox checkbox-danger">
+                <input type="checkbox" id="chk-super" name="super" value="1"{{if $role}}{{if $role.Super}} checked{{end}}{{end}}>
+                <label for="chk-super">SUPERUSER ({{"超级用户"|$.T}})</label>
+              </div>
+              <div class="checkbox checkbox-info">
+                <input type="checkbox" id="chk-createdb" name="createdb" value="1"{{if $role}}{{if $role.CreateDB}} checked{{end}}{{else}} checked{{end}}>
+                <label for="chk-createdb">CREATEDB ({{"创建数据库"|$.T}})</label>
+              </div>
+              <div class="checkbox checkbox-success">
+                <input type="checkbox" id="chk-createrole" name="createrole" value="1"{{if $role}}{{if $role.CreateRole}} checked{{end}}{{else}} checked{{end}}>
+                <label for="chk-createrole">CREATEROLE ({{"创建角色"|$.T}})</label>
+              </div>
+            </div>
+          </div>
+          <div class="form-group form-submit-group">
+            <div class="col-sm-9 col-sm-offset-2">
+              <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
+              <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `privileges`}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{/Block}}
