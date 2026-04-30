@@ -17,7 +17,7 @@
               <div class="form-group">
                 <label class="col-sm-2 control-label">{{"表名"|$.T}}</label>
                 <div class="col-sm-9">
-                    <input type="text" name="name" class="form-control" required="required" value="{{$.Form `name`}}">
+                    <input type="text" name="table" class="form-control" required="required" value="{{$.Form `table`}}">
                 </div>
               </div>
               <div class="form-group">
@@ -85,13 +85,13 @@
                         {{- range $index, $field := $.Stored.postFields -}}
                         <tr>
 							<td>
-                                <input type="text" name="fields[{{$index}}][name]" value="{{$field.Name}}" class="form-control">
+                                <input type="text" name="column_name[]" value="{{$field.Name}}" class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="fields[{{$index}}][type]" value="{{$field.Type}}" class="form-control" placeholder="{{`例如: String, UInt64, DateTime`|$.T}}">
+                                <input type="text" name="column_type[]" value="{{$field.Type}}" class="form-control" placeholder="{{`例如: String, UInt64, DateTime`|$.T}}">
                             </td>
                             <td>
-                                <input type="text" name="fields[{{$index}}][comment]" value="{{$field.Comment}}" class="form-control">
+                                <input type="text" name="column_comment[]" value="{{$field.Comment}}" class="form-control">
                             </td>
                             <td>
                                 <a href="javascript:;" onclick="moveUpRow(this)" class="label label-default" title="{{`上移`|$.T}}"><i class="fa fa-arrow-up"></i></a>
@@ -101,9 +101,9 @@
 						</tr>
                         {{- else -}}
                         <tr>
-							<td><input type="text" name="fields[0][name]" class="form-control"></td>
-                            <td><input type="text" name="fields[0][type]" class="form-control" placeholder="{{`例如: String, UInt64, DateTime`|$.T}}"></td>
-                            <td><input type="text" name="fields[0][comment]" class="form-control"></td>
+							<td><input type="text" name="column_name[]" class="form-control"></td>
+                            <td><input type="text" name="column_type[]" class="form-control" placeholder="{{`例如: String, UInt64, DateTime`|$.T}}"></td>
+                            <td><input type="text" name="column_comment[]" class="form-control"></td>
                             <td>
                                 <a href="javascript:;" onclick="moveUpRow(this)" class="label label-default" title="{{`上移`|$.T}}"><i class="fa fa-arrow-up"></i></a>
                                 <a href="javascript:;" onclick="moveDownRow(this)" class="label label-default" title="{{`下移`|$.T}}"><i class="fa fa-arrow-down"></i></a>
@@ -138,7 +138,7 @@ function addRow(){
     clone.find('input').val('');
     var index=tbody.children('tr').length;
     clone.find('[name]').each(function(){
-        var name=$(this).attr('name').replace(/fields\[\d+\]/, 'fields['+index+']');
+        var name=$(this).attr('name');
         $(this).attr('name',name);
     });
     tbody.append(clone);
@@ -153,7 +153,7 @@ function delRow(obj){
 function reorder(){
     $('#tbody-content tr').each(function(i){
         $(this).find('[name]').each(function(){
-            var name=$(this).attr('name').replace(/fields\[\d+\]/, 'fields['+i+']');
+            var name=$(this).attr('name');
             $(this).attr('name',name);
         });
     });

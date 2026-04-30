@@ -31,16 +31,49 @@
               </div>
               <div class="form-group form-submit-group">
 				<div class="col-sm-9 col-sm-offset-2">
-				  <button type="submit" name="action" value="modify" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存修改"|$.T}}</button>
-				  <button type="submit" name="action" value="rename" class="btn btn-warning btn-lg" onclick="return confirm('{{"确定要重命名此表吗？"|$.T}}');"><i class="fa fa-pencil"></i> {{"重命名"|$.T}}</button>
-				  <button type="submit" name="action" value="truncate" class="btn btn-danger btn-lg" onclick="return confirm('{{"确定要清空此表的所有数据吗？此操作不可恢复！"|$.T}}');"><i class="fa fa-eraser"></i> {{"清空"|$.T}}</button>
-				  <button type="submit" name="action" value="drop" class="btn btn-danger btn-lg" onclick="return confirm('{{"确定要删除此表吗？此操作不可恢复！"|$.T}}');"><i class="fa fa-times"></i> {{"删除"|$.T}}</button>
+				  <button type="submit" name="operate" value="modify" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"保存修改"|$.T}}</button>
+				  <button type="submit" name="operate" value="rename" class="btn btn-warning btn-lg" onclick="return confirm('{{"确定要重命名此表吗？"|$.T}}');"><i class="fa fa-pencil"></i> {{"重命名"|$.T}}</button>
+				  <button type="submit" name="operate" value="truncate" class="btn btn-danger btn-lg" onclick="return confirm('{{"确定要清空此表的所有数据吗？此操作不可恢复！"|$.T}}');"><i class="fa fa-eraser"></i> {{"清空"|$.T}}</button>
+				  <button type="submit" name="operate" value="drop" class="btn btn-danger btn-lg" onclick="return confirm('{{"确定要删除此表吗？此操作不可恢复！"|$.T}}');"><i class="fa fa-times"></i> {{"删除"|$.T}}</button>
 				  <a class="btn btn-default btn-lg" href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $table}}" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-reply"></i> {{"返回"|$.T}}</a>
 				</div>
 			</div>
               </form>
           </div><!-- /.content -->
         </div><!-- /.block-flat -->
+
+<!-- Modify Columns -->
+<div class="block-flat no-padding">
+  <div class="header"><h3>{{"修改列"|$.T}}</h3></div>
+  <div class="content">
+    <div class="table-responsive">
+      <table class="table no-border hover blue">
+        <thead><tr>
+          <th>{{"列名"|$.T}}</th><th>{{"类型"|$.T}}</th><th>{{"注释"|$.T}}</th><th style="width:140px">{{"操作"|$.T}}</th>
+        </tr></thead>
+        <tbody>
+        {{$tableName := $.Stored.table}}
+        {{range $k,$v := $.Stored.fields}}
+        <tr>
+          <form method="POST" action="">
+          <input type="hidden" name="operate" value="modifyColumn">
+          <input type="hidden" name="colName" value="{{$v.ColumnName}}">
+          <td><input type="text" name="newColName" class="form-control input-sm" value="{{$v.ColumnName}}" placeholder="{{"新名称"|$.T}}"></td>
+          <td><input type="text" name="colType" class="form-control input-sm" value="{{$v.DataType}}"></td>
+          <td><input type="text" name="colComment" class="form-control input-sm" value="{{$v.Comment}}" placeholder="{{"注释"|$.T}}"></td>
+          <td class="label-group">
+            <button type="submit" class="label label-primary"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
+            <a href="{{call $.Func.dbMgrURL `modifyTable` $.Stored.dbName $tableName}}&operate=dropColumn&colName={{$v.ColumnName}}" class="label label-danger" onclick="return confirm('{{$.T `确定要删除列"%v"吗？` $v.ColumnName}}');"><i class="fa fa-times"></i></a>
+          </td>
+          </form>
+        </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
     </div>
 </div>
 {{/Block}}

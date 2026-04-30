@@ -34,7 +34,7 @@
                   {{if $v.Super}}<span class="label label-danger">{{"超级用户"|$.T}}</span> {{end}}
                   {{if $v.CreateDB}}<span class="label label-info">{{"创建DB"|$.T}}</span> {{end}}
                   {{if $v.CreateRole}}<span class="label label-success">{{"创建角色"|$.T}}</span> {{end}}
-                  {{if $v.Login}}<span class="label label-primary">{{"可登录"|$.T}}</span> {{end}}
+                  {{if $v.CanLogin}}<span class="label label-primary">{{"可登录"|$.T}}</span> {{end}}
                 </td>
                 <td>
                   <a href="{{call $.Func.dbMgrURL `privileges`}}&act=edit&role={{$v.Name}}" class="label label-success" data-pjax="#pcont" data-keepjs="true">

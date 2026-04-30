@@ -25,6 +25,10 @@
             <i class="fa fa-plus"></i>
             {{"新建数据"|$.T}}
           </a>
+          <a href="{{call $.Func.dbMgrURL `indexes` $.Stored.dbName $table}}" class="btn btn-warning" data-pjax="#pcont" data-keepjs="true">
+            <i class="fa fa-list-alt"></i>
+            {{"管理索引"|$.T}}
+          </a>
           <a href="{{call $.Func.dbMgrURL `modifyTable` $.Stored.dbName $table}}" class="btn btn-default" data-pjax="#pcont" data-keepjs="true">
             <i class="fa fa-pencil"></i>
             {{"修改表"|$.T}}

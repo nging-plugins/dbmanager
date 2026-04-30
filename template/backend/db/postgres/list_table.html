@@ -5,7 +5,13 @@
     <div class="col-md-12">
         {{Include "db/mysql/dbinfo_btn"}}
         <div class="block-flat no-padding">
-          <div class="header"><h3>{{"表列表"|$.T}}: {{$.Stored.dbName}}</h3></div>
+          <div class="header">
+            <a href="{{call $.Func.dbMgrURL `createTable` $.Stored.dbName}}" class="btn btn-success pull-right" data-pjax="#pcont" data-keepjs="true">
+                <i class="fa fa-plus"></i>
+                {{"创建表"|$.T}}
+            </a>
+            <h3>{{"表列表"|$.T}}: {{$.Stored.dbName}}</h3>
+          </div>
           <div class="content">
               <div class="table-responsive" data-pattern="priority-columns">
                 <table class="table no-border hover blue">
@@ -14,7 +20,7 @@
                             <th><strong>{{"表名"|$.T}}</strong></th>
                             <th><strong>{{"行数"|$.T}}</strong></th>
                             <th><strong>{{"大小"|$.T}}</strong></th>
-                            <th style="width:100px"></th>
+                            <th style="width:140px"><strong>{{"操作"|$.T}}</strong></th>
                         </tr>
                     </thead>
                     <tbody class="no-border-x">
@@ -25,13 +31,15 @@
                             <td>{{if $statuses}}{{if index $statuses $v}}{{(index $statuses $v).Rows}}{{end}}{{end}}</td>
                             <td>{{if $statuses}}{{if index $statuses $v}}{{(index $statuses $v).SizePretty}}{{end}}{{end}}</td>
                             <td class="label-group">
+                                <a data-toggle="tooltip" title="{{`结构`|$.T}}" href="{{call $.Func.dbMgrURL `viewTable` $.Stored.dbName $v}}" class="label label-default"><i class="fa fa-eye"></i></a>
                                 <a data-toggle="tooltip" title="{{`数据`|$.T}}" href="{{call $.Func.dbMgrURL `listData` $.Stored.dbName $v}}" class="label label-info"><i class="fa fa-table"></i></a>
+                                <a data-toggle="tooltip" title="{{`索引`|$.T}}" href="{{call $.Func.dbMgrURL `indexes` $.Stored.dbName $v}}" class="label label-warning"><i class="fa fa-list-alt"></i></a>
                                 <a data-toggle="tooltip" title="{{`SQL`|$.T}}" href="{{call $.Func.dbMgrURL `runCommand` $.Stored.dbName $v}}" class="label label-success"><i class="fa fa-terminal"></i></a>
                                 <a data-toggle="tooltip" title="{{`修改`|$.T}}" href="{{call $.Func.dbMgrURL `modifyTable` $.Stored.dbName $v}}" class="label label-primary"><i class="fa fa-pencil"></i></a>
                             </td>
                         </tr>
                         {{- else}}
-                        <tr><td colspan="10" class="text-center">{{`暂无表`|$.T}}</td></tr>
+                        <tr><td colspan="4" class="text-center">{{`暂无表`|$.T}}</td></tr>
                         {{- end}}
                     </tbody>
                 </table>

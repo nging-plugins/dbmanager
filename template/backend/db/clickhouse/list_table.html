@@ -27,6 +27,7 @@
 							<th data-priority="3"><strong>{{"行数"|$.T}}</strong></th>
 							<th data-priority="4"><strong>{{"大小"|$.T}}</strong></th>
 							<th data-priority="1"><strong>{{"注释"|$.T}}</strong></th>
+							<th style="width:130px"><strong>{{"操作"|$.T}}</strong></th>
 						</tr>
 					</thead>
 					<tbody class="no-border-x" id="tbody-content">
@@ -43,9 +44,14 @@
 							<td>{{if $info}}{{$info.Rows}}{{end}}</td>
 							<td>{{if $info}}{{$info.Size}}{{end}}</td>
 							<td>{{if $info}}{{$info.Comment}}{{end}}</td>
+							<td class="label-group">
+                                <a data-toggle="tooltip" title="{{`数据`|$.T}}" href="{{call $.Func.dbMgrURL `listData` $dbName $v}}" class="label label-info" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-table"></i></a>
+                                <a data-toggle="tooltip" title="{{`索引`|$.T}}" href="{{call $.Func.dbMgrURL `indexes` $dbName $v}}" class="label label-warning" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-list-alt"></i></a>
+                                <a data-toggle="tooltip" title="{{`SQL`|$.T}}" href="{{call $.Func.dbMgrURL `runCommand` $dbName $v}}" class="label label-success" data-pjax="#pcont" data-keepjs="true"><i class="fa fa-terminal"></i></a>
+                            </td>
 						</tr>
                         {{else}}
-						<tr><td colspan="10" class="text-center">{{`暂无数据表`|$.T}}</td></tr>
+						<tr><td colspan="7" class="text-center">{{`暂无数据表`|$.T}}</td></tr>
                         {{end}}
 					</tbody>
 				</table>

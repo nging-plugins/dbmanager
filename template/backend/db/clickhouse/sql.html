@@ -82,14 +82,15 @@
 {{Block "footer"}}
 {{Super}}
 <script>
-var editor, tables = {
-    {{- $tableList := $.Stored.Get "tableList" -}}
-    {{- if $tableList -}}
-    {{- range $k,$v := $tableList -}}
-    "{{$v}}": {{call $.Func.getFieldsByTable $v}},
-    {{- end -}}
-    {{- end -}}
-};
+var editor, tables = {};
+{{- if $.Func.getFieldsByTable -}}
+{{- $tableList := $.Stored.Get "tableList" -}}
+{{- if $tableList -}}
+{{- range $k,$v := $tableList -}}
+tables["{{$v}}"] = {{call $.Func.getFieldsByTable $v}};
+{{- end -}}
+{{- end -}}
+{{- end -}}
 CodeMirror.modeURL = "{{AssetsURL}}/js/editor/markdown/lib/codemirror/mode/%N/%N.js";
 function initCodeMirrorEditor() {
     editor = CodeMirror.fromTextArea($("#query")[0], {

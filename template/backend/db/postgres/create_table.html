@@ -18,7 +18,7 @@
           <div class="form-group">
             <label class="col-sm-2 control-label">{{"表名"|$.T}}</label>
             <div class="col-sm-9">
-              <input type="text" name="name" class="form-control" required="required" value="{{$.Form `name`}}">
+              <input type="text" name="table" class="form-control" required="required" value="{{$.Form `table`}}">
             </div>
           </div>
 
@@ -37,9 +37,9 @@
                 </thead>
                 <tbody>
                   <tr class="column-row">
-                    <td><input type="text" name="columns[0][name]" class="form-control" required></td>
+                    <td><input type="text" name="column_name[]" class="form-control" required></td>
                     <td>
-                      <select name="columns[0][type]" class="form-control">
+                      <select name="column_type[]" class="form-control">
                         {{range $k,$v := $.Stored.dataTypes}}
                         <option value="{{$v}}">{{$v}}</option>
                         {{end}}
@@ -47,11 +47,11 @@
                     </td>
                     <td class="text-center">
                       <div class="checkbox checkbox-primary no-margin-y">
-                        <input type="checkbox" id="col-notnull-0" name="columns[0][notnull]" value="1">
+                        <input type="checkbox" id="col-notnull-0" name="column_null[]" value="NO">
                         <label for="col-notnull-0"></label>
                       </div>
                     </td>
-                    <td><input type="text" name="columns[0][default]" class="form-control"></td>
+                    <td><input type="text" name="column_default[]" class="form-control"></td>
                     <td><a href="javascript:;" onclick="delRow(this)" class="label label-danger"><i class="fa fa-times"></i></a></td>
                   </tr>
                 </tbody>
@@ -81,10 +81,10 @@ var colIndex = 1;
 function addColumnRow() {
   var tbody = $('#columns-table tbody');
   var tr = $('<tr class="column-row">' +
-    '<td><input type="text" name="columns['+colIndex+'][name]" class="form-control" required></td>' +
-    '<td><select name="columns['+colIndex+'][type]" class="form-control">{{range $k,$v := $.Stored.dataTypes}}<option value="{{$v}}">{{$v}}</option>{{end}}</select></td>' +
-    '<td class="text-center"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="col-notnull-'+colIndex+'" name="columns['+colIndex+'][notnull]" value="1"><label for="col-notnull-'+colIndex+'"></label></div></td>' +
-    '<td><input type="text" name="columns['+colIndex+'][default]" class="form-control"></td>' +
+    '<td><input type="text" name="column_name[]" class="form-control" required></td>' +
+    '<td><select name="column_type[]" class="form-control">{{range $k,$v := $.Stored.dataTypes}}<option value="{{$v}}">{{$v}}</option>{{end}}</select></td>' +
+    '<td class="text-center"><div class="checkbox checkbox-primary no-margin-y"><input type="checkbox" id="col-notnull-'+colIndex+'" name="column_null[]" value="NO"><label for="col-notnull-'+colIndex+'"></label></div></td>' +
+    '<td><input type="text" name="column_default[]" class="form-control"></td>' +
     '<td><a href="javascript:;" onclick="delRow(this)" class="label label-danger"><i class="fa fa-times"></i></a></td>' +
     '</tr>');
   tbody.append(tr);

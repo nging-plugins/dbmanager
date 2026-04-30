@@ -21,6 +21,7 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -326,6 +327,45 @@ func (p *Postgres) ViewTable() error {
 		p.Set(`ddl`, ddl)
 	}
 
+	// Get indexes for inline display
+	idxRows, idxErr := p.db.Query(`
+		SELECT
+			i.relname AS index_name,
+			am.amname AS index_type,
+			pg_get_indexdef(ix.indexrelid) AS index_def,
+			ix.indisunique AS is_unique,
+			ix.indisprimary AS is_primary
+		FROM pg_index ix
+		JOIN pg_class t ON t.oid = ix.indrelid
+		JOIN pg_class i ON i.oid = ix.indexrelid
+		JOIN pg_am am ON am.oid = i.relam
+		WHERE t.relname = $1
+		AND t.relkind = 'r'
+		ORDER BY i.relname`, tableName)
+	if idxErr == nil {
+		defer idxRows.Close()
+		type idxInfo struct {
+			Name    string
+			Columns string
+			Unique  bool
+		}
+		var indexes []idxInfo
+		reCols := regexp.MustCompile(`\(([^)]+)\)`)
+		for idxRows.Next() {
+			var name, idxType, def string
+			var isUnique, isPrimary bool
+			if err := idxRows.Scan(&name, &idxType, &def, &isUnique, &isPrimary); err != nil {
+				continue
+			}
+			columns := ""
+			if matches := reCols.FindStringSubmatch(def); len(matches) > 1 {
+				columns = matches[1]
+			}
+			indexes = append(indexes, idxInfo{Name: name, Columns: columns, Unique: isUnique})
+		}
+		p.Set(`indexes`, indexes)
+	}
+
 	return p.Render(`db/postgres/view_table`, p.checkErr(err))
 }
 
@@ -503,11 +543,10 @@ func (p *Postgres) ListData() error {
 // CreateTable handles the create table operation
 func (p *Postgres) CreateTable() error {
 	if p.IsPost() {
-		data := p.Data()
 		tableName := p.Form(`table`)
 		if len(tableName) == 0 {
-			data.SetInfo(p.T(`表名不能为空`), 0)
-			return p.JSON(data)
+			p.fail(p.T(`表名不能为空`))
+			return p.returnTo(p.GenURL(`createTable`, p.dbName))
 		}
 
 		columnNames := p.FormValues(`column_name[]`)
@@ -516,8 +555,8 @@ func (p *Postgres) CreateTable() error {
 		columnDefaults := p.FormValues(`column_default[]`)
 
 		if len(columnNames) == 0 {
-			data.SetInfo(p.T(`请至少定义一个字段`), 0)
-			return p.JSON(data)
+			p.fail(p.T(`请至少定义一个字段`))
+			return p.returnTo(p.GenURL(`createTable`, p.dbName))
 		}
 
 		var colDefs []string
@@ -538,11 +577,11 @@ func (p *Postgres) CreateTable() error {
 		sqlStr := fmt.Sprintf(`CREATE TABLE %s (%s)`, QuoteCol(tableName), strings.Join(colDefs, `, `))
 		_, err := p.db.Exec(sqlStr)
 		if err != nil {
-			data.SetError(err)
+			p.fail(err.Error())
 		} else {
-			data.SetInfo(p.T(`表创建成功`), 1)
+			p.ok(p.T(`表创建成功`))
 		}
-		return p.JSON(data)
+		return p.returnTo(p.GenURL(`listTable`, p.dbName))
 	}
 
 	// Provide data type suggestions
@@ -567,8 +606,7 @@ func (p *Postgres) ModifyTable() error {
 		return p.returnTo(p.GenURL(`listTable`))
 	}
 
-	if p.IsPost() {
-		data := p.Data()
+	if p.IsPost() || len(p.Form("operate")) > 0 {
 		operate := p.Form(`operate`)
 
 		switch operate {
@@ -579,10 +617,11 @@ func (p *Postgres) ModifyTable() error {
 			}
 			_, err := p.db.Exec(sqlStr)
 			if err != nil {
-				data.SetError(err)
+				p.fail(err.Error())
 			} else {
-				data.SetInfo(p.T(`表删除成功`), 1)
+				p.ok(p.T(`表删除成功`))
 			}
+			return p.returnTo(p.GenURL(`listTable`, p.dbName))
 		case `truncate`:
 			sqlStr := fmt.Sprintf(`TRUNCATE TABLE %s`, QuoteCol(tableName))
 			if p.Formx(`cascade`).Bool() {
@@ -590,27 +629,123 @@ func (p *Postgres) ModifyTable() error {
 			}
 			_, err := p.db.Exec(sqlStr)
 			if err != nil {
-				data.SetError(err)
+				p.fail(err.Error())
 			} else {
-				data.SetInfo(p.T(`表已清空`), 1)
+				p.ok(p.T(`表已清空`))
 			}
+			return p.returnTo(p.GenURL(`listTable`, p.dbName))
 		case `rename`:
 			newName := p.Form(`newName`)
 			if len(newName) == 0 {
-				data.SetInfo(p.T(`新表名不能为空`), 0)
-				return p.JSON(data)
+				p.fail(p.T(`新表名不能为空`))
+				return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
 			}
 			sqlStr := fmt.Sprintf(`ALTER TABLE %s RENAME TO %s`, QuoteCol(tableName), QuoteCol(newName))
 			_, err := p.db.Exec(sqlStr)
 			if err != nil {
-				data.SetError(err)
+				p.fail(err.Error())
 			} else {
-				data.SetInfo(p.T(`表重命名成功`), 1)
+				p.ok(p.T(`表重命名成功`))
 			}
+			return p.returnTo(p.GenURL(`listTable`, p.dbName))
+		case `addColumn`:
+			colName := p.Form(`columnName`)
+			colType := p.Form(`columnType`)
+			colDefault := p.Form(`columnDefault`)
+			colNotNull := p.Formx(`columnNotNull`).Bool()
+			if len(colName) == 0 || len(colType) == 0 {
+				p.fail(p.T(`列名和类型不能为空`))
+				return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+			}
+			sqlStr := fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s %s`, QuoteCol(tableName), QuoteCol(colName), colType)
+			if colNotNull {
+				sqlStr += ` NOT NULL`
+			}
+			if len(colDefault) > 0 {
+				sqlStr += ` DEFAULT ` + colDefault
+			}
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				p.fail(err.Error())
+			} else {
+				p.ok(p.T(`列添加成功`))
+			}
+			return p.returnTo(p.GenURL(`viewTable`, p.dbName, tableName))
+		case `modifyColumn`:
+			colName := p.Form(`colName`)
+			newColName := p.Form(`newColName`)
+			colType := p.Form(`colType`)
+			colDefault := p.Form(`colDefault`)
+			colNotNull := p.Form(`colNotNull`)
+			if len(colName) == 0 {
+				p.fail(p.T(`列名不能为空`))
+				return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+			}
+			// 1. Rename column if newColName is set and different
+			if len(newColName) > 0 && newColName != colName {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s RENAME COLUMN %s TO %s`, QuoteCol(tableName), QuoteCol(colName), QuoteCol(newColName))
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+					return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+				}
+				colName = newColName
+			}
+			// 2. Change column type
+			if len(colType) > 0 {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s ALTER COLUMN %s TYPE %s`, QuoteCol(tableName), QuoteCol(colName), colType)
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+					return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+				}
+			}
+			// 3. NOT NULL / DROP NOT NULL
+			if colNotNull == "1" {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s ALTER COLUMN %s SET NOT NULL`, QuoteCol(tableName), QuoteCol(colName))
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+					return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+				}
+			} else if colNotNull == "0" {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s ALTER COLUMN %s DROP NOT NULL`, QuoteCol(tableName), QuoteCol(colName))
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+					return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+				}
+			}
+			// 4. DEFAULT
+			if len(colDefault) > 0 {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s`, QuoteCol(tableName), QuoteCol(colName), colDefault)
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+					return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+				}
+			}
+			p.ok(p.T(`列修改成功`))
+			return p.returnTo(p.GenURL(`viewTable`, p.dbName, tableName))
+		case `dropColumn`:
+			colName := p.Form(`colName`)
+			if len(colName) == 0 {
+				p.fail(p.T(`列名不能为空`))
+				return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
+			}
+			sqlStr := fmt.Sprintf(`ALTER TABLE %s DROP COLUMN %s`, QuoteCol(tableName), QuoteCol(colName))
+			_, err := p.db.Exec(sqlStr)
+			if err != nil {
+				p.fail(err.Error())
+			} else {
+				p.ok(p.T(`列删除成功`))
+				return p.returnTo(p.GenURL(`viewTable`, p.dbName, tableName))
+			}
+			return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
 		default:
-			data.SetInfo(p.T(`不支持的操作`), 0)
+			p.fail(p.T(`不支持的操作`))
+			return p.returnTo(p.GenURL(`modifyTable`, p.dbName, tableName))
 		}
-		return p.JSON(data)
 	}
 
 	fields, err := p.getTableFields(tableName)
@@ -626,6 +761,48 @@ func (p *Postgres) Indexes() error {
 	if len(tableName) == 0 {
 		p.fail(p.T(`请选择表`))
 		return p.returnTo(p.GenURL(`listTable`))
+	}
+
+	// Handle drop/create actions
+	act := p.Form(`act`)
+	if p.IsPost() || len(act) > 0 {
+		switch act {
+		case `drop`:
+			idxName := p.Form(`name`)
+			if len(idxName) == 0 {
+				p.fail(p.T(`索引名不能为空`))
+			} else {
+				sqlStr := fmt.Sprintf(`DROP INDEX IF EXISTS %s`, QuoteCol(idxName))
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+				} else {
+					p.ok(p.T(`索引 %s 已删除`, idxName))
+				}
+			}
+			return p.returnTo(p.GenURL(`indexes`, p.dbName, tableName))
+
+		case `create`:
+			idxName := p.Form(`name`)
+			columns := p.Form(`columns`)
+			unique := p.Formx(`unique`).Bool()
+			if len(idxName) == 0 || len(columns) == 0 {
+				p.fail(p.T(`索引名和列名不能为空`))
+			} else {
+				uniqueStr := ``
+				if unique {
+					uniqueStr = ` UNIQUE`
+				}
+				sqlStr := fmt.Sprintf(`CREATE%s INDEX %s ON %s (%s)`, uniqueStr, QuoteCol(idxName), QuoteCol(tableName), columns)
+				_, err := p.db.Exec(sqlStr)
+				if err != nil {
+					p.fail(err.Error())
+				} else {
+					p.ok(p.T(`索引 %s 创建成功`, idxName))
+				}
+			}
+			return p.returnTo(p.GenURL(`indexes`, p.dbName, tableName))
+		}
 	}
 
 	sqlStr := `
@@ -653,16 +830,36 @@ func (p *Postgres) Indexes() error {
 	type IndexInfo struct {
 		Name      string
 		Type      string
-		Def       string
-		IsUnique  bool
+		Columns   string
+		Unique    bool
 		IsPrimary bool
 	}
 
+	// extract column names from index definition
+	reColumns := regexp.MustCompile(`\(([^)]+)\)`)
+
 	var indexes []IndexInfo
 	for rows.Next() {
-		var idx IndexInfo
-		if err := rows.Scan(&idx.Name, &idx.Type, &idx.Def, &idx.IsUnique, &idx.IsPrimary); err != nil {
+		var (
+			name      string
+			idxType   string
+			def       string
+			isUnique  bool
+			isPrimary bool
+		)
+		if err := rows.Scan(&name, &idxType, &def, &isUnique, &isPrimary); err != nil {
 			continue
+		}
+		columns := ""
+		if matches := reColumns.FindStringSubmatch(def); len(matches) > 1 {
+			columns = matches[1]
+		}
+		idx := IndexInfo{
+			Name:      name,
+			Type:      idxType,
+			Columns:   columns,
+			Unique:    isUnique,
+			IsPrimary: isPrimary,
 		}
 		indexes = append(indexes, idx)
 	}

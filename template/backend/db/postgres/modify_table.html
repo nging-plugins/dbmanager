@@ -36,7 +36,7 @@
         </form>
 
         <!-- Truncate Table -->
-        <form class="form-horizontal group-border-dashed" method="POST" action="" onsubmit="return confirm('{{$.T `确定要清空表“%v”的所有数据吗？此操作不可逆！` $table}}');">
+        <form class="form-horizontal group-border-dashed" method="POST" action="" onsubmit="return confirm('{{$.T `确定要清空表"%v"的所有数据吗？此操作不可逆！` $table}}');">
           <input type="hidden" name="operate" value="truncate">
           <div class="form-group">
             <label class="col-sm-2 control-label">{{"清空表"|$.T}}</label>
@@ -52,7 +52,7 @@
         </form>
 
         <!-- Drop Table -->
-        <form class="form-horizontal group-border-dashed" method="POST" action="" onsubmit="return confirm('{{$.T `确定要删除表“%v”吗？此操作不可逆！` $table}}');">
+        <form class="form-horizontal group-border-dashed" method="POST" action="" onsubmit="return confirm('{{$.T `确定要删除表"%v"吗？此操作不可逆！` $table}}');">
           <input type="hidden" name="operate" value="drop">
           <div class="form-group">
             <label class="col-sm-2 control-label">{{"删除表"|$.T}}</label>
@@ -110,6 +110,44 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Modify Columns -->
+    <div class="block-flat no-padding">
+      <div class="header"><h3>{{"修改列"|$.T}}</h3></div>
+      <div class="content">
+        <div class="table-responsive">
+          <table class="table no-border hover blue">
+            <thead><tr>
+              <th>{{"列名"|$.T}}</th><th>{{"类型"|$.T}}</th><th>{{"非空"|$.T}}</th><th>{{"默认值"|$.T}}</th><th style="width:140px">{{"操作"|$.T}}</th>
+            </tr></thead>
+            <tbody>
+            {{range $k,$v := $.Stored.fields}}
+            <tr>
+              <form method="POST" action="">
+              <input type="hidden" name="operate" value="modifyColumn">
+              <input type="hidden" name="colName" value="{{$v.ColumnName}}">
+              <td><input type="text" name="newColName" class="form-control input-sm" value="{{$v.ColumnName}}" placeholder="{{`新名称`|$.T}}"></td>
+              <td><input type="text" name="colType" class="form-control input-sm" value="{{$v.DataType}}"></td>
+              <td>
+                <select name="colNotNull" class="form-control input-sm">
+                  <option value="">{{"不变"|$.T}}</option>
+                  <option value="1"{{if eq $v.IsNullable "NO"}} selected{{end}}>NOT NULL</option>
+                  <option value="0"{{if eq $v.IsNullable "YES"}} selected{{end}}>NULL</option>
+                </select>
+              </td>
+              <td><input type="text" name="colDefault" class="form-control input-sm" value="{{$v.ColumnDefault}}" placeholder="{{`默认值`|$.T}}"></td>
+              <td class="label-group">
+                <button type="submit" class="label label-primary"><i class="fa fa-save"></i> {{"保存"|$.T}}</button>
+                <a href="{{call $.Func.dbMgrURL `modifyTable` $.Stored.dbName $table}}&operate=dropColumn&colName={{$v.ColumnName}}" class="label label-danger" onclick="return confirm('{{$.T `确定要删除列"%v"吗？` $v.ColumnName}}');"><i class="fa fa-times"></i></a>
+              </td>
+              </form>
+            </tr>
+            {{end}}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

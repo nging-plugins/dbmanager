@@ -323,6 +323,24 @@ func (c *ClickHouse) ViewTable() error {
 		c.Set(`ddl`, ddl)
 	}
 
+	// Get indexes (sorting key / primary key)
+	var sortKey, primaryKey sql.NullString
+	c.db.QueryRow(
+		`SELECT sorting_key, primary_key FROM system.tables WHERE database = currentDatabase() AND name = ?`,
+		tableName,
+	).Scan(&sortKey, &primaryKey)
+	var idx interface{}
+	if sortKey.Valid || primaryKey.Valid {
+		idx = &struct {
+			SortingKey string
+			PrimaryKey string
+		}{
+			SortingKey: sortKey.String,
+			PrimaryKey: primaryKey.String,
+		}
+	}
+	c.Set(`indexes`, idx)
+
 	return c.Render(`db/clickhouse/view_table`, c.checkErr(err))
 }
 
@@ -500,11 +518,10 @@ func (c *ClickHouse) ListData() error {
 // CreateTable handles the create table operation
 func (c *ClickHouse) CreateTable() error {
 	if c.IsPost() {
-		data := c.Data()
 		tableName := c.Form(`table`)
 		if len(tableName) == 0 {
-			data.SetInfo(c.T(`表名不能为空`), 0)
-			return c.JSON(data)
+			c.fail(c.T(`表名不能为空`))
+			return c.returnTo(c.GenURL(`createTable`, c.dbName))
 		}
 
 		columnNames := c.FormValues(`column_name[]`)
@@ -512,8 +529,8 @@ func (c *ClickHouse) CreateTable() error {
 		columnComments := c.FormValues(`column_comment[]`)
 
 		if len(columnNames) == 0 {
-			data.SetInfo(c.T(`请至少定义一个字段`), 0)
-			return c.JSON(data)
+			c.fail(c.T(`请至少定义一个字段`))
+			return c.returnTo(c.GenURL(`createTable`, c.dbName))
 		}
 
 		engine := c.Form(`engine`, `MergeTree()`)
@@ -543,11 +560,11 @@ func (c *ClickHouse) CreateTable() error {
 
 		_, err := c.db.Exec(sqlStr)
 		if err != nil {
-			data.SetError(err)
+			c.fail(err.Error())
 		} else {
-			data.SetInfo(c.T(`表创建成功`), 1)
+			c.ok(c.T(`表创建成功`))
 		}
-		return c.JSON(data)
+		return c.returnTo(c.GenURL(`listTable`, c.dbName))
 	}
 
 	// Provide engine suggestions
@@ -575,8 +592,7 @@ func (c *ClickHouse) ModifyTable() error {
 		return c.returnTo(c.GenURL(`listTable`))
 	}
 
-	if c.IsPost() {
-		data := c.Data()
+	if c.IsPost() || len(c.Form("operate")) > 0 {
 		operate := c.Form(`operate`)
 
 		switch operate {
@@ -584,35 +600,113 @@ func (c *ClickHouse) ModifyTable() error {
 			sqlStr := fmt.Sprintf(`DROP TABLE %s`, QuoteCol(tableName))
 			_, err := c.db.Exec(sqlStr)
 			if err != nil {
-				data.SetError(err)
+				c.fail(err.Error())
 			} else {
-				data.SetInfo(c.T(`表删除成功`), 1)
+				c.ok(c.T(`表删除成功`))
 			}
+			return c.returnTo(c.GenURL(`listTable`, c.dbName))
 		case `truncate`:
 			sqlStr := fmt.Sprintf(`TRUNCATE TABLE %s`, QuoteCol(tableName))
 			_, err := c.db.Exec(sqlStr)
 			if err != nil {
-				data.SetError(err)
+				c.fail(err.Error())
 			} else {
-				data.SetInfo(c.T(`表已清空`), 1)
+				c.ok(c.T(`表已清空`))
 			}
+			return c.returnTo(c.GenURL(`listTable`, c.dbName))
 		case `rename`:
 			newName := c.Form(`newName`)
 			if len(newName) == 0 {
-				data.SetInfo(c.T(`新表名不能为空`), 0)
-				return c.JSON(data)
+				c.fail(c.T(`新表名不能为空`))
+				return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
 			}
 			sqlStr := fmt.Sprintf(`RENAME TABLE %s TO %s`, QuoteCol(tableName), QuoteCol(newName))
 			_, err := c.db.Exec(sqlStr)
 			if err != nil {
-				data.SetError(err)
+				c.fail(err.Error())
 			} else {
-				data.SetInfo(c.T(`表重命名成功`), 1)
+				c.ok(c.T(`表重命名成功`))
 			}
+			return c.returnTo(c.GenURL(`listTable`, c.dbName))
+		case `modify`:
+			newName := c.Form(`new_name`)
+			comment := c.Form(`comment`)
+			if len(newName) > 0 {
+				sqlStr := fmt.Sprintf(`RENAME TABLE %s TO %s`, QuoteCol(tableName), QuoteCol(newName))
+				_, err := c.db.Exec(sqlStr)
+				if err != nil {
+					c.fail(err.Error())
+					return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+				}
+				tableName = newName
+			}
+			if len(comment) > 0 {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s MODIFY COMMENT %s`, QuoteCol(tableName), QuoteVal(comment))
+				_, err := c.db.Exec(sqlStr)
+				if err != nil {
+					c.fail(err.Error())
+					return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+				}
+			}
+			c.ok(c.T(`修改成功`))
+			return c.returnTo(c.GenURL(`listTable`, c.dbName))
+		case `modifyColumn`:
+			colName := c.Form(`colName`)
+			newColName := c.Form(`newColName`)
+			colType := c.Form(`colType`)
+			colComment := c.Form(`colComment`)
+			if len(colName) == 0 {
+				c.fail(c.T(`列名不能为空`))
+				return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+			}
+			targetCol := newColName
+			if len(targetCol) == 0 {
+				targetCol = colName
+			}
+			if newColName != colName && len(newColName) > 0 {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s RENAME COLUMN %s TO %s`, QuoteCol(tableName), QuoteCol(colName), QuoteCol(newColName))
+				_, err := c.db.Exec(sqlStr)
+				if err != nil {
+					c.fail(err.Error())
+					return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+				}
+			}
+			if len(colType) > 0 {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s MODIFY COLUMN %s %s`, QuoteCol(tableName), QuoteCol(targetCol), colType)
+				_, err := c.db.Exec(sqlStr)
+				if err != nil {
+					c.fail(err.Error())
+					return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+				}
+			}
+			if len(colComment) > 0 {
+				sqlStr := fmt.Sprintf(`ALTER TABLE %s COMMENT COLUMN %s %s`, QuoteCol(tableName), QuoteCol(targetCol), QuoteVal(colComment))
+				_, err := c.db.Exec(sqlStr)
+				if err != nil {
+					c.fail(err.Error())
+					return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+				}
+			}
+			c.ok(c.T(`修改成功`))
+			return c.returnTo(c.GenURL(`viewTable`, c.dbName, tableName))
+		case `dropColumn`:
+			colName := c.Form(`colName`)
+			if len(colName) == 0 {
+				c.fail(c.T(`列名不能为空`))
+				return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
+			}
+			sqlStr := fmt.Sprintf(`ALTER TABLE %s DROP COLUMN %s`, QuoteCol(tableName), QuoteCol(colName))
+			_, err := c.db.Exec(sqlStr)
+			if err != nil {
+				c.fail(err.Error())
+			} else {
+				c.ok(c.T(`列删除成功`))
+			}
+			return c.returnTo(c.GenURL(`viewTable`, c.dbName, tableName))
 		default:
-			data.SetInfo(c.T(`不支持的操作`), 0)
+			c.fail(c.T(`不支持的操作`))
+			return c.returnTo(c.GenURL(`modifyTable`, c.dbName, tableName))
 		}
-		return c.JSON(data)
 	}
 
 	fields, err := c.getTableFields(tableName)
@@ -630,6 +724,41 @@ func (c *ClickHouse) Indexes() error {
 		return c.returnTo(c.GenURL(`listTable`))
 	}
 
+	// Handle POST to modify ORDER BY / PRIMARY KEY / SAMPLE BY
+	if c.IsPost() {
+		sortingKey := c.Form(`sorting_key`)
+		primaryKey := c.Form(`primary_key`)
+		sampleBy := c.Form(`sample_by`)
+
+		var sqls []string
+		if len(sortingKey) > 0 {
+			sqls = append(sqls, fmt.Sprintf(`ALTER TABLE %s MODIFY ORDER BY %s`, QuoteCol(tableName), sortingKey))
+		}
+		if len(primaryKey) > 0 {
+			sqls = append(sqls, fmt.Sprintf(`ALTER TABLE %s MODIFY PRIMARY KEY %s`, QuoteCol(tableName), primaryKey))
+		}
+		if len(sampleBy) > 0 {
+			sqls = append(sqls, fmt.Sprintf(`ALTER TABLE %s MODIFY SAMPLE BY %s`, QuoteCol(tableName), sampleBy))
+		}
+		if len(sqls) == 0 {
+			c.fail(c.T(`请至少填写一项`))
+			return c.returnTo(c.GenURL(`indexes`, c.dbName, tableName))
+		}
+		var lastErr error
+		for _, s := range sqls {
+			_, lastErr = c.db.Exec(s)
+			if lastErr != nil {
+				break
+			}
+		}
+		if lastErr != nil {
+			c.fail(lastErr.Error())
+		} else {
+			c.ok(c.T(`索引修改成功`))
+		}
+		return c.returnTo(c.GenURL(`indexes`, c.dbName, tableName))
+	}
+
 	// Get sorting key and primary key from system.tables
 	var sortKey, primaryKey, sampleBy sql.NullString
 	c.db.QueryRow(
@@ -637,16 +766,19 @@ func (c *ClickHouse) Indexes() error {
 		tableName,
 	).Scan(&sortKey, &primaryKey, &sampleBy)
 
-	indexes := &struct {
-		Name       string
-		SortingKey string
-		PrimaryKey string
-		SampleBy   string
-	}{
-		Name:       tableName,
-		SortingKey: sortKey.String,
-		PrimaryKey: primaryKey.String,
-		SampleBy:   sampleBy.String,
+	var indexes interface{}
+	if sortKey.Valid || primaryKey.Valid || sampleBy.Valid {
+		indexes = &struct {
+			Name       string
+			SortingKey string
+			PrimaryKey string
+			SampleBy   string
+		}{
+			Name:       tableName,
+			SortingKey: sortKey.String,
+			PrimaryKey: primaryKey.String,
+			SampleBy:   sampleBy.String,
+		}
 	}
 
 	c.Set(`indexes`, indexes)
@@ -828,8 +960,7 @@ func (c *ClickHouse) ProcessList() error {
 			query,
 			elapsed,
 			read_rows,
-			memory_usage,
-			query_start_time
+			memory_usage
 		FROM system.processes
 		ORDER BY elapsed DESC`
 
@@ -847,21 +978,19 @@ func (c *ClickHouse) ProcessList() error {
 		Elapsed   float64
 		ReadRows  int64
 		ReadBytes int64
-		StartTime string
 	}
 
 	var processes []ProcessItem
 	for rows.Next() {
 		var (
-			queryID   string
-			user      sql.NullString
-			query     sql.NullString
-			elapsed   sql.NullFloat64
-			readRows  sql.NullInt64
-			memory    sql.NullInt64
-			startTime sql.NullString
+			queryID  string
+			user     sql.NullString
+			query    sql.NullString
+			elapsed  sql.NullFloat64
+			readRows sql.NullInt64
+			memory   sql.NullInt64
 		)
-		if err := rows.Scan(&queryID, &user, &query, &elapsed, &readRows, &memory, &startTime); err != nil {
+		if err := rows.Scan(&queryID, &user, &query, &elapsed, &readRows, &memory); err != nil {
 			continue
 		}
 		item := ProcessItem{
@@ -871,7 +1000,6 @@ func (c *ClickHouse) ProcessList() error {
 			Elapsed:   elapsed.Float64,
 			ReadRows:  readRows.Int64,
 			ReadBytes: memory.Int64,
-			StartTime: startTime.String,
 		}
 		processes = append(processes, item)
 	}
