@@ -52,15 +52,15 @@ func (m *mySQL) renameDatabase(newName, collate string) []*Result {
 	rs := []*Result{}
 	r := m.createDatabase(newName, collate)
 	rs = append(rs, r)
-	if r.err != nil {
+	if r.Error() != nil {
 		return rs
 	}
 	rGetTables := &Result{}
-	rGetTables.start()
+	rGetTables.Start()
 	tables, err := m.getTables()
-	rGetTables.end()
+	rGetTables.End()
 	rGetTables.SQL = `SHOW TABLES`
-	rGetTables.err = err
+	rGetTables.SetError(err)
 	if err != nil {
 		rGetTables.ErrorString = err.Error()
 	}
@@ -82,7 +82,7 @@ func (m *mySQL) renameDatabase(newName, collate string) []*Result {
 		rRename := &Result{}
 		rRename.SQL = "RENAME TABLE " + sql
 		rRename = rRename.Exec(m.newParam())
-		err = rRename.err
+		err = rRename.Error()
 		rs = append(rs, rRename)
 	}
 	if err == nil {

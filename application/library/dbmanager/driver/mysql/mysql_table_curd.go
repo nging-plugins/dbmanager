@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 	"github.com/webx-top/com"
 	"github.com/webx-top/db/lib/factory"
 )
@@ -103,8 +104,8 @@ func (m *mySQL) listData(
 	if record {
 		r = &Result{}
 	} else {
-		r = AcquireResult()
-		defer ReleaseResult(r)
+		r = shared.AcquireResult()
+		defer shared.ReleaseResult(r)
 	}
 	var whereStr string
 	if len(wheres) > 0 {
@@ -133,57 +134,14 @@ func (m *mySQL) listData(
 	}
 	r.Query(m.newParam(dbfactory), func(rows *sql.Rows) error {
 		if callback == nil {
-			columns, values, err = m.selectTable(rows, limit, textLength...)
+			columns, values, err = shared.QueryTable(rows, limit, textLength...)
 		} else {
-			columns, err = m.selectNext(rows, callback, limit, textLength...)
+			columns, err = shared.QueryNext(rows, callback, limit, textLength...)
 		}
 		return err
 	})
 	if record {
 		m.AddResults(r)
-	}
-	return
-}
-
-func (m *mySQL) selectTable(rows *sql.Rows, limit int, textLength ...int) (columns []string, r []map[string]*sql.NullString, err error) {
-	r = []map[string]*sql.NullString{}
-	columns, err = m.selectNext(rows, func(_ []string, row map[string]*sql.NullString) error {
-		r = append(r, row)
-		return nil
-	}, limit, textLength...)
-	return
-}
-
-func (m *mySQL) selectNext(rows *sql.Rows, callback func(columns []string, row map[string]*sql.NullString) error, limit int, textLength ...int) (columns []string, err error) {
-	columns, err = rows.Columns()
-	if err != nil {
-		return
-	}
-	size := len(columns)
-	var maxLen int
-	if len(textLength) > 0 {
-		maxLen = textLength[0]
-	}
-	for i := 0; (limit < 0 || i < limit) && rows.Next(); i++ {
-		values := make([]interface{}, size)
-		for k := range columns {
-			values[k] = &sql.NullString{}
-		}
-		err = rows.Scan(values...)
-		if err != nil {
-			return
-		}
-		val := map[string]*sql.NullString{}
-		for k, colName := range columns {
-			val[colName] = values[k].(*sql.NullString)
-			if maxLen > 0 {
-				val[colName].String = com.Substr(val[colName].String, ` ...`, maxLen)
-			}
-		}
-		err = callback(columns, val)
-		if err != nil {
-			return
-		}
 	}
 	return
 }
@@ -244,7 +202,7 @@ func (m *mySQL) delete(table, queryWhere string, limit int) error {
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) dumpHeaders(exportFormat string, multiTable bool) string {
@@ -388,7 +346,7 @@ func (m *mySQL) update(table string, set map[string]string, queryWhere string, l
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) set(table, queryWhere string, key string, value string, limit int, isNull ...bool) error {
@@ -408,7 +366,7 @@ func (m *mySQL) set(table, queryWhere string, key string, value string, limit in
 	r.Exec(m.newParam())
 	m.Logger().Debug(r.SQL)
 	//m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 /** Insert data into table
@@ -432,5 +390,5 @@ func (m *mySQL) insert(table string, set map[string]string) error {
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }

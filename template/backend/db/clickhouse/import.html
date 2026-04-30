@@ -1,94 +1,18 @@
 {{Extend "db/index"}}
-{{Block "title"}}{{"导入数据"|$.T}} - {{Super}}{{/Block}}
+{{Block "title"}}{{"导入数据"|$.T}}: {{$.Stored.dbName}} - {{Super}}{{/Block}}
+{{Block "head"}}
+{{Include "db/shared/import_head" $}}
+{{/Block}}
 {{Block "breadcrumb"}}
 {{Super}}
 {{if $.Stored.dbName}}<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>{{end}}
 <li class="active">{{"导入数据"|$.T}}</li>
 {{/Block}}
-{{Block "head"}}
-<link rel="stylesheet" href="{{AssetsURL}}/js/dropzone/dropzone.min.css" />
-{{/Block}}
 {{Block "main"}}
-<div class="row">
-    <div class="col-md-12">
-        <div class="block-flat no-padding">
-          <div class="header">							
-            <h3>{{"导入数据"|$.T}}</h3>
-          </div>
-          <div class="content padding">
-        <details class="clearfix">
-            <summary>{{`从备份文件导入`|$.T}}</summary>
-            <div class="col-md-12">
-            <form class="form-horizontal group-border-dashed" id="form-importfrom-dbfile" method="POST" action="{{$.URI}}" notify>
-              <div class="form-group">
-                <label class="col-sm-3 control-label">{{"文件路径"|$.T}}</label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="dbfile" placeholder="{{`输入备份文件路径`|$.T}}" value="{{$.Form `title`}}" required>
-                    <div class="help-block">{{`仅支持扩展名为“.sql”/“.zip”/“.tar.gz”的文件。`|$.T}}</div>
-                </div>
-              </div>
-              <div class="form-group">
-				<div class="col-sm-8 col-sm-offset-3">
-				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"导入"|$.T}}</button>
-				  <button type="reset" class="btn btn-default btn-lg"><i class="fa fa-refresh"></i> {{"重置"|$.T}}</button>
-				</div>
-				</div>
-            </form>
-            </div>
-        </details>
-        <details class="clearfix sm-margin-top">
-            <summary>{{`从上传文件导入`|$.T}}</summary>
-            <form action="{{$.URI}}" class="dropzone" id="my-awesome-dropzone" accept="application/zip,application/x-zip-compressed,application/gzip"></form>
-        </details>
-        <details class="clearfix sm-margin-top">
-            <summary>{{`粘贴SQL内容导入`|$.T}}</summary>
-            <div class="col-md-12">
-            <form class="form-horizontal group-border-dashed" method="POST" action="{{$.URI}}" notify>
-              <div class="form-group">
-                <label class="col-sm-3 control-label">{{"SQL内容"|$.T}}</label>
-                <div class="col-sm-8">
-                    <textarea name="sql_content" class="form-control" rows="10" placeholder="{{`粘贴ClickHouse SQL语句...`|$.T}}"></textarea>
-                </div>
-              </div>
-              <div class="form-group">
-				<div class="col-sm-8 col-sm-offset-3">
-				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> {{"执行"|$.T}}</button>
-				  <button type="reset" class="btn btn-default btn-lg"><i class="fa fa-refresh"></i> {{"重置"|$.T}}</button>
-				</div>
-				</div>
-            </form>
-            </div>
-        </details>
-            <table class="sm-margin-top">
-                <tbody id="import-progress">
-                </tbody>
-            </table>
-          </div><!-- /.content -->
-        </div><!-- /.block-flat -->
-    </div>
-</div>
+{{Include "db/shared/import_main" $}}
 {{/Block}}
 
 {{Block "footer"}}
 {{Super}}
-<script type="text/javascript" src="{{AssetsURL}}/js/dropzone/dropzone.min.js"></script>
-<script type="text/javascript">
-Dropzone.autoDiscover = false;
-$(function(){
-    $('#my-awesome-dropzone').dropzone({
-        url:'{{$.URI}}', timeout: 3600000,
-        dictDefaultMessage:'{{"可以把sql/zip/tar.gz文件拖到这里来进行上传"|$.T}}<p>{{"系统会自动执行sql文件"|$.T}}</p>',
-        uploadMultiple:true,paramName:function(n){return 'file'},
-        success:function(file){
-            if (file.previewElement) {
-                if($(file.previewElement).children('.dz-upload-after').length<1) {
-                    var tips='<div class="dz-upload-after"><i class="fa fa-spinner fa-spin"></i><span> {{"导入中"|$.T}}</span></div>';
-                    $(file.previewElement).prepend(tips);
-                }
-                return $(file.previewElement).attr("id","dz-preview-"+file.upload.uuid).addClass("dz-sql-importing");
-            }
-        }
-    });
-});
-</script>
+{{Include "db/shared/import_footer" $}}
 {{/Block}}

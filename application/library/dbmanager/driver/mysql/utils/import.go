@@ -35,6 +35,7 @@ import (
 	"github.com/coscms/webcore/library/notice"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 )
 
 // Import 导入SQL文件
@@ -80,7 +81,7 @@ func Import(ctx context.Context, noticer *notice.NoticeAndProgress, cfg *driver.
 		``,
 	}
 	sqls := `SET NAMES ` + cfg.Charset + `;SET FOREIGN_KEY_CHECKS=0;SET UNIQUE_CHECKS=0;source %s;SET FOREIGN_KEY_CHECKS=1;SET UNIQUE_CHECKS=1;`
-	ifi, err := ParseImportFile(cacheDir, files)
+	ifi, err := shared.ParseImportFile(cacheDir, files)
 	if err != nil {
 		return err
 	}

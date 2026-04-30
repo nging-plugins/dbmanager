@@ -352,81 +352,17 @@ func (c *ClickHouse) ViewTable() error {
 
 // RunCommand handles running SQL commands
 func (c *ClickHouse) RunCommand() error {
-	if c.IsPost() {
-		data := c.Data()
-		sqlStr := strings.TrimSpace(c.Form(`sql`))
-		if len(sqlStr) == 0 {
-			data.SetInfo(c.T(`请输入SQL语句`), 0)
-			return c.JSON(data)
-		}
+	err := shared.RunSQL(c.BaseDriver, c.db, nil)
+	c.SetFunc(`getFieldsByTable`, c.getFieldsByTable)
+	return c.Render(`db/clickhouse/sql`, c.checkErr(err))
+}
 
-		upperSQL := strings.ToUpper(sqlStr)
-
-		// Determine if it's a query or exec command
-		isQuery := strings.HasPrefix(upperSQL, `SELECT`) ||
-			strings.HasPrefix(upperSQL, `SHOW`) ||
-			strings.HasPrefix(upperSQL, `DESCRIBE`) ||
-			strings.HasPrefix(upperSQL, `EXPLAIN`) ||
-			strings.HasPrefix(upperSQL, `WITH`)
-
-		if isQuery {
-			rows, err := c.db.Query(sqlStr)
-			if err != nil {
-				data.SetError(err)
-				return c.JSON(data)
-			}
-			defer rows.Close()
-
-			columns, err := rows.Columns()
-			if err != nil {
-				data.SetError(err)
-				return c.JSON(data)
-			}
-
-			var results []map[string]interface{}
-			for rows.Next() {
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				if err := rows.Scan(valuePtrs...); err != nil {
-					data.SetError(err)
-					return c.JSON(data)
-				}
-
-				row := make(map[string]interface{})
-				for i, col := range columns {
-					val := values[i]
-					if b, ok := val.([]byte); ok {
-						row[col] = string(b)
-					} else {
-						row[col] = val
-					}
-				}
-				results = append(results, row)
-			}
-
-			c.Set(`columns`, columns)
-			c.Set(`results`, results)
-			c.Set(`rowsAffected`, int64(len(results)))
-		} else {
-			result, err := c.db.Exec(sqlStr)
-			if err != nil {
-				data.SetError(err)
-				return c.JSON(data)
-			}
-			rowsAffected, _ := result.RowsAffected()
-			c.Set(`rowsAffected`, rowsAffected)
-		}
-
-		c.Set(`sql`, sqlStr)
-		data.SetInfo(c.T(`执行成功`), 1)
-		return c.JSON(data)
+func (c *ClickHouse) getFieldsByTable(table string) []string {
+	columns, _ := shared.GetTableColumns(c.db, table)
+	if columns == nil {
+		return []string{}
 	}
-
-	return c.Render(`db/clickhouse/sql`, c.checkErr(nil))
+	return columns
 }
 
 // ListData handles displaying table data (paginated)
@@ -914,29 +850,14 @@ func (c *ClickHouse) Import() error {
 			c.fail(c.T(`请选择数据库`))
 			return c.returnTo(c.GenURL(`listDb`))
 		}
-		sqlContent := c.Form(`sql_content`)
-		var stats shared.SQLStats
-		if len(sqlContent) > 0 {
-			stats = shared.ExecuteSQL(c.db, sqlContent)
-		} else {
-			file, hdr, err := c.Request().FormFile(`file`)
-			if err != nil {
-				c.fail(c.T(`请提供SQL内容或上传文件`))
-				return c.returnTo(c.GenURL(`import`, c.dbName))
-			}
-			defer file.Close()
-			stats, err = shared.ExecuteUploadedSQLFile(c.db, file, hdr)
-			if err != nil {
-				c.fail(err.Error())
-				return c.returnTo(c.GenURL(`import`, c.dbName))
-			}
+		sqlFiles, err := shared.GetSQLFiles(c.Context)
+		if err != nil {
+			return shared.ResponseDropzone(err, c.Context)
 		}
-		if stats.Failed > 0 {
-			c.fail(c.T(`成功 %d 条，失败 %d 条: %s`, stats.Success, stats.Failed, strings.Join(stats.Errors, "; ")))
-		} else {
-			c.ok(c.T(`成功执行 %d 条SQL语句`, stats.Success))
-		}
-		return c.returnTo(c.GenURL(`import`, c.dbName))
+		async := c.Formx(`async`, `true`).Bool()
+		executor := shared.NewSQLExecutor(c.db)
+		err = shared.ImportSQLFiles(c.Context, *c.DbAuth, c.dbName, ``, sqlFiles, async, executor.ImportExecutor)
+		return shared.ResponseDropzone(err, c.Context)
 	}
 	return c.Render(`db/clickhouse/import`, c.checkErr(nil))
 }

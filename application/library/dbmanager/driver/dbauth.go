@@ -42,6 +42,10 @@ func (d *DbAuth) GenKey() string {
 	return GenKey(d.Driver, d.Username, d.Host, d.Db, d.AccountID)
 }
 
+func (d *DbAuth) ImportAndOutputOpName(op string) string {
+	return `dbmanager.` + d.Driver + `.` + op
+}
+
 func GenKey(driver string, username string, host string, database string, accountID uint) string {
 	key := fmt.Sprintf(
 		"%s://%s:@%s/%s?%d",

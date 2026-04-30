@@ -18,8 +18,7 @@ import (
 	"github.com/coscms/webcore/library/cron"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
-	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 	"github.com/nging-plugins/dbmanager/application/model"
 )
 
@@ -101,7 +100,7 @@ func mysqlBackup(id string) cron.Runner {
 }
 
 func clearHistoryBackup(dbName string, keepN int) {
-	saveDir := mysql.TempDir(utils.OpExport)
+	saveDir := shared.TempDir(shared.OpExport)
 	dbSaveDir := filepath.Join(saveDir, dbName)
 	if !com.FileExists(dbSaveDir) {
 		return

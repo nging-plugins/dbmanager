@@ -16,33 +16,21 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package utils
+package shared
 
 import (
-	"time"
+	"github.com/coscms/webcore/library/backend"
+	"github.com/coscms/webcore/library/notice"
+	"github.com/coscms/webcore/library/respond"
+	"github.com/webx-top/echo"
 )
 
-const (
-	// OpExport 导出操作
-	OpExport string = `export`
-	// OpImport 导入操作
-	OpImport string = `import`
-)
-
-// FileInfos 文件信息集合
-type FileInfos []*FileInfo
-
-func (f *FileInfos) Add(fi *FileInfo) {
-	*f = append(*f, fi)
-}
-
-// FileInfo 文件信息
-type FileInfo struct {
-	Start      time.Time
-	End        time.Time
-	Elapsed    time.Duration
-	Path       string
-	Size       int64
-	Compressed bool
-	Error      string `json:",omitempty"`
+func ResponseDropzone(err error, ctx echo.Context) error {
+	if err != nil {
+		if user := backend.User(ctx); user != nil {
+			notice.OpenMessage(user.Username, `upload`)
+			notice.Send(user.Username, notice.NewMessageWithValue(`upload`, ctx.T(`文件上传出错`), err.Error(), notice.StateFailure))
+		}
+	}
+	return respond.Dropzone(ctx, err, nil)
 }

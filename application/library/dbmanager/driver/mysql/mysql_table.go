@@ -64,12 +64,12 @@ func (m *mySQL) optimizeTables(tables []string, operation string) error {
 		table = quoteCol(table)
 		r.SQL = op + ` TABLE ` + table
 		r.Execs(m.newParam())
-		if r.err != nil {
-			return r.err
+		if r.Error() != nil {
+			return r.Error()
 		}
 	}
-	r.end()
-	return r.err
+	r.End()
+	return r.Error()
 }
 
 func (m *mySQL) setTablesCollate(tables []string, collate string) error {
@@ -117,7 +117,7 @@ func (m *mySQL) moveTables(tables []string, targetDb string) error {
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 // 删除表
@@ -138,7 +138,7 @@ func (m *mySQL) dropTables(tables []string, isView bool) error {
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 // 清空表
@@ -149,11 +149,11 @@ func (m *mySQL) truncateTables(tables []string) error {
 		table = quoteCol(table)
 		r.SQL = `TRUNCATE TABLE ` + table
 		r.Execs(m.newParam())
-		if r.err != nil {
-			return r.err
+		if r.Error() != nil {
+			return r.Error()
 		}
 	}
-	r.end()
+	r.End()
 	return nil
 }
 
@@ -185,8 +185,8 @@ func (m *mySQL) copyTables(tables []string, targetDb string, isView bool) error 
 	r.SQL = `SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'`
 	r.Execs(m.newParam())
 	m.AddResults(r)
-	if r.err != nil {
-		return r.err
+	if r.Error() != nil {
+		return r.Error()
 	}
 	same := m.dbName == targetDb
 	targetDb = quoteCol(targetDb)
@@ -202,8 +202,8 @@ func (m *mySQL) copyTables(tables []string, targetDb string, isView bool) error 
 		if isView {
 			r.SQL = `DROP VIEW IF EXISTS ` + name
 			r.Execs(m.newParam())
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 
 			viewInfo, err := m.tableView(table)
@@ -212,32 +212,32 @@ func (m *mySQL) copyTables(tables []string, targetDb string, isView bool) error 
 			}
 			r.SQL = `CREATE VIEW ` + name + ` AS ` + viewInfo.Select
 			r.Execs(m.newParam())
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 			continue
 
 		}
 		r.SQL = `DROP TABLE IF EXISTS ` + name
 		r.Execs(m.newParam())
-		if r.err != nil {
-			return r.err
+		if r.Error() != nil {
+			return r.Error()
 		}
 
 		r.SQL = `CREATE TABLE ` + name + ` LIKE ` + quotedTable
 		r.Execs(m.newParam())
-		if r.err != nil {
-			return r.err
+		if r.Error() != nil {
+			return r.Error()
 		}
 
 		r.SQL = `INSERT INTO ` + name + ` SELECT * FROM ` + quotedTable
 		r.Execs(m.newParam())
-		if r.err != nil {
-			return r.err
+		if r.Error() != nil {
+			return r.Error()
 		}
 	}
-	r.end()
-	return r.err
+	r.End()
+	return r.Error()
 }
 
 type fieldItem struct {
@@ -303,7 +303,7 @@ func (m *mySQL) alterTable(table string, newName string, fields []*fieldItem, fo
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 type indexItems struct {
@@ -336,7 +336,7 @@ func (m *mySQL) alterIndexes(table string, alter []*indexItems) error {
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) alterForeignKeys(table string, foreignKey *ForeignKeyParam, isDrop bool) error {
@@ -358,7 +358,7 @@ func (m *mySQL) alterForeignKeys(table string, foreignKey *ForeignKeyParam, isDr
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) alterTableCharset(table string, charset string, collate string) error {
@@ -371,7 +371,7 @@ func (m *mySQL) alterTableCharset(table string, charset string, collate string) 
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 type Partition struct {
@@ -954,7 +954,7 @@ func (m *mySQL) dropTrigger(table string, name string) error {
 	r := &Result{SQL: sqlStr}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) createTrigger(table string, trigger *Trigger) error {
@@ -976,7 +976,7 @@ func (m *mySQL) createTrigger(table string, trigger *Trigger) error {
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) tablePartitioning(partitions map[string]string, tableStatus *TableStatus) string {

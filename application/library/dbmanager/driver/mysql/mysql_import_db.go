@@ -8,7 +8,7 @@ import (
 	"github.com/admpub/errors"
 	"github.com/coscms/webcore/library/notice"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
-	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 	"github.com/webx-top/com"
 	"github.com/webx-top/db/lib/factory"
 )
@@ -23,8 +23,8 @@ func (m *mySQL) importDB(c context.Context, noticer *notice.NoticeAndProgress,
 		names[i] = filepath.Base(file)
 	}
 	noticer.Success(`开始导入: ` + strings.Join(names, ", "))
-	var ifi *utils.ImportFile
-	ifi, err = utils.ParseImportFile(cacheDir, files)
+	var ifi *shared.ImportFile
+	ifi, err = shared.ParseImportFile(cacheDir, files)
 	if err != nil {
 		return
 	}

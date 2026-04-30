@@ -21,37 +21,18 @@ package mysql
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
-	loga "github.com/admpub/log"
-	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/code"
 
-	"github.com/coscms/webcore/library/backend"
-	"github.com/coscms/webcore/library/background"
 	"github.com/coscms/webcore/library/notice"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/utils"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 )
-
-// SQLTempDir sql文件缓存目录获取函数(用于导入导出SQL)
-var SQLTempDir = os.TempDir
-
-func TempDir(op string) string {
-	dir := filepath.Join(SQLTempDir(), `dbmanager/cache`, op)
-	err := com.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		loga.Error(err)
-	}
-	return dir
-}
 
 func (m *mySQL) getCharsetList() []string {
 	e, _ := m.getCharsets()
@@ -64,7 +45,7 @@ func (m *mySQL) getCharsetList() []string {
 }
 
 func (m *mySQL) exporting() error {
-	return m.bgExecManage(utils.OpExport)
+	return m.bgExecManage(shared.OpExport)
 }
 
 func (m *mySQL) ImportAndOutputOpName(op string) string {
@@ -74,28 +55,13 @@ func (m *mySQL) ImportAndOutputOpName(op string) string {
 func (m *mySQL) bgExecManage(op string) error {
 	var err error
 	if m.IsPost() {
+		shared.BackgroundExecManage(m.Context, *m.DbAuth, op, true)
 		data := m.Data()
-		keys := m.FormValues(`key`)
-		background.Cancel(m.ImportAndOutputOpName(op), keys...)
 		data.SetInfo(m.T(`操作成功`))
 		m.ok(m.T(`操作成功`))
 		return m.returnTo(m.GenURL(op) + `&process=1`)
 	}
-	m.Set(`op`, op)
-	group := background.ListBy(m.ImportAndOutputOpName(op))
-	bgs := map[string]*background.Background{}
-	if group != nil {
-		bgs = group.Map()
-	}
-	m.Set(`list`, bgs)
-	var title string
-	if op == utils.OpExport {
-		title = m.T(`导出SQL`)
-	} else {
-		title = m.T(`导入SQL`)
-	}
-	m.Set(`title`, title)
-	m.Set(`cacheDir`, backend.URLFor(`/download/file?path=dbmanager/cache/`+op))
+	err = shared.BackgroundExecManage(m.Context, *m.DbAuth, op, false)
 	return m.Render(`db/mysql/process_store`, m.checkErr(err))
 }
 
@@ -138,165 +104,43 @@ func (m *mySQL) Export() error {
 				tables = append(tables, views...)
 			}
 		}
-		output := m.Form(`output`)
-		types := m.FormValues(`type`)
-		cacheKey := com.Md5(com.Dump([]interface{}{tables, output, types}, false))
-		var (
-			structWriter, dataWriter interface{}
-			sqlFiles                 []string
-			dbSaveDir                string
-			sqlSaveDir               string
-			async                    bool
-			bgExec                   = background.New(context.TODO(), echo.H{
-				`database`: m.dbName,
-				`tables`:   tables,
-				`output`:   output,
-				`types`:    types,
-			})
-			fileInfos = &utils.FileInfos{}
-		)
-		exports, err := background.Register(m.Context, m.ImportAndOutputOpName(utils.OpExport), cacheKey, bgExec)
-		if err != nil {
-			return err
-		}
-		nowTime := time.Now().Format("20060102150405.000")
-		saveDir := TempDir(utils.OpExport)
-		switch output {
-		case `down`:
-			m.Response().Header().Set(echo.HeaderContentType, echo.MIMEOctetStream)
-			m.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", m.dbName+"-sql-"+nowTime+".sql"))
-			fallthrough
-		case `open`:
-			m.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
-			if com.InSlice(`struct`, types) {
-				structWriter = m.Response()
-			}
-			if com.InSlice(`data`, types) {
-				dataWriter = m.Response()
-			}
-		default:
-			async = true
-			dbSaveDir = filepath.Join(saveDir, m.dbName)
-			sqlSaveDir = filepath.Join(dbSaveDir, nowTime)
-			com.MkdirAll(sqlSaveDir, os.ModePerm)
-			if com.InSlice(`struct`, types) {
-				structFile := filepath.Join(sqlSaveDir, `struct-`+nowTime+`.sql`)
-				sqlFiles = append(sqlFiles, structFile)
-				structWriter = structFile
-				fi := &utils.FileInfo{
-					Start: time.Now(),
-					Path:  structFile,
-				}
-				*fileInfos = append(*fileInfos, fi)
-			}
-			if com.InSlice(`data`, types) {
-				dataFile := filepath.Join(sqlSaveDir, `data-`+nowTime+`.sql`)
-				sqlFiles = append(sqlFiles, dataFile)
-				dataWriter = dataFile
-				fi := &utils.FileInfo{
-					Start: time.Now(),
-					Path:  dataFile,
-				}
-				*fileInfos = append(*fileInfos, fi)
-			}
-		}
 		coll, err := m.getCollation(m.dbName, nil)
 		if err != nil {
 			return err
 		}
-		cfg := *m.DbAuth
-		cfg.Db = m.dbName
-		cfg.Charset = strings.SplitN(coll, `_`, 2)[0]
+		charset := strings.SplitN(coll, `_`, 2)[0]
 
-		user := backend.User(m.Context)
-		var username string
-		if user != nil {
-			username = user.Username
-		}
-		noticer := notice.New(m.Context, `databaseExport`, username, bgExec.Context())
-		gtidMode, _ := m.showVariables(`gtid_mode`)
-		var hasGTID bool
-		if len(gtidMode) > 0 && len(gtidMode[0]) > 0 {
-			if k, y := gtidMode[0][`k`]; y && len(k) > 0 {
-				hasGTID = true
-			}
-		}
-
-		worker := func(c context.Context, cfg driver.DbAuth) error {
-			defer func() {
-				exports.Cancel(cacheKey)
-				if r := recover(); r != nil {
-					err = fmt.Errorf(`RECOVER: %v`, r)
-				}
-			}()
+		exportExecutor := func(c context.Context, noticer notice.Noticer, cfg *driver.DbAuth, tables []string, structWriter, dataWriter interface{}) error {
 			if utils.SupportedExport() { // 采用 mysqldump 命令导出
-				err = utils.Export(c, noticer, &cfg, tables, structWriter, dataWriter, m.getVersion(), hasGTID, true)
-			} else {
-				if structWriter != nil {
-					err = m.exportDBStruct(c, noticer, &cfg, tables, structWriter, m.getVersion(), true)
-				}
-				if err == nil && dataWriter != nil {
-					err = m.exportDBData(c, noticer, &cfg, tables, dataWriter, m.getVersion())
-				}
-			}
-			if err != nil {
-				loga.Error(err)
-				return err
-			}
-			if len(sqlFiles) > 0 {
-				now := time.Now()
-				for _, fi := range *fileInfos {
-					fi.End = now
-					fi.Size, err = com.FileSize(fi.Path)
-					if err != nil {
-						fi.Error = err.Error()
-					}
-					fi.Elapsed = fi.End.Sub(fi.Start)
-				}
-				zipFile := filepath.Join(dbSaveDir, "sql-"+nowTime+".zip")
-				fi := &utils.FileInfo{
-					Start:      now,
-					Path:       zipFile,
-					Compressed: true,
-				}
-				fi.Size, err = com.Zip(sqlSaveDir, zipFile)
-				if err != nil {
-					loga.Error(err)
-					return err
-				}
-				os.RemoveAll(sqlSaveDir)
-				fi.End = time.Now()
-				fi.Elapsed = fi.End.Sub(fi.Start)
-				fileInfos.Add(fi)
-				os.WriteFile(zipFile+`.txt`, com.Str2bytes(com.Dump(fileInfos, false)), os.ModePerm)
-			}
-			return nil
-		}
-		if !async {
-			done := make(chan struct{})
-			ctx := m.StdContext()
-			go func() {
-				defer exports.Cancel(cacheKey)
-				for {
-					select {
-					case <-ctx.Done():
-						return
-					case <-done:
-						return
+				gtidMode, _ := m.showVariables(`gtid_mode`)
+				var hasGTID bool
+				if len(gtidMode) > 0 && len(gtidMode[0]) > 0 {
+					if k, y := gtidMode[0][`k`]; y && len(k) > 0 {
+						hasGTID = true
 					}
 				}
-			}()
-			err = worker(bgExec.Context(), cfg)
-			if err != nil {
-				noticer(m.T(`导出失败`)+`: `+err.Error(), 0)
+				return utils.Export(c, noticer, cfg, tables, structWriter, dataWriter, m.getVersion(), hasGTID, true)
 			}
-			done <- struct{}{}
+			var err error
+			if structWriter != nil {
+				err = m.exportDBStruct(c, noticer, cfg, tables, structWriter, m.getVersion(), true)
+			}
+			if err == nil && dataWriter != nil {
+				err = m.exportDBData(c, noticer, cfg, tables, dataWriter, m.getVersion())
+			}
 			return err
 		}
-		data := m.Data()
-		data.SetInfo(m.T(`任务已经在后台成功启动`))
-		data.SetURL(backend.URLFor(`/download/file?path=dbmanager/cache/` + utils.OpExport + `/` + m.dbName))
-		go worker(bgExec.Context(), cfg)
+
+		var data echo.Data
+		data, err = shared.ExportSQLFiles(m.Context, *m.DbAuth, m.dbName, charset, tables, exportExecutor)
+		if err != nil {
+			return err
+		}
+
+		if data == nil {
+			return err
+		}
+
 		return m.JSON(data)
 	}
 	return m.Redirect(m.GenURL(`listTable`, m.dbName))

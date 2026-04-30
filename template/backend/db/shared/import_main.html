@@ -1,0 +1,39 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="block-flat no-padding">
+          <div class="header">							
+            <h3>{{"导入数据"|$.T}}</h3>
+          </div>
+          <div class="content padding">
+        <details class="clearfix">
+            <summary>{{`从备份文件导入`|$.T}}</summary>
+            <div class="col-md-12">
+            <form class="form-horizontal group-border-dashed" id="form-importfrom-dbfile" method="POST" action="{{$.URI}}" notify>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">{{"文件路径"|$.T}}</label>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control" name="dbfile" placeholder="{{`输入备份文件路径`|$.T}}" value="{{$.Form `title`}}" required>
+                    <div class="help-block">{{`仅支持扩展名为“.sql”/“.zip”/“.tar.gz”的文件。如果指定文件夹，需确保含有此类型的文件。`|$.T}}</div>
+                </div>
+              </div>
+              <div class="form-group">
+				<div class="col-sm-8 col-sm-offset-3">
+				  <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> {{"导入"|$.T}}</button>
+				  <button type="reset" class="btn btn-default btn-lg"><i class="fa fa-refresh"></i> {{"重置"|$.T}}</button>
+				</div>
+				</div>
+            </form>
+            </div>
+        </details>
+        <details class="clearfix sm-margin-top">
+            <summary>{{`从上传文件导入`|$.T}}</summary>
+            <form action="{{$.URI}}" class="dropzone" id="my-awesome-dropzone" accept="application/zip,application/x-zip-compressed,application/gzip"></form>
+        </details>
+            <table class="sm-margin-top">
+                <tbody id="import-progress">
+                </tbody>
+            </table>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>

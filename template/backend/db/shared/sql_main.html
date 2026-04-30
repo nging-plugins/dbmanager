@@ -1,0 +1,84 @@
+<div class="row">
+    <div class="col-md-12" id="block-container">
+        {{Include "db/mysql/dbinfo_btn"}}
+        {{if $.Stored.selects}}
+        {{range $keyd,$data := $.Stored.selects}}
+        <div class="block-flat no-padding">{{- $.Set `partial.result` $data.Result -}}
+          {{Include "db/mysql/result" $}}
+          <div class="header">
+            <h3>{{"数据"|$.T}}</h3>
+          </div>
+          <div class="content">
+             <div class="table-responsive">
+				<table class="table no-border hover blue">
+					<thead class="no-border">
+						<tr>{{range $k, $colName := $data.Data.Columns}}
+							<th><strong>{{$colName}}</strong></th>
+                            {{end}}
+						</tr>
+					</thead>
+					<tbody class="no-border-x" id="tbody-content">
+                        {{range $k,$v := $data.Data.Values}}
+						<tr>
+                            {{range $k, $colName := $data.Data.Columns}}
+                            <td class="wrap-only">{{(index $v $colName).String}}</td>
+                            {{end}}
+						</tr>
+                        {{end}}
+					</tbody>
+				</table>
+			    </div>
+                {{if $data.Explain}}
+                <fieldset>
+                    <legend class="no-margin-bottom"><a href="javascript:;" onclick="$('#explain-table-{{$keyd}}').toggleClass('hidden');">EXPLAIN</a></legend>
+                    <div id="explain-table-{{$keyd}}" class="table-responsive hidden">
+				<table class="table no-border hover blue">
+					<thead class="no-border">
+						<tr>{{range $k, $colName := $data.Explain.Columns}}
+							<th><strong>{{$colName}}</strong></th>
+                            {{end}}
+						</tr>
+					</thead>
+					<tbody class="no-border-x" id="explain-tbody-content-{{$keyd}}">
+                        {{range $k,$v := $data.Explain.Values}}
+						<tr>
+                            {{range $k, $colName := $data.Explain.Columns}}
+                            <td class="wrap-only">{{(index $v $colName).String}}</td>
+                            {{end}}
+						</tr>
+                        {{end}}
+					</tbody>
+				</table>
+                    </div>
+                </fieldset>
+                {{end}}
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+        {{end}}
+        {{end}}
+        <div class="block-flat no-padding">
+          <div class="content no-padding">
+              <form class="form-horizontal group-border-dashed" method="POST" action="" id="form-sql-query" notify>
+              <div class="form-group">
+				<div class="col-sm-12">
+                    <textarea name="query" id="query" class="form-control">{{$.Form "query"}}</textarea>
+                </div>
+              </div>
+              <div class="form-group form-submit-group" disabled-fixed="true">
+				<div class="col-sm-12">
+                    <button type="button" class="btn btn-info btn-lg" id="btn-sql-analysis"><i class="fa fa-search"></i> {{"分析"|$.T}}</button>
+				    <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> {{"执行"|$.T}}</button>
+                    <label for="limit">{{"行数"|$.T}}: </label><input name="limit" id="limit" type="number" style="width:100px" class="form-control inline" />
+                    <div class="checkbox checkbox-primary checkbox-inline"> 
+                      <input type="checkbox" id="error_stops" name="error_stops"><label for="error_stops"> {{"出错时停止"|$.T}}</label> 
+                    </div>
+                    <div class="checkbox checkbox-primary checkbox-inline"> 
+                      <input type="checkbox" id="only_errors" name="only_errors"><label for="only_errors"> {{"只显示错误"|$.T}}</label> 
+                    </div>
+				</div>
+			    </div>
+              </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>

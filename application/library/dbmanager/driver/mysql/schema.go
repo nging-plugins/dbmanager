@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 	"github.com/webx-top/echo/param"
@@ -221,21 +222,21 @@ func (op *Operation) Apply(m *mySQL) error {
 				r.SQL = `REVOKE PROXY ` + on
 				r.Exec(m.newParam())
 				m.AddResults(r)
-				return r.err
+				return r.Error()
 			}
 			r := &Result{}
 			r.SQL = `REVOKE ALL PRIVILEGES ` + on
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 			if hasOpt {
 				r := &Result{}
 				r.SQL = `REVOKE GRANT OPTION ` + on
 				r.Exec(m.newParam())
 				m.AddResults(r)
-				return r.err
+				return r.Error()
 			}
 		} else if hasOpt {
 			if op.Scope == `proxy` {
@@ -243,14 +244,14 @@ func (op *Operation) Apply(m *mySQL) error {
 				r.SQL = `REVOKE PROXY ` + on
 				r.Exec(m.newParam())
 				m.AddResults(r)
-				return r.err
+				return r.Error()
 			}
 			r := &Result{}
 			r.SQL = `REVOKE GRANT OPTION ` + on
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 		}
 		if len(op.Revoke) > 0 {
@@ -259,8 +260,8 @@ func (op *Operation) Apply(m *mySQL) error {
 			r.SQL = `REVOKE ` + reGrantOptionValue.ReplaceAllString(c, `$1`) + ` ` + on
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 		}
 	}
@@ -275,7 +276,7 @@ func (op *Operation) Apply(m *mySQL) error {
 			}
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			return r.err
+			return r.Error()
 		}
 		hasAll := op.HasAllPrivileges(&op.Grant, true)
 		hasOpt := op.HasGrantOption(&op.Grant, true)
@@ -284,22 +285,22 @@ func (op *Operation) Apply(m *mySQL) error {
 			r.SQL = `GRANT ALL PRIVILEGES ` + on + ` WITH GRANT OPTION`
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			return r.err
+			return r.Error()
 		}
 		if hasAll {
 			r := &Result{}
 			r.SQL = `GRANT ALL PRIVILEGES ` + on
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			return r.err
+			return r.Error()
 		}
 		if hasOpt {
 			r := &Result{}
 			r.SQL = `GRANT GRANT OPTION ` + on
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 		}
 		if len(op.Grant) > 0 {
@@ -308,8 +309,8 @@ func (op *Operation) Apply(m *mySQL) error {
 			r.SQL = `GRANT ` + reGrantOptionValue.ReplaceAllString(c, `$1`) + ` ` + on
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			if r.err != nil {
-				return r.err
+			if r.Error() != nil {
+				return r.Error()
 			}
 		}
 	}
@@ -644,7 +645,7 @@ func (f *Field) InputType() string {
 		return f.Type
 	case `year`:
 		return f.Type
-	case `json`,`text`:
+	case `json`, `text`:
 		return `textarea`
 	default:
 		if f.MaxSize() > 255 {
@@ -700,27 +701,11 @@ func (t TriggerOptions) Get(typeName string) []string {
 	return []string{}
 }
 
-func NewDataTable() *DataTable {
-	return &DataTable{
-		Columns: []string{},
-		Values:  []map[string]*sql.NullString{},
-	}
-}
-
-type DataTable struct {
-	Columns []string
-	Values  []map[string]*sql.NullString
-}
-
-type SelectData struct {
-	Result  *Result
-	Data    *DataTable
-	Explain *DataTable
-}
-
 type CharsetData struct {
 	Charset          sql.NullString
 	Description      sql.NullString
 	DefaultCollation sql.NullString
 	Maxlen           sql.NullInt64
 }
+
+type Result = shared.Result

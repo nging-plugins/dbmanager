@@ -7,7 +7,7 @@ import (
 	"github.com/coscms/webcore/library/cron"
 	"github.com/coscms/webcore/library/module"
 	routeRegistry "github.com/coscms/webcore/registry/route"
-	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 	dlconfig "github.com/nging-plugins/dlmanager/application/library/config"
 )
 
@@ -47,7 +47,7 @@ func registerRoute(g echo.RouteRegister) {
 }
 
 func init() {
-	mysql.SQLTempDir = downloadDir //将SQL文件缓存到下载目录里面方便管理
+	shared.SQLTempDir = downloadDir //将SQL文件缓存到下载目录里面方便管理
 
 	cron.Register(`mysql_backup`, mysqlBackup, `>mysql_backup:1?database=test&keepN=30`, `数据库备份`)
 

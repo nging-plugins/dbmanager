@@ -37,14 +37,14 @@ func (m *mySQL) dropUser(user string, host string) error {
 	r.SQL = "DROP USER " + user
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	if r.err != nil {
-		return r.err
+	if r.Error() != nil {
+		return r.Error()
 	}
 	r2 := &Result{}
 	r2.SQL = "FLUSH PRIVILEGES"
 	r2.Exec(m.newParam())
 	m.AddResults(r2)
-	return r2.err
+	return r2.Error()
 }
 
 func (m *mySQL) modifyPassword(user string, host string, password string, authPlugin string) error {
@@ -64,7 +64,7 @@ func (m *mySQL) modifyPassword(user string, host string, password string, authPl
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) addUser(user string, host string, password string, authPlugin string) error {
@@ -88,7 +88,7 @@ func (m *mySQL) addUser(user string, host string, password string, authPlugin st
 	}
 	r.Exec(m.newParam())
 	m.AddResults(r)
-	return r.err
+	return r.Error()
 }
 
 func (m *mySQL) isV8Plus() bool {
@@ -127,8 +127,8 @@ func (m *mySQL) editUser(oldUser string, oldHost string, newUser string, newHost
 			r2 := &Result{}
 			r2.SQL = "DROP USER " + newUserAndHost
 			r2.Exec(m.newParam())
-			if r2.err != nil {
-				m.Echo().Logger().Error(r2.err)
+			if r2.Error() != nil {
+				m.Echo().Logger().Error(r2.Error())
 			}
 			m.AddResults(r2)
 			return err
@@ -294,7 +294,7 @@ func (m *mySQL) editUser(oldUser string, oldHost string, newUser string, newHost
 			r.SQL = "DROP USER " + oldUserAndHost
 			r.Exec(m.newParam())
 			m.AddResults(r)
-			if r.err != nil {
+			if r.Error() != nil {
 				return onerror(err)
 			}
 		}

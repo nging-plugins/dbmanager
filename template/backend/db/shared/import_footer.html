@@ -1,0 +1,115 @@
+<script type="text/javascript" src="{{AssetsURL}}/js/dropzone/dropzone.min.js"></script>
+<script type="text/template" id="tr-progressbar">
+<tr class="tr-progressbar">
+	<td colspan="12" style="padding:0">
+		<div class="progress-description"></div>
+		<div class="progress progress-striped" style="border-radius:0;background-color:#555">
+			<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+			<span class="sr-only">0%</span>
+			</div>
+		</div>
+	</td>
+</tr>
+</script>
+<script type="text/template" id="tr-error">
+<div class="alert alert-danger alert-white rounded">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+    <div class="icon"><i class="fa fa-times-circle"></i></div>
+    <strong>Error!</strong> <pre></pre>
+ </div>
+</script>
+<script type="text/javascript">
+function recv_notice_databaseImport(m){
+	var percent=m.progress?m.progress.percent.toFixed(2)*1:0;
+    if(m.status>0){
+        console.info('['+percent+'/100] '+m.content);
+    }else{
+        console.error('['+percent+'/100] '+m.content);
+    }
+	if(!m.progress) return;
+	var el='import-progress';
+	var box=$('#'+el);
+    var id=m.id;
+	if(box.length<1) return;
+	var pb=box.find('#tr-progressbar-'+id);
+	if(pb.length<1){
+		var pb=$($('#tr-progressbar').html());
+        pb.attr('id','tr-progressbar-'+id);
+        if(box.children('tr:first').length>0){
+		    box.children('tr:first').before(pb);
+        }else{
+		    box.html(pb);
+        }
+	}
+    if(m.status==0){
+        var e=$($('#tr-error').html());
+        e.find('pre').html(m.content);
+        pb.after(e);
+    }
+	var bar=pb.children('td').children('.progress').children('.progress-bar');
+	bar.css('width',percent+'%').attr('aria-valuenow',percent);
+	//bar.children('.sr-only').html('['+percent+'%] '+m.content);
+	pb.find('.progress-description').text(' ['+percent+'%] '+m.content);
+	if(percent>=100&&m.progress.complete){
+        pb.remove();
+		App.message({title:App.i18n.SYS_INFO,text:m.content,
+		time:5000,sticky:false,class_name:'success'});
+        var $previewElement=$("#dz-preview-"+id);
+        if($previewElement.length<1){
+            var cb=box.data('endCallback');
+            if(cb && typeof cb === 'function'){
+                cb();
+                box.data('endCallback',null);
+            }
+            return;
+        }
+        $previewElement.addClass("dz-success").removeClass("dz-sql-importing").children(".dz-upload-after").text(m.content);
+        while($previewElement.prev(".dz-sql-importing").length>0){
+            $previewElement = $previewElement.prev(".dz-sql-importing");
+            $previewElement.addClass("dz-success").removeClass("dz-sql-importing").children(".dz-upload-after").text(m.content);
+        }
+	}
+}
+Dropzone.autoDiscover = false;
+$(function(){
+    $('#my-awesome-dropzone').dropzone({
+        url:'{{$.URI}}', timeout: 3600000, // 1h
+        params: function(files){
+            return {clientID:App.clientID['notify'],id:files[files.length-1].upload.uuid};
+        },
+        dictDefaultMessage:'{{"可以把sql文件拖到这里来进行上传"|$.T}}<p>{{"支持上传“.sql”和“.zip”/“.tar.gz”压缩包，系统会自动执行sql文件"|$.T}}<br />{{$.T "文件名如果包含单词%v则会被优先执行" `<code>struct</code>`|ToHTML}}</p>',
+        uploadMultiple:true,paramName:function(n){return 'file'},
+        success:function(file){
+            if (file.previewElement) {
+                if($(file.previewElement).children('.dz-upload-after').length<1) {
+                    var tips='<div class="dz-upload-after"><i class="fa fa-spinner fa-spin"></i><span> {{"导入中"|$.T}}</span></div>';
+                    $(file.previewElement).prepend(tips);
+                }
+                return $(file.previewElement).attr("id","dz-preview-"+file.upload.uuid).addClass("dz-sql-importing");
+                //return file.previewElement.classList.add("dz-success");
+            }
+        }
+    });
+    $('#form-importfrom-dbfile').on('submit',function(e){
+        e.preventDefault();
+        var $submit=$(this).find(':submit');
+        $submit.prop('disabled',true);
+        $submit.children('.fa').addClass('fa-spin');
+        var end=function(){
+            $submit.prop('disabled',false);
+            $submit.children('.fa').removeClass('fa-spin')
+        };
+        $('#import-progress').data('endCallback',end);
+        var url=$(this).attr('action'),data=$(this).serializeArray();
+        $.ajax({type:'post',url:url,dataType:'json',data:data,
+        success:function(r){
+            if('Code' in r){
+                end();
+                if(r.Code!=1)return App.message({text:r.Info,type:'error'});
+                App.message({text:r.Info,type:'success'});
+            }
+        },error:function(xhr,statusText,err){end();App.message({text:App.htmlEncode(xhr.responseText),type:'error'});}
+        });
+    })
+});
+</script>

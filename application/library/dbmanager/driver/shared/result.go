@@ -16,7 +16,7 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package mysql
+package shared
 
 import (
 	"database/sql"
@@ -54,6 +54,7 @@ func ReleaseResult(r *Result) {
 }
 
 type Result struct {
+	db           *sql.DB
 	SQL          string
 	SQLs         []string
 	RowsAffected int64
@@ -63,6 +64,11 @@ type Result struct {
 	Elapsed      string
 	err          error
 	ErrorString  string
+}
+
+func (r *Result) SetDB(db *sql.DB) *Result {
+	r.db = db
+	return r
 }
 
 func (r *Result) Reset() {
@@ -82,7 +88,7 @@ func (r *Result) GetSQL() string {
 }
 
 func (r *Result) GetSQLs() []string {
-	if r.SQLs == nil || len(r.SQLs) == 0 {
+	if len(r.SQLs) == 0 {
 		return []string{r.SQL}
 	}
 	return r.SQLs
@@ -138,10 +144,20 @@ func (r *Result) end() *Result {
 	return r
 }
 
+func (r *Result) Start() *Result {
+	return r.start()
+}
+
+func (r *Result) End() *Result {
+	return r.end()
+}
+
 func (r *Result) Exec(p *factory.Param) *Result {
 	r.start()
 	defer r.end()
-	result, err := p.SetCollection(r.SQL).Exec()
+
+	result, err := r.GetDB(p).Exec(r.SQL)
+
 	r.err = err
 	if err != nil {
 		return r
@@ -153,7 +169,7 @@ func (r *Result) Exec(p *factory.Param) *Result {
 func (r *Result) Query(p *factory.Param, readRows func(*sql.Rows) error) *Result {
 	r.start()
 	defer r.end()
-	rows, err := p.SetCollection(r.SQL).Query()
+	rows, err := r.GetDB(p).Query(r.SQL)
 	r.err = err
 	if err != nil {
 		return r
@@ -163,10 +179,18 @@ func (r *Result) Query(p *factory.Param, readRows func(*sql.Rows) error) *Result
 	return r
 }
 
+func (r *Result) GetDB(p *factory.Param) *sql.DB {
+	if p == nil {
+		return r.db
+	}
+	return p.DB()
+}
+
 func (r *Result) QueryRow(p *factory.Param, recvs ...interface{}) *Result {
 	r.start()
 	defer r.end()
-	row, err := p.SetCollection(r.SQL).QueryRow()
+	row := r.GetDB(p).QueryRow(r.SQL)
+	err := row.Err()
 	if err != nil {
 		r.err = err
 		return r
@@ -191,7 +215,7 @@ func (r *Result) Execs(p *factory.Param) *Result {
 	} else {
 		r.SQLs = append(r.SQLs, r.SQL+";")
 	}
-	result, err := p.DB().Exec(r.SQL)
+	result, err := r.GetDB(p).Exec(r.SQL)
 	r.err = err
 	if err != nil {
 		return r
@@ -216,7 +240,7 @@ func (r *Result) Queries(p *factory.Param, readRows func(*sql.Rows) error) *Resu
 	} else {
 		r.SQLs = append(r.SQLs, r.SQL+";")
 	}
-	rows, err := p.SetCollection(r.SQL).Query()
+	rows, err := r.GetDB(p).Query(r.SQL)
 	r.err = err
 	if err != nil {
 		return r

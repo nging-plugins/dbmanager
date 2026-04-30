@@ -1,67 +1,18 @@
-{{Extend "db/index"}}
+{{Strip}}{{Extend "db/index"}}
 {{Block "title"}}{{"SQL命令"|$.T}} - {{Super}}{{/Block}}
 {{Block "breadcrumb"}}
 {{Super}}
 {{if $.Stored.dbName}}<li><a href="{{call $.Func.dbMgrURL `listTable` $.Stored.dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$.Stored.dbName}}</a></li>{{end}}
 <li class="active">{{"SQL命令"|$.T}}</li>
 {{/Block}}
-{{Block "main"}}
-<div class="row">
-  <div class="col-md-12">
-    {{Include "db/mysql/dbinfo_btn"}}
-
-    {{if $.Stored.columns}}
-    <div class="block-flat no-padding">
-      <div class="header">
-        <h3>{{"查询结果"|$.T}}</h3>
-      </div>
-      <div class="content">
-        <div class="table-responsive">
-          <table class="table no-border hover blue">
-            <thead class="no-border">
-              <tr>
-                {{range $k,$col := $.Stored.columns}}
-                <th><strong>{{$col}}</strong></th>
-                {{end}}
-              </tr>
-            </thead>
-            <tbody class="no-border-x">
-              {{range $k,$row := $.Stored.results}}
-              <tr>
-                {{range $k2,$col := $.Stored.columns}}
-                <td>{{index $row $col}}</td>
-                {{end}}
-              </tr>
-              {{else}}
-              <tr><td colspan="{{len $.Stored.columns}}" class="text-center">{{`无结果`|$.T}}</td></tr>
-              {{end}}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    {{else if $.Stored.rowsAffected}}
-    <div class="alert alert-success">
-      {{"执行成功"|$.T}}，{{"影响行数"|$.T}}: <strong>{{$.Stored.rowsAffected}}</strong>
-    </div>
-    {{end}}
-
-    <div class="block-flat no-padding">
-      <div class="content no-padding">
-        <form class="form-horizontal group-border-dashed" method="POST" action="">
-          <div class="form-group">
-            <div class="col-sm-12">
-              <textarea name="query" id="query" class="form-control" rows="10" placeholder="{{`输入SQL语句...`|$.T}}">{{$.Form "query"}}</textarea>
-            </div>
-          </div>
-          <div class="form-group form-submit-group">
-            <div class="col-sm-12">
-              <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check"></i> {{"执行"|$.T}}</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+{{Block "head"}}
+{{Include "db/shared/sql_head" $}}
 {{/Block}}
+{{Block "main"}}
+{{Include "db/shared/sql_main" $}}
+{{/Block}}
+{{Block "footer"}}
+{{Super}}
+{{Include "db/shared/sql_footer" $}}
+{{/Block}}
+{{/Strip}}

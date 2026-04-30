@@ -19,10 +19,8 @@
 package mysql
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
-	"io"
 	"net/url"
 	"regexp"
 	"slices"
@@ -44,6 +42,7 @@ import (
 
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver"
 	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/mysql/formdata"
+	"github.com/nging-plugins/dbmanager/application/library/dbmanager/driver/shared"
 )
 
 func init() {
@@ -118,9 +117,6 @@ func connect(dbAuth *driver.DbAuth, dbName ...string) (*factory.Factory, error) 
 		return nil, errors.Wrap(err, echo.Dump(settings, false))
 	}
 	if db == nil {
-		if db != nil {
-			db.Close()
-		}
 		return dbfactory, ErrConnectTimeout
 	}
 	cluster := factory.NewCluster().AddMaster(db)
@@ -362,8 +358,8 @@ func (m *mySQL) CreateDb() error {
 		data.SetZone(`name`).SetInfo(m.T(`数据库名称不能为空`), 0)
 	} else {
 		res := m.createDatabase(dbName, collate)
-		if res.err != nil {
-			data.SetError(res.err)
+		if res.Error() != nil {
+			data.SetError(res.Error())
 		} else {
 			data.SetData(res)
 		}
@@ -414,8 +410,8 @@ func (m *mySQL) listDbAjax(opType string) error {
 		for _, db := range dbs {
 			r := m.dropDatabase(db)
 			rs = append(rs, r)
-			if r.err != nil {
-				data.SetError(r.err)
+			if r.Error() != nil {
+				data.SetError(r.Error())
 				code = 0
 				break
 			}
@@ -1744,229 +1740,7 @@ func (m *mySQL) modifyTrigger() error {
 	return m.Render(`db/mysql/modify_trigger`, m.checkErr(err))
 }
 func (m *mySQL) RunCommand() error {
-	var err error
-	selects := []*SelectData{}
-	var errs []error
-	if m.IsPost() {
-		query := m.Form(`query`)
-		query = strings.TrimSpace(query)
-		errorStops := m.Formx(`error_stops`).Bool()
-		onlyErrors := m.Formx(`only_errors`).Bool()
-		limit := m.Formx(`limit`).Int()
-		if limit <= 0 {
-			limit = 50
-		}
-		reader := bytes.NewReader([]byte(query))
-		space := "(?:\\s|/\\*[\\s\\S]*?\\*/|(?:#|-- )[^\\n]*\\n?|--\\r?\\n)"
-		delimiter := ";"
-		parse := `['"`
-		empty := true
-		switch m.DbAuth.Driver {
-		case `sqlite`:
-			parse += "`["
-		case `mssql`:
-			parse += "["
-		default:
-			if strings.Contains(m.DbAuth.Driver, `sql`) {
-				parse += "`#"
-			}
-		}
-		parse += "]|/\\*|-- |$"
-		switch m.DbAuth.Driver {
-		case `sqlite`:
-			parse += "|\\$[^$]*\\$"
-		}
-		buf := make([]byte, 1e6)
-		query = ``
-		offset := 0
-		for {
-			n, e := reader.Read(buf)
-			if e != nil {
-				if e == io.EOF {
-					break
-				}
-				m.Logger().Error(err)
-				errs = append(errs, err)
-			}
-			q := string(buf[0:n])
-			if offset == 0 {
-				if match := regexp.MustCompile("(?i)^" + space + "*DELIMITER\\s+(\\S+)").FindStringSubmatch(q); len(match) > 1 {
-					delimiter = match[1]
-					q = q[len(match[0]):]
-					query += q
-					offset += n
-					continue
-				}
-			}
-			query += q
-			offset += n
-
-			/*/ 跳过注释和空白
-			match := regexp.MustCompile("(" + regexp.QuoteMeta(delimiter) + "\\s*|" + parse + ")").FindStringSubmatch(query)
-			com.Dump(match)
-			if len(match) > 1 {
-				found := match[1]
-				if strings.TrimRight(query, " \t\n\r") != delimiter {
-					rule := `(?s)`
-					switch found {
-					case `/*`:
-						rule += "\\*\/"
-					case `[`:
-						rule += `]`
-					default:
-						match := regexp.MustCompile("^-- |^#").FindStringSubmatch(found)
-						if len(match) > 1 {
-							rule += "\n"
-						} else {
-							rule += regexp.QuoteMeta(found) + "|\\\\."
-						}
-					}
-					pos := strings.Index(query, found)
-					query = query[:pos]
-					rule += `|$`
-					match := regexp.MustCompile(rule).FindStringSubmatch(query)
-					for len(match) > 0 {
-						n, e := reader.Read(buf)
-						if e != nil {
-							if e == io.EOF {
-								break
-							}
-							m.Logger().Error(err)
-						}
-						q := string(buf[0:n])
-						if len(match) > 1 && len(match[1]) > 0 && match[1][0] != '\\' {
-							break
-						}
-						match = regexp.MustCompile(rule).FindStringSubmatch(q)
-					}
-				}
-			}
-			// */
-
-			empty = false
-			if m.DbAuth.Driver == `sqlite` && regexp.MustCompile(`(?i)^`+space+`*ATTACH\b`).MatchString(query) {
-				if errorStops {
-					err = errors.New(m.T(`ATTACH queries are not supported.`))
-					break
-				}
-			}
-
-			if regexp.MustCompile(`(?i)^` + space + `*USE\b`).MatchString(query) {
-				_, err = m.newParam().DB().Exec(query)
-				if err != nil {
-					m.Logger().Error(err, query)
-					if onlyErrors {
-						return err
-					}
-					errs = append(errs, err)
-				}
-				continue
-			}
-
-			if regexp.MustCompile(`(?i)^` + space + `*(CREATE|DROP|ALTER)` + space + `+(DATABASE|SCHEMA)\b`).MatchString(query) {
-				_, err = m.newParam().DB().Exec(query)
-				if err != nil {
-					m.Logger().Error(err, query)
-					if onlyErrors {
-						return err
-					}
-					errs = append(errs, err)
-				}
-				continue
-			}
-
-			if !regexp.MustCompile(`(?i)^(` + space + `|\()*(SELECT|SHOW|EXPLAIN|DESC|DESCRIBE)\b`).MatchString(query) {
-				execute := nsql.SQLLineParser(func(sqlStr string) error {
-					r := &Result{
-						SQL: sqlStr,
-					}
-					r.Exec(m.newParam())
-					m.AddResults(r)
-					return r.Error()
-				})
-				if !strings.HasSuffix(strings.TrimSpace(query), `;`) {
-					query += `;`
-				}
-				for _, line := range strings.Split(query, "\n") {
-					line = strings.TrimSpace(line)
-					if len(line) == 0 {
-						continue
-					}
-					err = execute(line)
-					if err != nil {
-						m.Logger().Error(err, line)
-						if onlyErrors {
-							return err
-						}
-						errs = append(errs, err)
-					}
-				}
-				continue
-			}
-			execute := nsql.SQLLineParser(func(sqlStr string) error {
-				r := &Result{
-					SQL: sqlStr,
-				}
-				dt := &DataTable{}
-				r.Query(m.newParam(), func(rows *sql.Rows) error {
-					dt.Columns, dt.Values, err = m.selectTable(rows, limit)
-					return err
-				})
-				if r.Error() != nil {
-					return fmt.Errorf(`%w: %s`, r.Error(), sqlStr)
-				}
-				selectData := &SelectData{Result: r, Data: dt}
-				if regexp.MustCompile(`(?i)^(` + space + `|\()*SELECT\b`).MatchString(sqlStr) {
-					var rows *sql.Rows
-					sqlStr = `EXPLAIN ` + sqlStr
-					rows, err = m.newParam().DB().Query(sqlStr)
-					if err != nil {
-						return fmt.Errorf(`%w: %s`, r.Error(), sqlStr)
-					}
-					dt := &DataTable{}
-					dt.Columns, dt.Values, err = m.selectTable(rows, limit)
-					if err != nil {
-						return fmt.Errorf(`%w: %s`, r.Error(), sqlStr)
-					}
-					selectData.Explain = dt
-				}
-				selects = append(selects, selectData)
-				return nil
-			})
-			if !strings.HasSuffix(strings.TrimSpace(query), `;`) {
-				query += `;`
-			}
-			for _, line := range strings.Split(query, "\n") {
-				line = strings.TrimSpace(line)
-				if len(line) == 0 {
-					continue
-				}
-				err = execute(line)
-				if err != nil {
-					m.Logger().Error(err.Error())
-					if onlyErrors {
-						return err
-					}
-					errs = append(errs, err)
-				}
-			}
-
-			/*
-				com.Dump(columns)
-				com.Dump(values)
-			// */
-		}
-		_ = delimiter
-		_ = empty
-	}
-	m.Set(`selects`, selects)
-	if len(errs) > 0 {
-		errMessages := make([]string, len(errs))
-		for i, e := range errs {
-			errMessages[i] = e.Error()
-		}
-		err = m.E(strings.Join(errMessages, "\n"))
-	}
+	err := shared.RunSQL(m.BaseDriver, m.newParam().DB(), nil)
 	m.SetFunc(`getFieldsByTable`, m.getFieldsByTable)
 	return m.Render(`db/mysql/sql`, m.checkErr(err))
 }

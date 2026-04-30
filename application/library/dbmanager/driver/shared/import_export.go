@@ -1,16 +1,29 @@
+/*
+   Nging is a toolbox for webmasters
+   Copyright (C) 2019-present  Wenhui Shen <swh@admpub.com>
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package shared
 
 import (
-	"bufio"
 	"database/sql"
 	"fmt"
 	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/webx-top/com"
 	"github.com/webx-top/echo"
 )
 
@@ -194,137 +207,6 @@ type SQLStats struct {
 	Success int
 	Failed  int
 	Errors  []string
-}
-
-// ExecuteSQL splits content into statements and executes them against db.
-func ExecuteSQL(db *sql.DB, sqlContent string) SQLStats {
-	stats := SQLStats{}
-	for _, stmt := range SplitSQL(sqlContent) {
-		stmt = strings.TrimSpace(stmt)
-		if len(stmt) == 0 {
-			continue
-		}
-		_, err := db.Exec(stmt)
-		stats.Total++
-		if err != nil {
-			stats.Failed++
-			stats.Errors = append(stats.Errors, fmt.Sprintf("%v: %s", err, truncate(stmt, 120)))
-		} else {
-			stats.Success++
-		}
-	}
-	return stats
-}
-
-func ExecuteUploadedSQLFile(db *sql.DB, file multipart.File, hdr *multipart.FileHeader) (SQLStats, error) {
-	executor := NewSQLExecutor(db)
-	// Save to temp and execute line-by-line via SeekFileLines
-	tmpFile := filepath.Join(os.TempDir(), `dbmanager`, `import`, hdr.Filename)
-	com.MkdirAll(filepath.Dir(tmpFile), os.ModePerm)
-	dst, err := os.Create(tmpFile)
-	if err != nil {
-		return executor.Stats(), err
-	}
-	io.Copy(dst, file)
-	dst.Close()
-	defer os.Remove(tmpFile)
-	com.SeekFileLines(tmpFile, executor.WriteLine)
-	executor.Flush()
-	return executor.Stats(), err
-}
-
-// NewSQLExecutor creates a line-based SQL executor for use with SeekFileLines.
-// It accumulates lines into a statement buffer and executes when a complete
-// statement (ending with ';') is detected. Returns final stats.
-func NewSQLExecutor(db *sql.DB) *SQLExecutor {
-	return &SQLExecutor{db: db}
-}
-
-// SQLExecutor executes SQL statements incrementally as they are read line by line.
-type SQLExecutor struct {
-	db    *sql.DB
-	buf   strings.Builder
-	stats SQLStats
-}
-
-// WriteLine processes one line of SQL content. If it completes a statement,
-// the statement is executed immediately.
-func (e *SQLExecutor) WriteLine(line string) error {
-	line = strings.TrimSpace(line)
-	if line == "" || strings.HasPrefix(line, "--") || strings.HasPrefix(line, "#") {
-		return nil
-	}
-	e.buf.WriteString(line)
-	if strings.HasSuffix(line, ";") {
-		stmt := strings.TrimSuffix(e.buf.String(), ";")
-		e.buf.Reset()
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			return nil
-		}
-		_, err := e.db.Exec(stmt)
-		e.stats.Total++
-		if err != nil {
-			e.stats.Failed++
-			e.stats.Errors = append(e.stats.Errors, fmt.Sprintf("%v: %s", err, truncate(stmt, 120)))
-		} else {
-			e.stats.Success++
-		}
-		return err
-	}
-	e.buf.WriteByte(' ')
-	return nil
-}
-
-// Flush executes any remaining un-terminated statement.
-func (e *SQLExecutor) Flush() {
-	remainder := strings.TrimSpace(e.buf.String())
-	if remainder == "" {
-		return
-	}
-	e.buf.Reset()
-	_, err := e.db.Exec(remainder)
-	e.stats.Total++
-	if err != nil {
-		e.stats.Failed++
-		e.stats.Errors = append(e.stats.Errors, fmt.Sprintf("%v: %s", err, truncate(remainder, 120)))
-	} else {
-		e.stats.Success++
-	}
-}
-
-// Stats returns the accumulated execution statistics.
-func (e *SQLExecutor) Stats() SQLStats {
-	return e.stats
-}
-
-// SplitSQL splits SQL content into individual statements.
-func SplitSQL(content string) []string {
-	var statements []string
-	scanner := bufio.NewScanner(strings.NewReader(content))
-	scanner.Buffer(make([]byte, 1024*1024), 50*1024*1024)
-	var buf strings.Builder
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "--") || strings.HasPrefix(line, "#") {
-			continue
-		}
-		buf.WriteString(line)
-		if strings.HasSuffix(line, ";") {
-			stmt := strings.TrimSuffix(buf.String(), ";")
-			if strings.TrimSpace(stmt) != "" {
-				statements = append(statements, stmt)
-			}
-			buf.Reset()
-		} else {
-			buf.WriteByte(' ')
-		}
-	}
-	remainder := strings.TrimSpace(buf.String())
-	if remainder != "" {
-		statements = append(statements, remainder)
-	}
-	return statements
 }
 
 func truncate(s string, max int) string {

@@ -1,4 +1,4 @@
-package mysql
+package shared
 
 import (
 	"html/template"

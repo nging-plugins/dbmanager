@@ -378,81 +378,17 @@ func (p *Postgres) ViewTable() error {
 
 // RunCommand handles running SQL commands
 func (p *Postgres) RunCommand() error {
-	if p.IsPost() {
-		data := p.Data()
-		sqlStr := strings.TrimSpace(p.Form(`sql`))
-		if len(sqlStr) == 0 {
-			data.SetInfo(p.T(`请输入SQL语句`), 0)
-			return p.JSON(data)
-		}
+	err := shared.RunSQL(p.BaseDriver, p.db, nil)
+	p.SetFunc(`getFieldsByTable`, p.getFieldsByTable)
+	return p.Render(`db/postgres/sql`, p.checkErr(err))
+}
 
-		upperSQL := strings.ToUpper(sqlStr)
-
-		// Determine if it's a query or exec command
-		isQuery := strings.HasPrefix(upperSQL, `SELECT`) ||
-			strings.HasPrefix(upperSQL, `SHOW`) ||
-			strings.HasPrefix(upperSQL, `EXPLAIN`) ||
-			strings.HasPrefix(upperSQL, `WITH`)
-
-		if isQuery {
-			rows, err := p.db.Query(sqlStr)
-			if err != nil {
-				data.SetError(err)
-				return p.JSON(data)
-			}
-			defer rows.Close()
-
-			columns, err := rows.Columns()
-			if err != nil {
-				data.SetError(err)
-				return p.JSON(data)
-			}
-
-			var results []map[string]interface{}
-			for rows.Next() {
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range columns {
-					valuePtrs[i] = &values[i]
-				}
-
-				if err := rows.Scan(valuePtrs...); err != nil {
-					data.SetError(err)
-					return p.JSON(data)
-				}
-
-				row := make(map[string]interface{})
-				for i, col := range columns {
-					val := values[i]
-					// Convert byte arrays to strings
-					if b, ok := val.([]byte); ok {
-						row[col] = string(b)
-					} else {
-						row[col] = val
-					}
-				}
-				results = append(results, row)
-			}
-
-			p.Set(`columns`, columns)
-			p.Set(`results`, results)
-			p.Set(`rowsAffected`, int64(len(results)))
-		} else {
-			result, err := p.db.Exec(sqlStr)
-			if err != nil {
-				data.SetError(err)
-				return p.JSON(data)
-			}
-			rowsAffected, _ := result.RowsAffected()
-			p.Set(`rowsAffected`, rowsAffected)
-		}
-
-		p.Set(`sql`, sqlStr)
-		data.SetInfo(p.T(`执行成功`), 1)
-		return p.JSON(data)
+func (p *Postgres) getFieldsByTable(table string) []string {
+	columns, _ := shared.GetTableColumns(p.db, table)
+	if columns == nil {
+		return []string{}
 	}
-
-	return p.Render(`db/postgres/sql`, p.checkErr(nil))
+	return columns
 }
 
 // ListData handles displaying table data (paginated)
@@ -998,29 +934,14 @@ func (p *Postgres) Import() error {
 			p.fail(p.T(`请选择数据库`))
 			return p.returnTo(p.GenURL(`listDb`))
 		}
-		sqlContent := p.Form(`sql_content`)
-		var stats shared.SQLStats
-		if len(sqlContent) > 0 {
-			stats = shared.ExecuteSQL(p.db, sqlContent)
-		} else {
-			file, hdr, err := p.Request().FormFile(`file`)
-			if err != nil {
-				p.fail(p.T(`请提供SQL内容或上传文件`))
-				return p.returnTo(p.GenURL(`import`, p.dbName))
-			}
-			defer file.Close()
-			stats, err = shared.ExecuteUploadedSQLFile(p.db, file, hdr)
-			if err != nil {
-				p.fail(err.Error())
-				return p.returnTo(p.GenURL(`import`, p.dbName))
-			}
+		sqlFiles, err := shared.GetSQLFiles(p.Context)
+		if err != nil {
+			return shared.ResponseDropzone(err, p.Context)
 		}
-		if stats.Failed > 0 {
-			p.fail(p.T(`成功 %d 条，失败 %d 条: %s`, stats.Success, stats.Failed, strings.Join(stats.Errors, "; ")))
-		} else {
-			p.ok(p.T(`成功执行 %d 条SQL语句`, stats.Success))
-		}
-		return p.returnTo(p.GenURL(`import`, p.dbName))
+		async := p.Formx(`async`, `true`).Bool()
+		executor := shared.NewSQLExecutor(p.db)
+		err = shared.ImportSQLFiles(p.Context, *p.DbAuth, p.dbName, ``, sqlFiles, async, executor.ImportExecutor)
+		return shared.ResponseDropzone(err, p.Context)
 	}
 	return p.Render(`db/postgres/import`, p.checkErr(nil))
 }
