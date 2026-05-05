@@ -66,7 +66,7 @@ func ExportSQLFiles(ctx echo.Context, cfg driver.DbAuth, dbName string, charset 
 	switch output {
 	case `down`:
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEOctetStream)
-		ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", dbName+"-sql-"+nowTime+".sql"))
+		ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", dbName+"-"+nowTime+".sql"))
 		fallthrough
 	case `open`:
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
@@ -131,7 +131,7 @@ func ExportSQLFiles(ctx echo.Context, cfg driver.DbAuth, dbName string, charset 
 				}
 				fi.Elapsed = fi.End.Sub(fi.Start)
 			}
-			zipFile := filepath.Join(dbSaveDir, "sql-"+nowTime+".zip")
+			zipFile := filepath.Join(dbSaveDir, dbName+"-"+nowTime+".zip")
 			fi := &FileInfo{
 				Start:      now,
 				Path:       zipFile,
