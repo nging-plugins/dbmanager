@@ -1,0 +1,93 @@
+{{Extend "db/index"}}
+{{Block "title"}}{{"修改数据"|$.T}}: {{$.Stored.table}} - {{Super}}{{/Block}}
+{{Block "breadcrumb"}}
+{{Super}}
+{{- $dbName := $.Stored.dbName -}}
+{{- $table := $.Stored.table -}}
+<li><a href="{{call $.Func.dbMgrURL `listTable` $dbName}}" data-pjax="#pcont" data-keepjs="true">{{"数据库"|$.T}}: {{$dbName}}</a></li>
+<li><a href="{{call $.Func.dbMgrURL `viewTable` $dbName $table}}" data-pjax="#pcont" data-keepjs="true">{{"表"|$.T}}: {{$table}}</a></li>
+<li class="active">{{"修改数据"|$.T}}</li>
+{{/Block}}
+{{Block "main"}}
+{{$saveType := $.Stored.saveType}}
+<div class="row">
+    <div class="col-md-12">
+        {{Include "db/mysql/results"}}
+        <div class="block-flat no-padding">
+          <div class="content">
+             <form action="" id="form-table-data-edit" method="POST">
+             <div class="table-responsive">
+                <table class="table blue">
+                    <colgroup>
+                    <col style="width:30%" />
+                    <col style="width:150px" />
+                    <col />
+                    </colgroup>
+                    <tbody class="no-border-x" id="tbody-content">
+                        {{range $k,$column := $.Stored.columns}}
+                        {{$field := index $.Stored.fields $k}}
+                        {{$value := index $.Stored.values $column}}
+                        <tr>
+                            <th>{{$column}}<br /><em class="text-normal grey">{{$field.Comment}}</em></th>
+                            <td>
+                                <span class="label label-default">{{$field.DataType}}</span>
+                            </td>
+                            <td>
+                                {{if or (call $.Func.isText $field.DataType) (Contains $value.String "\n")}}
+                                <textarea name="value[{{$column}}]" cols="30" rows="10" class="form-control" style="resize:vertical">{{$value.String}}</textarea>
+                                {{else if (call $.Func.isNumber $field.DataType)}}
+                                <input type="number" name="value[{{$column}}]" class="form-control" value="{{$value.String}}">
+                                {{else}}
+                                <input type="text" name="value[{{$column}}]" class="form-control" value="{{$value.String}}">
+                                {{end}}
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                </div>
+                <div class="footer">
+                <fieldset class="text-center">
+                     <button type="submit" name="save" value="save" class="btn btn-primary">
+                         <i class="fa fa-save"></i>
+                         {{"保存"|$.T}}
+                    </button>
+                    <input type="hidden" name="clone" value="{{if eq $saveType `copy`}}1{{end}}">
+                    <input type="hidden" name="all" value="">
+                    {{if eq $saveType `edit`}}
+                     <button type="submit" name="save" value="saveAndContinue" class="btn btn-info">
+                         <i class="fa fa-save"></i>
+                         {{"保存并继续编辑"|$.T}}
+                    </button>
+                     <button type="submit" name="save" value="delete" class="btn btn-danger" onclick="return confirm('{{`确定要删除吗？`|$.T}}');">
+                         <i class="fa fa-times"></i>
+                         {{"删除"|$.T}}
+                    </button>
+                    {{else}}
+                     <button type="submit" name="save" value="saveAndContinue" class="btn btn-info">
+                         <i class="fa fa-save"></i>
+                         {{"保存并插入下一个"|$.T}}
+                    </button>
+                    {{end}}
+                     <a href="{{call $.Func.dbMgrURL `listData` $.Stored.dbName $.Stored.table}}" class="btn btn-default" data-pjax="#pcont" data-keepjs="true">
+                         <i class="fa fa-reply"></i>
+                         {{"返回列表"|$.T}}
+                    </a>
+                </fieldset>
+                </div><!-- /.footer -->
+                </form>
+          </div><!-- /.content -->
+        </div><!-- /.block-flat -->
+    </div>
+</div>
+{{/Block}}
+
+{{Block "footer"}}
+{{Super}}
+<script type="text/javascript" src="{{AssetsURL}}/js/textarea/autosize.min.js"></script>
+<script>
+$(function() {
+    $('#form-table-data-edit textarea').autosize();
+});
+</script>
+{{/Block}}

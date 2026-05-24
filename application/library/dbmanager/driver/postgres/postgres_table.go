@@ -483,6 +483,194 @@ func (p *Postgres) ListData() error {
 	return p.Render(`db/postgres/list_data`, p.checkErr(err))
 }
 
+// update modifies data in a PostgreSQL table
+func (p *Postgres) update(table string, set map[string]string, whereStr string) error {
+	values := []string{}
+	for key, val := range set {
+		values = append(values, QuoteCol(key)+"="+val)
+	}
+	sqlStr := fmt.Sprintf(`UPDATE %s SET %s%s`, QuoteCol(table), strings.Join(values, ", "), whereStr)
+	_, err := p.db.Exec(sqlStr)
+	if err != nil {
+		return fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	return nil
+}
+
+// insert inserts data into a PostgreSQL table
+func (p *Postgres) insert(table string, set map[string]string) error {
+	keys := []string{}
+	vals := []string{}
+	for key, val := range set {
+		keys = append(keys, QuoteCol(key))
+		vals = append(vals, val)
+	}
+	sqlStr := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, QuoteCol(table), strings.Join(keys, ", "), strings.Join(vals, ", "))
+	_, err := p.db.Exec(sqlStr)
+	if err != nil {
+		return fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	return nil
+}
+
+func isPGNumericType(dt string) bool {
+	dt = strings.ToLower(dt)
+	switch {
+	case dt == "integer", dt == "bigint", dt == "smallint":
+		return true
+	case dt == "serial", dt == "bigserial", dt == "smallserial":
+		return true
+	case dt == "real", dt == "money":
+		return true
+	case strings.HasPrefix(dt, "double precision"):
+		return true
+	case strings.HasPrefix(dt, "numeric"), strings.HasPrefix(dt, "decimal"):
+		return true
+	}
+	return false
+}
+
+func isPGTextType(dt string) bool {
+	dt = strings.ToLower(dt)
+	return strings.HasPrefix(dt, "text") ||
+		strings.HasPrefix(dt, "varchar") ||
+		strings.HasPrefix(dt, "character") ||
+		strings.HasPrefix(dt, "json") ||
+		strings.HasPrefix(dt, "xml") ||
+		strings.HasPrefix(dt, "tsvector") ||
+		strings.HasPrefix(dt, "tsquery") ||
+		strings.HasPrefix(dt, "bytea")
+}
+
+// CreateData handles insert, update, and delete of table data
+func (p *Postgres) CreateData() error {
+	saveType := p.Form(`save`)
+	clone := p.Formx(`clone`).Bool()
+	table := p.Form(`table`)
+
+	fields, err := p.getTableFields(table)
+	if err != nil {
+		return err
+	}
+
+	// Build WHERE condition from form params
+	whereCols := p.FormValues(`where[col][]`)
+	whereVals := p.FormValues(`where[val][]`)
+	whereOps := p.FormValues(`where[op][]`)
+
+	var whereParts []string
+	for i, col := range whereCols {
+		if len(col) == 0 {
+			continue
+		}
+		val := ``
+		if i < len(whereVals) {
+			val = whereVals[i]
+		}
+		op := `=`
+		if i < len(whereOps) && len(whereOps[i]) > 0 {
+			op = whereOps[i]
+		}
+		whereParts = append(whereParts, fmt.Sprintf(`%s %s %s`, QuoteCol(col), op, QuoteVal(val)))
+	}
+	whereStr := ``
+	if len(whereParts) > 0 {
+		whereStr = ` WHERE ` + strings.Join(whereParts, ` AND `)
+	}
+
+	if p.IsPost() && (saveType == `save` || saveType == `saveAndContinue` || saveType == `delete`) {
+		if saveType == `delete` {
+			sqlStr := fmt.Sprintf(`DELETE FROM %s%s`, QuoteCol(table), whereStr)
+			_, err = p.db.Exec(sqlStr)
+			if err != nil {
+				p.fail(err.Error())
+				return p.returnTo(p.GenURL(`listData`, p.dbName, table))
+			}
+			return p.returnTo(p.GenURL(`listData`, p.dbName, table))
+		}
+		// save or saveAndContinue
+		set := map[string]string{}
+		for _, field := range fields {
+			val := p.Form(`value[` + field.ColumnName + `]`)
+			if isPGNumericType(field.DataType) && len(val) > 0 {
+				set[field.ColumnName] = val
+			} else if len(val) > 0 {
+				set[field.ColumnName] = QuoteVal(val)
+			} else {
+				if field.IsNullable == `YES` {
+					set[field.ColumnName] = `NULL`
+				} else {
+					set[field.ColumnName] = QuoteVal(``)
+				}
+			}
+		}
+		if len(whereStr) > 0 && !clone {
+			err = p.update(table, set, whereStr)
+		} else {
+			err = p.insert(table, set)
+		}
+		if err == nil && saveType == `save` {
+			return p.returnTo(p.GenURL(`listData`, p.dbName, table))
+		}
+	}
+
+	// Load existing data for editing (GET) or after saveAndContinue
+	var columns []string
+	values := map[string]*sql.NullString{}
+	if len(whereStr) > 0 {
+		sqlStr := `SELECT * FROM ` + QuoteCol(table) + whereStr
+		rows, qerr := p.db.Query(sqlStr)
+		if qerr != nil {
+			return qerr
+		}
+		defer rows.Close()
+		columns, err = rows.Columns()
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			recv := make([]interface{}, len(columns))
+			for i := 0; i < len(columns); i++ {
+				recv[i] = &sql.NullString{}
+			}
+			serr := rows.Scan(recv...)
+			if serr != nil {
+				continue
+			}
+			for k, colName := range columns {
+				values[colName] = recv[k].(*sql.NullString)
+			}
+			break
+		}
+		if len(values) == 0 {
+			p.fail(p.T(`数据不存在`))
+			return p.returnTo(p.GenURL(`listData`, p.dbName, table))
+		}
+	} else {
+		for _, field := range fields {
+			columns = append(columns, field.ColumnName)
+			values[field.ColumnName] = &sql.NullString{}
+		}
+	}
+
+	p.Set(`columns`, columns)
+	p.Set(`values`, values)
+	p.Set(`fields`, fields)
+	if clone {
+		p.Set(`saveType`, `copy`)
+	} else {
+		p.Set(`saveType`, saveType)
+	}
+	p.SetFunc(`isNumber`, func(typ string) bool {
+		return isPGNumericType(typ)
+	})
+	p.SetFunc(`isText`, func(typ string) bool {
+		return isPGTextType(typ)
+	})
+
+	return p.Render(`db/postgres/edit_data`, p.checkErr(err))
+}
+
 // CreateTable handles the create table operation
 func (p *Postgres) CreateTable() error {
 	if p.IsPost() {

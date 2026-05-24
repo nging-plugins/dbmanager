@@ -457,6 +457,189 @@ func (c *ClickHouse) ListData() error {
 	return c.Render(`db/clickhouse/list_data`, c.checkErr(err))
 }
 
+// isCHNumericType checks if a ClickHouse data type is numeric
+func isCHNumericType(dt string) bool {
+	dt = strings.ToLower(dt)
+	switch {
+	case strings.HasPrefix(dt, "int"), strings.HasPrefix(dt, "uint"):
+		return true
+	case strings.HasPrefix(dt, "float"), strings.HasPrefix(dt, "decimal"):
+		return true
+	case dt == "double":
+		return true
+	}
+	return false
+}
+
+// isCHStringType checks if a ClickHouse data type is string-like (text area)
+func isCHStringType(dt string) bool {
+	dt = strings.ToLower(dt)
+	switch {
+	case dt == "string":
+		return true
+	case strings.HasPrefix(dt, "fixedstring"):
+		return true
+	case strings.HasPrefix(dt, "enum"):
+		return true
+	}
+	return false
+}
+
+// update modifies data in a ClickHouse table using ALTER TABLE UPDATE
+func (c *ClickHouse) update(table string, set map[string]string, whereStr string) error {
+	values := []string{}
+	for key, val := range set {
+		values = append(values, QuoteCol(key)+"="+val)
+	}
+	sqlStr := fmt.Sprintf(`ALTER TABLE %s UPDATE %s%s`, QuoteCol(table), strings.Join(values, ", "), whereStr)
+	_, err := c.db.Exec(sqlStr)
+	if err != nil {
+		return fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	return nil
+}
+
+// insert inserts data into a ClickHouse table
+func (c *ClickHouse) insert(table string, set map[string]string) error {
+	keys := []string{}
+	vals := []string{}
+	for key, val := range set {
+		keys = append(keys, QuoteCol(key))
+		vals = append(vals, val)
+	}
+	sqlStr := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, QuoteCol(table), strings.Join(keys, ", "), strings.Join(vals, ", "))
+	_, err := c.db.Exec(sqlStr)
+	if err != nil {
+		return fmt.Errorf(`%v: %v`, sqlStr, err)
+	}
+	return nil
+}
+
+// CreateData handles insert, update, and delete of table data
+func (c *ClickHouse) CreateData() error {
+	saveType := c.Form(`save`)
+	clone := c.Formx(`clone`).Bool()
+	table := c.Form(`table`)
+
+	fields, err := c.getTableFields(table)
+	if err != nil {
+		return err
+	}
+
+	// Build WHERE condition from form params
+	whereCols := c.FormValues(`where[col][]`)
+	whereVals := c.FormValues(`where[val][]`)
+	whereOps := c.FormValues(`where[op][]`)
+
+	var whereParts []string
+	for i, col := range whereCols {
+		if len(col) == 0 {
+			continue
+		}
+		val := ``
+		if i < len(whereVals) {
+			val = whereVals[i]
+		}
+		op := `=`
+		if i < len(whereOps) && len(whereOps[i]) > 0 {
+			op = whereOps[i]
+		}
+		whereParts = append(whereParts, fmt.Sprintf(`%s %s %s`, QuoteCol(col), op, QuoteVal(val)))
+	}
+	whereStr := ``
+	if len(whereParts) > 0 {
+		whereStr = ` WHERE ` + strings.Join(whereParts, ` AND `)
+	}
+
+	if c.IsPost() && (saveType == `save` || saveType == `saveAndContinue` || saveType == `delete`) {
+		if saveType == `delete` {
+			sqlStr := fmt.Sprintf(`ALTER TABLE %s DELETE%s`, QuoteCol(table), whereStr)
+			_, err = c.db.Exec(sqlStr)
+			if err != nil {
+				c.fail(err.Error())
+				return c.returnTo(c.GenURL(`listData`, c.dbName, table))
+			}
+			return c.returnTo(c.GenURL(`listData`, c.dbName, table))
+		}
+		// save or saveAndContinue
+		set := map[string]string{}
+		for _, field := range fields {
+			val := c.Form(`value[` + field.ColumnName + `]`)
+			if isCHNumericType(field.DataType) && len(val) > 0 {
+				set[field.ColumnName] = val
+			} else if len(val) > 0 {
+				set[field.ColumnName] = QuoteVal(val)
+			} else {
+				set[field.ColumnName] = QuoteVal(``)
+			}
+		}
+		if len(whereStr) > 0 && !clone {
+			err = c.update(table, set, whereStr)
+		} else {
+			err = c.insert(table, set)
+		}
+		if err == nil && saveType == `save` {
+			return c.returnTo(c.GenURL(`listData`, c.dbName, table))
+		}
+	}
+
+	// Load existing data for editing (GET) or after saveAndContinue
+	var columns []string
+	values := map[string]*sql.NullString{}
+	if len(whereStr) > 0 {
+		sqlStr := `SELECT * FROM ` + QuoteCol(table) + whereStr
+		rows, qerr := c.db.Query(sqlStr)
+		if qerr != nil {
+			return qerr
+		}
+		defer rows.Close()
+		columns, err = rows.Columns()
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			recv := make([]interface{}, len(columns))
+			for i := 0; i < len(columns); i++ {
+				recv[i] = &sql.NullString{}
+			}
+			serr := rows.Scan(recv...)
+			if serr != nil {
+				continue
+			}
+			for k, colName := range columns {
+				values[colName] = recv[k].(*sql.NullString)
+			}
+			break
+		}
+		if len(values) == 0 {
+			c.fail(c.T(`数据不存在`))
+			return c.returnTo(c.GenURL(`listData`, c.dbName, table))
+		}
+	} else {
+		for _, field := range fields {
+			columns = append(columns, field.ColumnName)
+			values[field.ColumnName] = &sql.NullString{}
+		}
+	}
+
+	c.Set(`columns`, columns)
+	c.Set(`values`, values)
+	c.Set(`fields`, fields)
+	if clone {
+		c.Set(`saveType`, `copy`)
+	} else {
+		c.Set(`saveType`, saveType)
+	}
+	c.SetFunc(`isNumber`, func(typ string) bool {
+		return isCHNumericType(typ)
+	})
+	c.SetFunc(`isText`, func(typ string) bool {
+		return isCHStringType(typ)
+	})
+
+	return c.Render(`db/clickhouse/edit_data`, c.checkErr(err))
+}
+
 // CreateTable handles the create table operation
 func (c *ClickHouse) CreateTable() error {
 	if c.IsPost() {

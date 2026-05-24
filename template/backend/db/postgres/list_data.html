@@ -34,17 +34,37 @@
                 {{range $k,$v := $.Stored.columns}}
                 <th><strong>{{$v}}</strong></th>
                 {{end}}
+                <th style="width:120px"><strong>{{"操作"|$.T}}</strong></th>
               </tr>
             </thead>
             <tbody class="no-border-x">
               {{range $k,$row := $.Stored.values}}
+              {{$firstCol := index $.Stored.columns 0}}
               <tr>
                 {{range $k2,$col := $.Stored.columns}}
                 <td>{{index $row $col}}</td>
                 {{end}}
+                <td class="text-center">
+                  <a href="{{call $.Func.dbMgrURL `createData` $.Stored.dbName $.Stored.table}}&where[col][]={{$firstCol}}&where[op][]==&where[val][]={{index $row $firstCol}}" class="btn btn-xs btn-primary" data-pjax="#pcont" data-keepjs="true">
+                    <i class="fa fa-pencil"></i>
+                    {{"修改"|$.T}}
+                  </a>
+                  <form method="POST" action="{{call $.Func.dbMgrURL `createData` $.Stored.dbName $.Stored.table}}" style="display:inline" onsubmit="return confirm('{{`确定要删除该数据吗？`|$.T}}');">
+                    <input type="hidden" name="save" value="delete">
+                    {{range $k2,$col := $.Stored.columns}}
+                    <input type="hidden" name="where[col][]" value="{{$col}}">
+                    <input type="hidden" name="where[op][]" value="=">
+                    <input type="hidden" name="where[val][]" value="{{index $row $col}}">
+                    {{end}}
+                    <button type="submit" class="btn btn-xs btn-danger">
+                      <i class="fa fa-times"></i>
+                      {{"删除"|$.T}}
+                    </button>
+                  </form>
+                </td>
               </tr>
               {{else}}
-              <tr><td colspan="{{len $.Stored.columns}}" class="text-center">{{`暂无数据`|$.T}}</td></tr>
+              <tr><td colspan="{{len $.Stored.columns | Add 1}}" class="text-center">{{`暂无数据`|$.T}}</td></tr>
               {{end}}
             </tbody>
           </table>
